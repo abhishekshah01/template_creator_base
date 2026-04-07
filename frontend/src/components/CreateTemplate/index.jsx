@@ -24,6 +24,8 @@ export default function CreateTemplate() {
   const [gcsPath, setGcsPath] = useState('');
   const [logOutput, setLogOutput] = useState('');
   const [loading, setLoading] = useState('');
+  const [jobPaused, setJobPaused] = useState(false);
+  const [podStatus, setPodStatus] = useState('');
 
   const stepsRef = useRef({});
 
@@ -46,6 +48,7 @@ export default function CreateTemplate() {
     setStep(1); setJobId(''); setTemplateName(''); setUserId(''); setEnvId('');
     setPodName(''); setDbName(''); setCollections([]); setSelected(new Set());
     setTimes({}); setStatuses({}); setGcsPath(''); setLogOutput(''); setLoading('');
+    setJobPaused(false); setPodStatus('');
   }
 
   function stepStatus(n) {
@@ -61,13 +64,22 @@ export default function CreateTemplate() {
     if (!/^[a-zA-Z0-9_-]+$/.test(templateName)) { setStatusFor(1, 'Template name: only letters, numbers, hyphens, underscores', 'error'); return; }
 
     setLoading('fetch');
-    setStatusFor(1, 'Fetching job info and collections...', 'loading');
+    setJobPaused(false);
+    setStatusFor(1, 'Fetching job info...', 'loading');
     try {
       const info = await api.getJobInfo(jobId);
       setUserId(info.user_id || '');
       setEnvId(info.env_id || '');
       setPodName(info.pod_info?.pod_name || '');
+      setPodStatus(info.pod_status || '');
 
+      if (info.is_paused) {
+        setJobPaused(true);
+        setStatusFor(1, `Job is paused (${info.pod_status}). Resume the job on the platform before proceeding.`, 'error');
+        return;
+      }
+
+      setStatusFor(1, 'Fetching collections...', 'loading');
       const coll = await api.getCollections(jobId);
       setDbName(coll.db_name);
       setCollections(coll.collections);
@@ -208,6 +220,14 @@ export default function CreateTemplate() {
             {loading === 'fetch' && <div className="w-3.5 h-3.5 border-2 border-blue-300/30 border-t-white rounded-full animate-spin" />}
             {loading === 'fetch' ? 'Working...' : 'Fetch Job Info'}
           </button>
+          {jobPaused && (
+            <div className="mt-3 bg-amber-900/30 border border-amber-800/50 rounded-lg px-3.5 py-3 text-xs text-amber-400 flex items-center gap-2">
+              <AlertTriangle className="w-4 h-4 shrink-0" />
+              <div>
+                <strong>Job is paused</strong> (status: {podStatus}). Resume the job on the Emergent platform first, then click "Fetch Job Info" again.
+              </div>
+            </div>
+          )}
           {userId && (
             <div className="flex gap-2 mt-2.5 flex-wrap">
               <span className="text-[11px] bg-slate-950 border border-slate-700 px-2.5 py-1 rounded-md text-slate-400">User: <strong className="text-slate-200">{userId.slice(0, 8)}...</strong></span>

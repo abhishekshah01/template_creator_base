@@ -85,17 +85,22 @@ def _get_user_id_for_job(job_id: str) -> str | None:
 def _pod_exec(env_id: str, command: str, timeout: int = 30) -> dict:
     """Execute a command in a job's pod via envcore."""
     if config.ENVCORE_URL:
-        resp = httpx.post(
-            f"{config.ENVCORE_URL}/api/v1/env/run-command",
-            json={
-                "commands": ["sh", "-c", command],
-                "env": {"env_key": env_id},
-                "timeout": timeout,
-            },
-            timeout=60,
-        )
-        resp.raise_for_status()
-        return resp.json()
+        try:
+            resp = httpx.post(
+                f"{config.ENVCORE_URL}/api/v1/env/run-command",
+                json={
+                    "commands": ["sh", "-c", command],
+                    "env": {"env_key": env_id},
+                    "timeout": timeout,
+                },
+                timeout=60,
+            )
+            resp.raise_for_status()
+            return resp.json()
+        except httpx.HTTPStatusError as e:
+            raise HTTPException(e.response.status_code, f"Pod exec failed (is the job running?): {e.response.text[:300]}")
+        except Exception as e:
+            raise HTTPException(502, f"Pod exec failed: {e}")
     else:
         # Fallback: kubectl exec (local dev)
         pod_name = f"agent-env-{env_id}"
@@ -129,7 +134,22 @@ async def get_job_info(req: JobRequest):
 
     user_id = _get_user_id_for_job(req.job_id)
 
-    # Check pod status via envcore
+    # Check pod lifecycle status from DB
+    pod_status = None
+    if config.DB_DSN:
+        conn = psycopg2.connect(config.DB_DSN)
+        try:
+            with conn.cursor() as cur:
+                cur.execute(
+                    "SELECT pod_lifecycle_status FROM environments WHERE id = %s",
+                    (env_id,),
+                )
+                row = cur.fetchone()
+                pod_status = row[0] if row else None
+        finally:
+            conn.close()
+
+    # Check pod info via envcore
     pod_info = {}
     if config.ENVCORE_URL:
         try:
@@ -143,11 +163,18 @@ async def get_job_info(req: JobRequest):
         except Exception as e:
             pod_info = {"error": str(e)}
 
+    # Determine if job is running
+    is_running = pod_status in ("RUNNING", "POD_READY", None) and "error" not in pod_info
+    is_paused = pod_status in ("PVC_BOUND", "SNAPSHOTTING", "TERMINATED")
+
     return {
         "job_id": req.job_id,
         "env_id": env_id,
         "user_id": user_id,
         "pod_info": pod_info,
+        "pod_status": pod_status,
+        "is_running": is_running,
+        "is_paused": is_paused,
     }
 
 
