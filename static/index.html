@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Template Creator</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #0f172a; color: #e2e8f0; min-height: 100vh; }
+
+    .container { max-width: 760px; margin: 0 auto; padding: 40px 20px; }
+
+    /* Header */
+    .header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 32px; }
+    .header-left h1 { font-size: 22px; font-weight: 600; }
+    .header-left p { color: #64748b; font-size: 13px; margin-top: 4px; }
+    .btn-reset { background: none; border: 1px solid #475569; color: #94a3b8; padding: 6px 14px; border-radius: 6px; font-size: 12px; cursor: pointer; display: flex; align-items: center; gap: 6px; }
+    .btn-reset:hover { border-color: #94a3b8; color: #e2e8f0; }
+    .btn-reset svg { width: 14px; height: 14px; }
+
+    /* Progress */
+    .progress-container { display: flex; align-items: center; gap: 8px; margin-bottom: 28px; }
+    .progress-step { flex: 1; height: 3px; background: #334155; border-radius: 2px; transition: background 0.4s; }
+    .progress-step.active { background: #3b82f6; }
+    .progress-step.done { background: #22c55e; }
+    .progress-label { font-size: 11px; color: #64748b; white-space: nowrap; }
+
+    /* Steps */
+    .step { background: #1e293b; border: 1px solid #334155; border-radius: 12px; padding: 24px; margin-bottom: 12px; transition: all 0.3s; }
+    .step.disabled { opacity: 0.35; pointer-events: none; }
+    .step.active { border-color: #3b82f6; box-shadow: 0 0 0 1px rgba(59,130,246,0.2); }
+    .step.completed { border-color: #22c55e33; }
+    .step.completed .step-content { opacity: 0.6; }
+    .step.locked .step-content { pointer-events: none; }
+    .step-header { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+    .step-number { width: 30px; height: 30px; border-radius: 50%; background: #334155; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 600; flex-shrink: 0; transition: all 0.3s; }
+    .step.active .step-number { background: #3b82f6; color: white; }
+    .step.completed .step-number { background: #22c55e; color: #0f172a; }
+    .step-title { font-size: 15px; font-weight: 500; flex: 1; }
+    .step-time { font-size: 11px; color: #64748b; }
+
+    /* Form elements */
+    label { display: block; font-size: 12px; color: #64748b; margin-bottom: 5px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; }
+    input[type="text"] { width: 100%; padding: 10px 12px; background: #0f172a; border: 1px solid #334155; border-radius: 8px; color: #e2e8f0; font-size: 14px; outline: none; transition: border 0.2s; }
+    input[type="text"]:focus { border-color: #3b82f6; }
+    input[type="text"]::placeholder { color: #475569; }
+    input[type="text"]:disabled { opacity: 0.5; }
+
+    .input-row { display: flex; gap: 12px; margin-bottom: 12px; }
+    .input-row > div { flex: 1; }
+
+    button { padding: 8px 18px; border-radius: 8px; border: none; font-size: 13px; font-weight: 500; cursor: pointer; transition: all 0.15s; display: inline-flex; align-items: center; gap: 6px; }
+    button:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .btn-primary { background: #3b82f6; color: white; }
+    .btn-primary:hover:not(:disabled) { background: #2563eb; }
+    .btn-danger { background: #dc2626; color: white; }
+    .btn-danger:hover:not(:disabled) { background: #b91c1c; }
+    .btn-warning { background: #d97706; color: white; }
+    .btn-warning:hover:not(:disabled) { background: #b45309; }
+    .btn-success { background: #16a34a; color: white; }
+    .btn-success:hover:not(:disabled) { background: #15803d; }
+    .btn-secondary { background: #1e293b; color: #94a3b8; border: 1px solid #334155; }
+    .btn-secondary:hover:not(:disabled) { background: #334155; color: #e2e8f0; }
+    .btn-ghost { background: none; color: #94a3b8; padding: 6px 12px; }
+    .btn-ghost:hover:not(:disabled) { color: #e2e8f0; }
+    .btn-skip { background: none; color: #64748b; border: 1px solid #334155; font-size: 12px; padding: 6px 14px; }
+    .btn-skip:hover:not(:disabled) { color: #94a3b8; border-color: #475569; }
+
+    /* Collections */
+    .collections-list { margin: 8px 0; max-height: 260px; overflow-y: auto; border: 1px solid #334155; border-radius: 8px; position: relative; }
+    .collections-list.has-overflow { border-bottom: 2px solid #3b82f6; }
+    .scroll-hint { text-align: center; font-size: 11px; color: #64748b; padding: 6px 0; background: linear-gradient(transparent, #1e293b); }
+    .collection-item { display: flex; align-items: center; gap: 10px; padding: 10px 14px; font-size: 14px; border-bottom: 1px solid #1e293b; cursor: pointer; transition: background 0.1s; }
+    .collection-item:last-child { border-bottom: none; }
+    .collection-item:hover { background: #334155; }
+    .collection-item input[type="checkbox"] { width: 16px; height: 16px; accent-color: #dc2626; cursor: pointer; }
+    .collection-item label { margin: 0; color: #e2e8f0; cursor: pointer; flex: 1; text-transform: none; letter-spacing: 0; font-size: 14px; }
+    .coll-count { font-size: 11px; color: #64748b; }
+
+    /* Status */
+    .status-bar { margin-top: 12px; padding: 10px 14px; border-radius: 8px; font-size: 13px; display: none; align-items: center; gap: 8px; }
+    .status-bar.info { display: flex; background: #172554; color: #93c5fd; border: 1px solid #1e3a5f; }
+    .status-bar.success { display: flex; background: #052e16; color: #86efac; border: 1px solid #14532d; }
+    .status-bar.error { display: flex; background: #2a0a0a; color: #fca5a5; border: 1px solid #450a0a; }
+    .status-bar.loading { display: flex; background: #1e293b; color: #94a3b8; border: 1px solid #334155; }
+    .status-bar.warn { display: flex; background: #422006; color: #fbbf24; border: 1px solid #92400e; }
+    .spinner { width: 14px; height: 14px; border: 2px solid #475569; border-top-color: #93c5fd; border-radius: 50%; animation: spin 0.6s linear infinite; flex-shrink: 0; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Log */
+    .log { margin-top: 12px; background: #0f172a; border: 1px solid #334155; border-radius: 8px; padding: 12px; font-family: 'SF Mono', 'Fira Code', monospace; font-size: 12px; max-height: 200px; overflow-y: auto; white-space: pre-wrap; display: none; color: #94a3b8; }
+    .log.visible { display: block; }
+
+    /* GCS Result */
+    .gcs-result { margin-top: 16px; padding: 16px; background: #052e16; border: 1px solid #14532d; border-radius: 8px; display: none; }
+    .gcs-result.visible { display: block; }
+    .gcs-result-title { font-size: 14px; color: #86efac; margin-bottom: 8px; font-weight: 500; display: flex; align-items: center; gap: 8px; }
+    .gcs-path { font-family: 'SF Mono', monospace; font-size: 13px; color: #4ade80; background: #0f172a; padding: 10px 14px; border-radius: 6px; word-break: break-all; }
+
+    .actions { display: flex; gap: 8px; margin-top: 12px; align-items: center; }
+
+    /* Info chips */
+    .info-row { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+    .info-chip { font-size: 12px; background: #0f172a; border: 1px solid #334155; padding: 5px 10px; border-radius: 6px; color: #94a3b8; }
+    .info-chip strong { color: #e2e8f0; }
+
+    /* Warning banner */
+    .warning-banner { background: #422006; border: 1px solid #92400e; border-radius: 8px; padding: 10px 14px; margin-bottom: 12px; font-size: 13px; color: #fbbf24; display: flex; align-items: center; gap: 8px; }
+    .warning-banner svg { flex-shrink: 0; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- Header -->
+    <div class="header">
+      <div class="header-left">
+        <h1>Template Creator</h1>
+        <p>Create reusable templates from Emergent job environments</p>
+      </div>
+      <button class="btn-reset" onclick="resetFlow()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 4v6h6"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>
+        Reset
+      </button>
+    </div>
+
+    <!-- Progress -->
+    <div class="progress-container">
+      <span class="progress-label">Start</span>
+      <div class="progress-step" id="prog1"></div>
+      <div class="progress-step" id="prog2"></div>
+      <div class="progress-step" id="prog3"></div>
+      <div class="progress-step" id="prog4"></div>
+      <span class="progress-label">Done</span>
+    </div>
+
+    <!-- Step 1: Job Info -->
+    <div class="step active" id="step1">
+      <div class="step-header">
+        <div class="step-number">1</div>
+        <div class="step-title">Identify Job</div>
+        <span class="step-time" id="step1Time"></span>
+      </div>
+      <div class="step-content">
+        <div class="input-row">
+          <div style="flex:2">
+            <label>Job ID</label>
+            <input type="text" id="jobId" placeholder="e.g. 54ae01c4-d111-447a-baa4-c35854d2c5f1">
+          </div>
+          <div style="flex:1">
+            <label>Template Name</label>
+            <input type="text" id="templateName" placeholder="e.g. lead-gen-v2">
+          </div>
+        </div>
+        <div class="actions">
+          <button class="btn-primary" id="fetchJobBtn" onclick="fetchJob()">Fetch Job Info</button>
+        </div>
+        <div class="info-row" id="jobInfo" style="display:none"></div>
+      </div>
+      <div class="status-bar" id="step1Status"></div>
+    </div>
+
+    <!-- Step 2: Collections -->
+    <div class="step disabled" id="step2">
+      <div class="step-header">
+        <div class="step-number">2</div>
+        <div class="step-title">Clear Database Collections</div>
+        <span class="step-time" id="step2Time"></span>
+      </div>
+      <div class="step-content">
+        <p style="font-size:13px; color:#64748b; margin-bottom:12px">
+          Select which collections to delete. Unselected collections will be preserved in the template.
+        </p>
+        <div class="actions" style="margin-bottom:8px">
+          <button class="btn-secondary" onclick="selectAll(true)">Select All</button>
+          <button class="btn-secondary" onclick="selectAll(false)">Deselect All</button>
+        </div>
+        <div class="collections-list" id="collectionsList"></div>
+        <div class="actions">
+          <button class="btn-danger" id="deleteBtn" onclick="deleteCollections()">Delete Selected</button>
+          <button class="btn-skip" id="skipBtn" onclick="skipDelete()">Skip (DB already clean)</button>
+        </div>
+      </div>
+      <div class="status-bar" id="step2Status"></div>
+    </div>
+
+    <!-- Step 3: Pause -->
+    <div class="step disabled" id="step3">
+      <div class="step-header">
+        <div class="step-number">3</div>
+        <div class="step-title">Pause Job (Trigger Restic Backup)</div>
+        <span class="step-time" id="step3Time"></span>
+      </div>
+      <div class="step-content">
+        <div class="warning-banner">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          Do NOT refresh the app preview before pausing! The preview will re-seed the database.
+        </div>
+        <p style="font-size:13px; color:#64748b; margin-bottom:12px">
+          Pausing creates a restic snapshot of the current (cleaned) state.
+        </p>
+        <div class="actions">
+          <button class="btn-warning" id="pauseBtn" onclick="pauseJob()">Pause Job</button>
+        </div>
+      </div>
+      <div class="status-bar" id="step3Status"></div>
+    </div>
+
+    <!-- Step 4: Create Template -->
+    <div class="step disabled" id="step4">
+      <div class="step-header">
+        <div class="step-number">4</div>
+        <div class="step-title">Create Template</div>
+        <span class="step-time" id="step4Time"></span>
+      </div>
+      <div class="step-content">
+        <p style="font-size:13px; color:#64748b; margin-bottom:12px">
+          Runs the template creation script on the dev VM. Auto-sanitizes .env secrets and stores the template in GCS.
+        </p>
+        <div class="actions">
+          <button class="btn-success" id="createBtn" onclick="createTemplate()">Create Template</button>
+        </div>
+      </div>
+      <div class="status-bar" id="step4Status"></div>
+      <div class="log" id="step4Log"></div>
+      <div class="gcs-result" id="gcsResult">
+        <div class="gcs-result-title">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+          Template created successfully!
+        </div>
+        <div class="gcs-path" id="gcsPath"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let state = {
+      jobId: '',
+      userId: '',
+      templateName: '',
+      dbName: '',
+      collections: [],
+      currentStep: 1,
+    };
+
+    function now() {
+      return new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    }
+
+    function setStatus(stepId, message, type) {
+      const el = document.getElementById(stepId);
+      el.className = `status-bar ${type}`;
+      const spinner = type === 'loading' ? '<div class="spinner"></div>' : '';
+      el.innerHTML = `${spinner}<span>${message}</span>`;
+    }
+
+    function updateProgress(step, status) {
+      for (let i = 1; i <= 4; i++) {
+        const el = document.getElementById(`prog${i}`);
+        el.className = 'progress-step';
+        if (i < step) el.classList.add('done');
+        else if (i === step && status === 'active') el.classList.add('active');
+        else if (i === step && status === 'done') el.classList.add('done');
+      }
+    }
+
+    function activateStep(n) {
+      for (let i = 1; i <= 4; i++) {
+        const el = document.getElementById(`step${i}`);
+        el.classList.remove('active', 'disabled');
+        if (i < n) {
+          el.classList.add('completed', 'locked');
+        } else if (i === n) {
+          el.classList.add('active');
+        } else {
+          el.classList.add('disabled');
+        }
+      }
+      state.currentStep = n;
+      updateProgress(n, 'active');
+      // Scroll to active step
+      setTimeout(() => document.getElementById(`step${n}`).scrollIntoView({ behavior: 'smooth', block: 'center' }), 100);
+    }
+
+    function completeStep(n) {
+      document.getElementById(`step${n}`).classList.add('completed');
+      document.getElementById(`step${n}`).classList.remove('active');
+      document.getElementById(`step${n}Time`).textContent = now();
+      updateProgress(n, 'done');
+    }
+
+    function setLoading(btnId, loading) {
+      const btn = document.getElementById(btnId);
+      btn.disabled = loading;
+      if (loading) {
+        btn.dataset.origText = btn.textContent;
+        btn.innerHTML = '<div class="spinner"></div> Working...';
+      } else {
+        btn.textContent = btn.dataset.origText || btn.textContent;
+      }
+    }
+
+    function resetFlow() {
+      if (state.currentStep > 1 && !confirm('Reset the entire flow? All progress will be lost.')) return;
+      state = { jobId: '', userId: '', templateName: '', dbName: '', collections: [], currentStep: 1 };
+      document.getElementById('jobId').value = '';
+      document.getElementById('templateName').value = '';
+      document.getElementById('jobInfo').style.display = 'none';
+      document.getElementById('collectionsList').innerHTML = '';
+      document.getElementById('step4Log').classList.remove('visible');
+      document.getElementById('gcsResult').classList.remove('visible');
+      for (let i = 1; i <= 4; i++) {
+        document.getElementById(`step${i}Status`).className = 'status-bar';
+        document.getElementById(`step${i}Status`).innerHTML = '';
+        document.getElementById(`step${i}Time`).textContent = '';
+        document.getElementById(`step${i}`).classList.remove('completed', 'locked', 'active', 'disabled');
+        document.getElementById(`prog${i}`).className = 'progress-step';
+      }
+      document.getElementById('step1').classList.add('active');
+      for (let i = 2; i <= 4; i++) document.getElementById(`step${i}`).classList.add('disabled');
+    }
+
+    // Step 1
+    async function fetchJob() {
+      const jobId = document.getElementById('jobId').value.trim();
+      const templateName = document.getElementById('templateName').value.trim();
+
+      if (!jobId) { setStatus('step1Status', 'Please enter a Job ID', 'error'); return; }
+      if (!templateName) { setStatus('step1Status', 'Please enter a Template Name', 'error'); return; }
+      if (!/^[a-zA-Z0-9_-]+$/.test(templateName)) { setStatus('step1Status', 'Template name: only letters, numbers, hyphens, underscores', 'error'); return; }
+
+      state.jobId = jobId;
+      state.templateName = templateName;
+      setLoading('fetchJobBtn', true);
+      setStatus('step1Status', 'Fetching job info and collections...', 'loading');
+
+      try {
+        const resp = await fetch('/api/job-info', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ job_id: jobId }),
+        });
+        if (!resp.ok) {
+          const err = await resp.json();
+          throw new Error(err.detail || 'Failed to fetch job info');
+        }
+        const data = await resp.json();
+        state.userId = data.user_id || '';
+
+        const infoEl = document.getElementById('jobInfo');
+        infoEl.style.display = 'flex';
+        infoEl.innerHTML = `
+          <span class="info-chip">User: <strong>${state.userId?.slice(0, 8) || '?'}...</strong></span>
+          <span class="info-chip">Env: <strong>${data.env_id?.slice(0, 8) || '?'}...</strong></span>
+          <span class="info-chip">Pod: <strong>${data.pod_info?.pod_name?.slice(0, 12) || '?'}...</strong></span>
+        `;
+
+        const collResp = await fetch('/api/collections', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ job_id: jobId }),
+        });
+        if (!collResp.ok) {
+          const err = await collResp.json();
+          throw new Error(err.detail || 'Failed to fetch collections');
+        }
+        const collData = await collResp.json();
+        state.dbName = collData.db_name;
+        state.collections = collData.collections;
+
+        setStatus('step1Status', `Found ${state.collections.length} collection(s) in "${state.dbName}"`, 'success');
+        completeStep(1);
+        renderCollections();
+        activateStep(2);
+
+      } catch (e) {
+        setStatus('step1Status', e.message, 'error');
+      } finally {
+        setLoading('fetchJobBtn', false);
+      }
+    }
+
+    function renderCollections() {
+      const list = document.getElementById('collectionsList');
+      if (state.collections.length === 0) {
+        list.innerHTML = '<p style="color:#64748b; font-size:13px; padding:14px; text-align:center">No collections found. Database is already empty.</p>';
+        document.getElementById('deleteBtn').style.display = 'none';
+        return;
+      }
+      document.getElementById('deleteBtn').style.display = '';
+      list.innerHTML = state.collections.map((c, i) => `
+        <div class="collection-item" onclick="document.getElementById('coll_${i}').click()">
+          <input type="checkbox" id="coll_${i}" data-name="${c.name}" onchange="updateDeleteBtn()" onclick="event.stopPropagation()">
+          <label for="coll_${i}" onclick="event.stopPropagation()">${c.name}</label>
+        </div>
+      `).join('');
+      // Show scroll hint if list overflows
+      requestAnimationFrame(() => {
+        if (list.scrollHeight > list.clientHeight) {
+          list.classList.add('has-overflow');
+          const hint = document.createElement('div');
+          hint.className = 'scroll-hint';
+          hint.textContent = `Scroll to see all ${state.collections.length} collections`;
+          list.parentNode.insertBefore(hint, list.nextSibling);
+          list.addEventListener('scroll', () => {
+            if (list.scrollTop + list.clientHeight >= list.scrollHeight - 10) {
+              hint.style.display = 'none';
+            } else {
+              hint.style.display = '';
+            }
+          });
+        }
+      });
+      updateDeleteBtn();
+    }
+
+    function selectAll(checked) {
+      document.querySelectorAll('#collectionsList input[type=checkbox]').forEach(cb => cb.checked = checked);
+      updateDeleteBtn();
+    }
+
+    function updateDeleteBtn() {
+      const selected = document.querySelectorAll('#collectionsList input:checked').length;
+      const btn = document.getElementById('deleteBtn');
+      btn.textContent = selected > 0 ? `Delete Selected (${selected})` : 'Delete Selected';
+      btn.disabled = selected === 0;
+    }
+
+    function skipDelete() {
+      setStatus('step2Status', 'Skipped collection cleanup', 'info');
+      completeStep(2);
+      activateStep(3);
+    }
+
+    // Step 2
+    async function deleteCollections() {
+      const checkboxes = document.querySelectorAll('#collectionsList input:checked');
+      const toDelete = Array.from(checkboxes).map(cb => cb.dataset.name);
+
+      if (toDelete.length === 0) {
+        skipDelete();
+        return;
+      }
+
+      if (!confirm(`Delete ${toDelete.length} collection(s)?\n\n${toDelete.join('\n')}\n\nThis cannot be undone.`)) return;
+
+      setLoading('deleteBtn', true);
+      setStatus('step2Status', `Deleting ${toDelete.length} collection(s)...`, 'loading');
+
+      try {
+        const resp = await fetch('/api/delete-collections', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ job_id: state.jobId, db_name: state.dbName, collections: toDelete }),
+        });
+        if (!resp.ok) {
+          const err = await resp.json();
+          throw new Error(err.detail || 'Delete failed');
+        }
+        const data = await resp.json();
+        const dropped = data.results.filter(r => r.status === 'dropped').length;
+        const failed = data.results.filter(r => r.status === 'failed');
+
+        if (failed.length > 0) {
+          setStatus('step2Status', `Dropped ${dropped}, failed ${failed.length}: ${failed.map(f => f.collection).join(', ')}`, 'error');
+        } else {
+          setStatus('step2Status', `Dropped ${dropped} collection(s)`, 'success');
+          completeStep(2);
+          activateStep(3);
+        }
+      } catch (e) {
+        setStatus('step2Status', e.message, 'error');
+      } finally {
+        setLoading('deleteBtn', false);
+      }
+    }
+
+    // Step 3
+    async function pauseJob() {
+      setLoading('pauseBtn', true);
+      setStatus('step3Status', 'Pausing job and triggering restic backup...', 'loading');
+
+      try {
+        const resp = await fetch('/api/pause-job', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ job_id: state.jobId }),
+        });
+        const text = await resp.text();
+        let data;
+        try { data = JSON.parse(text); } catch { data = { message: text }; }
+        if (!resp.ok) throw new Error(data.detail || data.message || 'Pause failed');
+
+        setStatus('step3Status', `Job paused: ${data.message || data.status}`, 'success');
+        completeStep(3);
+        activateStep(4);
+      } catch (e) {
+        setStatus('step3Status', e.message, 'error');
+      } finally {
+        setLoading('pauseBtn', false);
+      }
+    }
+
+    // Step 4
+    async function createTemplate() {
+      if (!state.userId) {
+        setStatus('step4Status', 'User ID not found. Cannot construct source repo path.', 'error');
+        return;
+      }
+
+      setLoading('createBtn', true);
+      setStatus('step4Status', 'Creating template (this may take a few minutes)...', 'loading');
+
+      try {
+        const resp = await fetch('/api/create-template', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            job_id: state.jobId,
+            user_id: state.userId,
+            template_name: state.templateName,
+          }),
+        });
+        if (!resp.ok) {
+          const text = await resp.text();
+          let err;
+          try { err = JSON.parse(text); } catch { err = { detail: text }; }
+          throw new Error(err.detail || 'Template creation failed');
+        }
+        const data = await resp.json();
+
+        const logEl = document.getElementById('step4Log');
+        if (data.output) {
+          logEl.textContent = data.output;
+          logEl.classList.add('visible');
+        }
+
+        if (data.status === 'success') {
+          setStatus('step4Status', 'Template created successfully!', 'success');
+          document.getElementById('gcsPath').textContent = data.gcs_path;
+          document.getElementById('gcsResult').classList.add('visible');
+          completeStep(4);
+          updateProgress(4, 'done');
+        } else {
+          logEl.textContent = data.error || data.output;
+          logEl.classList.add('visible');
+          throw new Error('Template creation failed -- check log output');
+        }
+      } catch (e) {
+        setStatus('step4Status', e.message, 'error');
+      } finally {
+        setLoading('createBtn', false);
+      }
+    }
+
+    // Enter key triggers fetch
+    document.getElementById('jobId').addEventListener('keydown', e => { if (e.key === 'Enter') fetchJob(); });
+    document.getElementById('templateName').addEventListener('keydown', e => { if (e.key === 'Enter') fetchJob(); });
+  </script>
+</body>
+</html>
