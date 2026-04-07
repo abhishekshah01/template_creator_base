@@ -1,27 +1,32 @@
-"""Template Creator — Automates template creation from Emergent job IDs.
+"""Template Creator API — Backend for template creation automation.
 
-Run: uvicorn main:app --reload --port 8000
-Open: http://localhost:8000
+Run: cd backend && uvicorn main:app --reload --port 8000
 """
 
 from __future__ import annotations
 
-import asyncio
 import json
+import os
 import re
 import subprocess
-from typing import Optional
 
 import httpx
 import psycopg2
 from fastapi import FastAPI, HTTPException
-from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
 import config
 
-app = FastAPI(title="Template Creator")
+app = FastAPI(title="Template Creator API")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173", "http://localhost:3000"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 
 # ---------------------------------------------------------------------------
@@ -111,8 +116,8 @@ def _pod_exec(env_id: str, command: str, timeout: int = 30) -> dict:
 # ---------------------------------------------------------------------------
 
 @app.get("/")
-async def index():
-    return FileResponse("static/index.html")
+def health():
+    return {"status": "ok", "service": "template-creator-api"}
 
 
 @app.post("/api/job-info")
@@ -334,7 +339,3 @@ async def create_template(req: CreateTemplateRequest):
         raise HTTPException(504, "Template creation timed out (5 min limit)")
     except FileNotFoundError:
         raise HTTPException(500, "gcloud CLI not found. Install Google Cloud SDK or configure SSH key.")
-
-
-# Serve static files
-app.mount("/static", StaticFiles(directory="static"), name="static")
