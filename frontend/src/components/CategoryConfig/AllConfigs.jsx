@@ -1,23 +1,99 @@
 import { useState } from 'react';
 
+// Dummy data matching real API shape
 const DUMMY_CONFIGS = [
-  { id: 'cfg_001', template_name: 'lumina-stays-v1', env_vars: 5, internal: true, public: true, summary: 'Hospitality management system for booking and reservations', updated: 'last week', owner: 'abhishek' },
-  { id: 'cfg_002', template_name: 'propnex_crm_prebuilt-v0', env_vars: 3, internal: true, public: false, summary: 'Real estate CRM platform with lead tracking', updated: '2 weeks ago', owner: 'sritam' },
-  { id: 'cfg_003', template_name: 'real-estate-v0', env_vars: 4, internal: true, public: false, summary: 'Property listing search and management app', updated: '3 weeks ago', owner: 'abhishek' },
-  { id: 'cfg_004', template_name: 'lead-gen-v2', env_vars: 6, internal: false, public: true, summary: 'Lead generation automation with multi-channel outreach', updated: 'last month', owner: 'anshul' },
-  { id: 'cfg_005', template_name: 'booking-engine-v1', env_vars: 8, internal: true, public: true, summary: 'Hotel booking engine with payment integration', updated: 'last month', owner: 'sritam' },
-  { id: 'cfg_006', template_name: 'analytics-dashboard-v0', env_vars: 4, internal: true, public: false, summary: 'Analytics and reporting dashboard for business metrics', updated: '2 months ago', owner: 'abhishek' },
+  {
+    id: 1,
+    template_name: 'propnex_crm_scratch-v0',
+    config: { app_summary: '<analysis>**original_problem_statement:** \nBuild a real estate CRM template that can be sold to customers. They start using this template on Emergent and can customize it for their own needs. The CRM should be designed for a mid-sized real estate agency with a hierarchical structure (Admin > Manager > Agent).\n\n**PRODUCT REQUIREMENTS...' },
+    default_env_config: { DB_NAME: 'propnex_crm', MONGO_URL: 'mongodb://localhost:27017', CORS_ORIGINS: '*' },
+    public: false, internal: true,
+    summary_source_job_id: '71503f24-6251-4e30-97a8-fe4603c14d7f',
+    created_at: '2026-04-07T10:33:34.741710Z',
+    updated_at: '2026-04-07T10:35:56.918297Z',
+  },
+  {
+    id: 2,
+    template_name: 'lumina-stays-v1',
+    config: { app_summary: 'Hospitality management system for hotel booking, reservations, and admin panel with payment integration and multi-property support.' },
+    default_env_config: { DB_NAME: 'lumina_stays', MONGO_URL: 'mongodb://localhost:27017', CORS_ORIGINS: '*', JWT_ALGORITHM: 'HS256', JWT_SECRET_KEY: 'your_secret' },
+    public: true, internal: true,
+    summary_source_job_id: 'a2c8f1e0-3b5d-4a1e-9c7f-2d4e6f8a0b1c',
+    created_at: '2026-04-01T08:12:00.000000Z',
+    updated_at: '2026-04-06T14:22:10.000000Z',
+  },
+  {
+    id: 3,
+    template_name: 'lead-gen-v2',
+    config: null,
+    default_env_config: { DB_NAME: 'leadgen', MONGO_URL: 'mongodb://localhost:27017', CORS_ORIGINS: '*', RATELIMIT_ENABLED: 'True', SECRET_KEY: 'change-me', MAX_BODY_SIZE: '5242880' },
+    public: true, internal: false,
+    summary_source_job_id: null,
+    created_at: '2026-03-15T12:00:00.000000Z',
+    updated_at: '2026-03-15T12:00:00.000000Z',
+  },
+  {
+    id: 4,
+    template_name: 'real-estate-v0',
+    config: { app_summary: 'Property listing and search application with map integration, favorites, and agent contact system.' },
+    default_env_config: { DB_NAME: 'real_estate', MONGO_URL: 'mongodb://localhost:27017', CORS_ORIGINS: '*', EMERGENT_AUTH_URL: 'https://auth.emergentagent.com' },
+    public: false, internal: true,
+    summary_source_job_id: 'f5d2e1a0-9b8c-4d3e-a7f6-1c2d3e4f5a6b',
+    created_at: '2026-03-20T09:30:00.000000Z',
+    updated_at: '2026-04-02T11:45:00.000000Z',
+  },
+  {
+    id: 5,
+    template_name: 'booking-engine-v1',
+    config: { app_summary: 'Hotel booking engine with availability calendar, room management, and Stripe payment integration for direct bookings.' },
+    default_env_config: { DB_NAME: 'booking_engine', MONGO_URL: 'mongodb://localhost:27017', CORS_ORIGINS: '*', STRIPE_KEY: 'sk_test_xxx', JWT_SECRET_KEY: 'booking_secret' },
+    public: true, internal: true,
+    summary_source_job_id: 'c3b2a1d0-5e4f-6a7b-8c9d-0e1f2a3b4c5d',
+    created_at: '2026-02-28T16:00:00.000000Z',
+    updated_at: '2026-03-25T10:15:00.000000Z',
+  },
+  {
+    id: 6,
+    template_name: 'analytics-dashboard-v0',
+    config: null,
+    default_env_config: { DB_NAME: 'analytics', MONGO_URL: 'mongodb://localhost:27017', CORS_ORIGINS: 'http://localhost:3000' },
+    public: false, internal: true,
+    summary_source_job_id: null,
+    created_at: '2026-02-10T11:00:00.000000Z',
+    updated_at: '2026-02-10T11:00:00.000000Z',
+  },
 ];
 
-// --- Icons ---
-function ConfigIcon({ className }) {
-  return (
-    <svg className={className} viewBox="0 0 16 16" fill="currentColor">
-      <path d="M8 9.5a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3Z" />
-      <path d="M8 0a8 8 0 1 1 0 16A8 8 0 0 1 8 0ZM1.5 8a6.5 6.5 0 1 0 13 0 6.5 6.5 0 0 0-13 0Z" />
-    </svg>
-  );
+// --- Helpers ---
+function timeAgo(dateStr) {
+  const now = new Date();
+  const date = new Date(dateStr);
+  const seconds = Math.floor((now - date) / 1000);
+  if (seconds < 60) return 'just now';
+  const minutes = Math.floor(seconds / 60);
+  if (minutes < 60) return `${minutes}m ago`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours}h ago`;
+  const days = Math.floor(hours / 24);
+  if (days < 7) return `${days}d ago`;
+  if (days < 30) return `${Math.floor(days / 7)}w ago`;
+  if (days < 365) return `${Math.floor(days / 30)}mo ago`;
+  return `${Math.floor(days / 365)}y ago`;
 }
+
+function extractSummaryPreview(config) {
+  if (!config?.app_summary) return null;
+  let text = config.app_summary;
+  // Strip analysis tags and markdown
+  text = text.replace(/<\/?analysis>/g, '');
+  text = text.replace(/\*\*[^*]+\*\*/g, '');
+  text = text.replace(/\n/g, ' ').replace(/\s+/g, ' ').trim();
+  // Take first ~120 chars
+  if (text.length > 120) text = text.slice(0, 120).trim() + '...';
+  return text || null;
+}
+
+// --- Icons ---
 function SearchIcon({ className }) {
   return (
     <svg className={className} viewBox="0 0 16 16" fill="currentColor">
@@ -29,13 +105,6 @@ function TagIcon({ className }) {
   return (
     <svg className={className} viewBox="0 0 16 16" fill="currentColor">
       <path d="M1 7.775V2.75C1 1.784 1.784 1 2.75 1h5.025c.464 0 .91.184 1.238.513l6.25 6.25a1.75 1.75 0 0 1 0 2.474l-5.026 5.026a1.75 1.75 0 0 1-2.474 0l-6.25-6.25A1.752 1.752 0 0 1 1 7.775Zm1.5 0c0 .066.026.13.073.177l6.25 6.25a.25.25 0 0 0 .354 0l5.025-5.025a.25.25 0 0 0 0-.354l-6.25-6.25a.25.25 0 0 0-.177-.073H2.75a.25.25 0 0 0-.25.25ZM6 5a1 1 0 1 1 0 2 1 1 0 0 1 0-2Z" />
-    </svg>
-  );
-}
-function CommentIcon({ className }) {
-  return (
-    <svg className={className} viewBox="0 0 16 16" fill="currentColor">
-      <path d="M1 2.75C1 1.784 1.784 1 2.75 1h10.5c.966 0 1.75.784 1.75 1.75v7.5A1.75 1.75 0 0 1 13.25 12H9.06l-2.573 2.573A1.458 1.458 0 0 1 4 13.543V12H2.75A1.75 1.75 0 0 1 1 10.25Zm1.75-.25a.25.25 0 0 0-.25.25v7.5c0 .138.112.25.25.25h2a.75.75 0 0 1 .75.75v2.19l2.72-2.72a.749.749 0 0 1 .53-.22h4.5a.25.25 0 0 0 .25-.25v-7.5a.25.25 0 0 0-.25-.25Z" />
     </svg>
   );
 }
@@ -53,22 +122,25 @@ function SortIcon({ className }) {
     </svg>
   );
 }
-
-const LABEL_COLORS = {
-  internal: { bg: '#1f6feb', text: '#ffffff' },
-  public: { bg: '#238636', text: '#ffffff' },
-  'has-summary': { bg: '#8957e5', text: '#ffffff' },
-};
+function DatabaseIcon({ className }) {
+  return (
+    <svg className={className} viewBox="0 0 16 16" fill="currentColor">
+      <path d="M1 3.5c0-.626.292-1.165.7-1.59C2.105 1.496 2.747 1.2 3.45 1h9.1c.703.2 1.345.496 1.75.91.408.425.7.964.7 1.59v9c0 .626-.292 1.165-.7 1.59-.405.414-1.047.71-1.75.91h-9.1c-.703-.2-1.345-.496-1.75-.91C1.292 13.665 1 13.126 1 12.5Zm1.5 0c0 .238.148.473.36.674.213.2.526.374.89.5V5.5h8.5V4.674c.364-.126.677-.3.89-.5.212-.201.36-.436.36-.674 0-.238-.148-.473-.36-.674A2.727 2.727 0 0 0 12.25 2.5h-8.5a2.727 2.727 0 0 0-.89.326c-.212.201-.36.436-.36.674Zm0 3.5V9h9V7Zm9 3.5H2.5V12.5c0 .238.148.473.36.674.213.2.526.374.89.5h8.5c.364-.126.677-.3.89-.5.212-.201.36-.436.36-.674Z" />
+    </svg>
+  );
+}
 
 export default function AllConfigs({ onNavigate }) {
   const [search, setSearch] = useState('');
   const [tab, setTab] = useState('all');
-  const [sortBy, setSortBy] = useState('newest');
 
   const filtered = DUMMY_CONFIGS.filter(c => {
     if (tab === 'internal' && !c.internal) return false;
     if (tab === 'public' && !c.public) return false;
-    if (search && !c.template_name.toLowerCase().includes(search.toLowerCase()) && !c.summary.toLowerCase().includes(search.toLowerCase())) return false;
+    if (search) {
+      const q = search.toLowerCase();
+      return c.template_name.toLowerCase().includes(q) || (c.config?.app_summary || '').toLowerCase().includes(q);
+    }
     return true;
   });
 
@@ -83,9 +155,8 @@ export default function AllConfigs({ onNavigate }) {
         <h1 className="text-2xl font-semibold text-gh-text">Category Configs</h1>
       </div>
 
-      {/* Search bar + action buttons row (GitHub-style) */}
+      {/* Search bar + action buttons */}
       <div className="flex items-center gap-2 mb-4">
-        {/* Search input */}
         <div className="flex-1 flex items-center bg-gh-canvas border border-gh-border rounded-md overflow-hidden">
           <div className="px-3 py-[7px] flex items-center gap-2 flex-1">
             <SearchIcon className="w-4 h-4 text-gh-text-muted shrink-0" />
@@ -94,47 +165,40 @@ export default function AllConfigs({ onNavigate }) {
               className="flex-1 bg-transparent text-sm text-gh-text outline-none placeholder:text-gh-text-muted" />
           </div>
         </div>
-
-        {/* Labels button */}
         <button className="flex items-center gap-1.5 px-3 py-[7px] bg-gh-btn border border-gh-border rounded-md text-sm text-gh-text hover:bg-gh-btn-hover transition-colors">
           <TagIcon className="w-4 h-4" />
           <span>Labels</span>
         </button>
-
-        {/* New config button (green like GitHub "New issue") */}
         <button onClick={() => onNavigate('config-create')}
           className="flex items-center gap-1.5 px-4 py-[7px] bg-gh-btn-primary text-white text-sm font-medium rounded-md hover:bg-gh-btn-primary-hover transition-colors">
           New config
         </button>
       </div>
 
-      {/* Table container */}
+      {/* Table */}
       <div className="border border-gh-border rounded-md overflow-hidden">
-        {/* Tab header (Open/Closed style) + filter dropdowns */}
+        {/* Tab header + filters */}
         <div className="flex items-center px-4 py-3 bg-gh-canvas-subtle border-b border-gh-border">
-          {/* Tabs */}
           <div className="flex items-center gap-4">
-            <button onClick={() => setTab('all')}
-              className={`flex items-center gap-1.5 text-sm ${tab === 'all' ? 'font-semibold text-gh-text' : 'text-gh-text-secondary hover:text-gh-text'}`}>
-              <ConfigIcon className="w-4 h-4" />
-              All
-              <span className={`text-xs px-1.5 py-0.5 rounded-full ${tab === 'all' ? 'bg-gh-text text-gh-canvas' : 'bg-gh-overlay text-gh-text-secondary'}`}>{allCount}</span>
-            </button>
-            <button onClick={() => setTab('internal')}
-              className={`flex items-center gap-1.5 text-sm ${tab === 'internal' ? 'font-semibold text-gh-text' : 'text-gh-text-secondary hover:text-gh-text'}`}>
-              Internal
-              <span className={`text-xs px-1.5 py-0.5 rounded-full ${tab === 'internal' ? 'bg-gh-text text-gh-canvas' : 'bg-gh-overlay text-gh-text-secondary'}`}>{internalCount}</span>
-            </button>
-            <button onClick={() => setTab('public')}
-              className={`flex items-center gap-1.5 text-sm ${tab === 'public' ? 'font-semibold text-gh-text' : 'text-gh-text-secondary hover:text-gh-text'}`}>
-              Public
-              <span className={`text-xs px-1.5 py-0.5 rounded-full ${tab === 'public' ? 'bg-gh-text text-gh-canvas' : 'bg-gh-overlay text-gh-text-secondary'}`}>{publicCount}</span>
-            </button>
+            {[
+              { key: 'all', label: 'All', count: allCount },
+              { key: 'internal', label: 'Internal', count: internalCount },
+              { key: 'public', label: 'Public', count: publicCount },
+            ].map(t => (
+              <button key={t.key} onClick={() => setTab(t.key)}
+                className={`flex items-center gap-1.5 text-sm transition-colors ${
+                  tab === t.key ? 'font-semibold text-gh-text' : 'text-gh-text-secondary hover:text-gh-text'
+                }`}>
+                {t.key === 'all' && <DatabaseIcon className="w-4 h-4" />}
+                {t.label}
+                <span className={`text-xs px-[6px] py-[1px] rounded-full leading-tight ${
+                  tab === t.key ? 'bg-gh-text text-gh-canvas font-medium' : 'bg-gh-overlay text-gh-text-secondary'
+                }`}>{t.count}</span>
+              </button>
+            ))}
           </div>
-
-          {/* Filter dropdowns (right side) */}
           <div className="ml-auto flex items-center gap-1">
-            {['Visibility', 'Owner', 'Sort'].map(label => (
+            {['Visibility', 'Sort'].map(label => (
               <button key={label}
                 className="flex items-center gap-0.5 px-2 py-1 text-xs text-gh-text-secondary hover:text-gh-text transition-colors">
                 {label === 'Sort' && <SortIcon className="w-3.5 h-3.5 mr-0.5" />}
@@ -146,69 +210,83 @@ export default function AllConfigs({ onNavigate }) {
         </div>
 
         {/* Config rows */}
-        {filtered.map(config => (
-          <div key={config.id}
-            onClick={() => onNavigate('config-detail', config.id)}
-            className="flex items-start gap-3 px-4 py-3 border-b border-gh-border-muted hover:bg-gh-surface-hover cursor-pointer transition-colors group">
-            {/* Config icon */}
-            <ConfigIcon className="w-4 h-4 text-gh-accent-green-text mt-0.5 shrink-0" />
+        {filtered.map(config => {
+          const envVarCount = Object.keys(config.default_env_config || {}).length;
+          const preview = extractSummaryPreview(config.config);
+          const hasSummary = !!config.config?.app_summary;
 
-            {/* Main content */}
-            <div className="flex-1 min-w-0">
-              {/* Title row with labels */}
-              <div className="flex items-center gap-2 flex-wrap">
-                <span className="text-sm font-semibold text-gh-text group-hover:text-gh-accent-blue-text transition-colors">
-                  {config.template_name}
-                </span>
-                {/* Labels */}
-                {config.internal && (
-                  <span className="text-xs font-medium px-[7px] py-[1px] rounded-full border"
-                    style={{ backgroundColor: LABEL_COLORS.internal.bg + '20', color: LABEL_COLORS.internal.text, borderColor: LABEL_COLORS.internal.bg + '40' }}>
-                    internal
+          return (
+            <div key={config.id}
+              onClick={() => onNavigate('config-detail', config.id)}
+              className="flex items-start gap-3 px-4 py-3 border-b border-gh-border-muted hover:bg-gh-surface-hover cursor-pointer transition-colors group">
+              {/* Main content */}
+              <div className="flex-1 min-w-0">
+                {/* Title + labels */}
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="text-sm font-semibold text-gh-text group-hover:text-gh-accent-blue-text transition-colors">
+                    {config.template_name}
                   </span>
+                  {config.internal && (
+                    <span className="text-[11px] font-medium px-[7px] py-[1px] rounded-full leading-tight"
+                      style={{ backgroundColor: 'rgba(31,111,235,0.2)', color: '#58a6ff', border: '1px solid rgba(31,111,235,0.4)' }}>
+                      internal
+                    </span>
+                  )}
+                  {config.public && (
+                    <span className="text-[11px] font-medium px-[7px] py-[1px] rounded-full leading-tight"
+                      style={{ backgroundColor: 'rgba(35,134,54,0.2)', color: '#3fb950', border: '1px solid rgba(35,134,54,0.4)' }}>
+                      public
+                    </span>
+                  )}
+                  {hasSummary && (
+                    <span className="text-[11px] font-medium px-[7px] py-[1px] rounded-full leading-tight"
+                      style={{ backgroundColor: 'rgba(137,87,229,0.2)', color: '#bc8cff', border: '1px solid rgba(137,87,229,0.4)' }}>
+                      has summary
+                    </span>
+                  )}
+                </div>
+
+                {/* Summary preview */}
+                {preview && (
+                  <div className="text-xs text-gh-text-secondary mt-1 leading-relaxed truncate max-w-[600px]">
+                    {preview}
+                  </div>
                 )}
-                {config.public && (
-                  <span className="text-xs font-medium px-[7px] py-[1px] rounded-full border"
-                    style={{ backgroundColor: LABEL_COLORS.public.bg + '20', color: LABEL_COLORS.public.text, borderColor: LABEL_COLORS.public.bg + '40' }}>
-                    public
-                  </span>
-                )}
-                {config.env_vars > 5 && (
-                  <span className="text-xs font-medium px-[7px] py-[1px] rounded-full border"
-                    style={{ backgroundColor: LABEL_COLORS['has-summary'].bg + '20', color: LABEL_COLORS['has-summary'].text, borderColor: LABEL_COLORS['has-summary'].bg + '40' }}>
-                    {config.env_vars} env vars
-                  </span>
-                )}
-              </div>
-              {/* Meta line */}
-              <div className="text-xs text-gh-text-muted mt-0.5">
-                <span className="text-gh-text-secondary">{config.summary}</span>
-              </div>
-              <div className="text-xs text-gh-text-muted mt-0.5">
-                {config.id.replace('cfg_', '#')} · {config.owner} updated {config.updated} · {config.env_vars} env vars
+
+                {/* Meta line */}
+                <div className="flex items-center gap-2 text-xs text-gh-text-muted mt-1 flex-wrap">
+                  <span>{envVarCount} env vars</span>
+                  <span>·</span>
+                  <span>created {timeAgo(config.created_at)}</span>
+                  {config.created_at !== config.updated_at && (
+                    <>
+                      <span>·</span>
+                      <span>updated {timeAgo(config.updated_at)}</span>
+                    </>
+                  )}
+                  {config.summary_source_job_id && (
+                    <>
+                      <span>·</span>
+                      <span className="font-mono text-gh-text-disabled">
+                        job:{config.summary_source_job_id.slice(0, 8)}
+                      </span>
+                    </>
+                  )}
+                </div>
               </div>
             </div>
-
-            {/* Right side: comment/action count */}
-            <div className="flex items-center gap-3 shrink-0 mt-1">
-              <span className="flex items-center gap-1 text-xs text-gh-text-muted hover:text-gh-accent-blue-text transition-colors">
-                <CommentIcon className="w-4 h-4" />
-                {config.env_vars}
-              </span>
-            </div>
-          </div>
-        ))}
+          );
+        })}
 
         {filtered.length === 0 && (
           <div className="text-center py-16">
-            <ConfigIcon className="w-6 h-6 text-gh-text-muted mx-auto mb-3" />
+            <DatabaseIcon className="w-6 h-6 text-gh-text-muted mx-auto mb-3" />
             <div className="text-lg font-medium text-gh-text mb-1">No results matched your search.</div>
             <div className="text-sm text-gh-text-secondary">Try a different search term or filter.</div>
           </div>
         )}
       </div>
 
-      {/* Footer info */}
       {filtered.length > 0 && (
         <div className="mt-4 text-center text-xs text-gh-text-muted">
           Showing {filtered.length} of {allCount} configs
