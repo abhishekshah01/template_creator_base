@@ -63,7 +63,7 @@ export default function CreateTemplate() {
 
     setLoading('fetch');
     setJobPaused(false);
-    setStatusFor(1, 'Fetching job info...', 'loading');
+    setStatusFor(1, 'Fetching job details...', 'loading');
     try {
       const info = await api.getJobInfo(jobId);
       setUserId(info.user_id || '');
@@ -77,7 +77,7 @@ export default function CreateTemplate() {
         return;
       }
 
-      setStatusFor(1, 'Fetching collections...', 'loading');
+      setStatusFor(1, 'Fetching database collections...', 'loading');
       const coll = await api.getCollections(jobId);
       setDbName(coll.db_name);
       setCollections(coll.collections);
@@ -215,8 +215,7 @@ export default function CreateTemplate() {
             </div>
           </div>
           <button onClick={fetchJob} disabled={loading === 'fetch'} className={btnDefault}>
-            {loading === 'fetch' && <div className={spinner} />}
-            {loading === 'fetch' ? 'Working...' : 'Fetch Job Info'}
+            Fetch Job Info
           </button>
           {jobPaused && (
             <div className="mt-3 bg-[#9e6a03]/15 border border-[#9e6a03]/30 rounded-md px-3 py-2 text-[12px] text-[#d29922] flex items-center gap-2">
@@ -227,16 +226,16 @@ export default function CreateTemplate() {
             </div>
           )}
           {userId && (
-            <div className="flex gap-1.5 mt-2.5 flex-wrap">
-              {[
-                { l: 'User', v: userId.slice(0, 8) },
-                { l: 'Env', v: envId.slice(0, 8) },
-                { l: 'Pod', v: podName.slice(0, 12) },
-              ].map(t => (
-                <span key={t.l} className="text-[11px] bg-[#161b22] border border-[#30363d] px-2 py-[2px] rounded-md text-[#8b949e] font-mono">
-                  {t.l}: <span className="text-[#e6edf3]">{t.v}...</span>
-                </span>
-              ))}
+            <div className="flex gap-2 mt-2.5 flex-wrap">
+              <span className="inline-flex items-center gap-1.5 text-[12px] bg-[#161b22] border border-[#30363d] px-2.5 py-[3px] rounded-full text-[#8b949e] font-mono">
+                <span className="text-[#484f58]">User</span> <span className="text-[#e6edf3]">{userId}</span>
+              </span>
+              <span className="inline-flex items-center gap-1.5 text-[12px] bg-[#161b22] border border-[#30363d] px-2.5 py-[3px] rounded-full text-[#8b949e] font-mono">
+                <span className="text-[#484f58]">Env</span> <span className="text-[#e6edf3]">{envId}</span>
+              </span>
+              <span className="inline-flex items-center gap-1.5 text-[12px] bg-[#161b22] border border-[#30363d] px-2.5 py-[3px] rounded-full text-[#8b949e] font-mono">
+                <span className="text-[#484f58]">Pod</span> <span className="text-[#e6edf3]">{podName}</span>
+              </span>
             </div>
           )}
           <StatusBar {...(statuses[1] || {})} />
