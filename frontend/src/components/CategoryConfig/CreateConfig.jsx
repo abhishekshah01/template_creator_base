@@ -183,41 +183,47 @@ export default function CreateConfig({ bearerToken, onTokenExpired, onNavigate }
         <p className="text-xs text-gh-text-secondary mb-3">
           Control who can access this template config.
         </p>
-        <div className="flex flex-col gap-2 max-w-lg">
+        <div className="max-w-lg border border-gh-border rounded-md overflow-hidden">
           {/* Internal */}
-          <label
-            className={`flex items-start gap-3 p-3 rounded-md border cursor-pointer transition-all ${
-              internal
-                ? 'border-gh-accent-blue/50 bg-gh-accent-blue/5'
-                : 'border-gh-border hover:border-gh-text-muted'
-            }`}>
-            <input type="radio" name="visibility-internal" checked={internal} onChange={() => setInternal(!internal)}
-              className="mt-0.5 accent-[#1f6feb]" />
+          <div className="flex items-center justify-between gap-4 px-4 py-3 border-b border-gh-border">
             <div>
-              <div className="text-sm font-medium text-gh-text flex items-center gap-2">
-                <svg className="w-4 h-4 text-gh-text-secondary" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-                Internal
-              </div>
+              <div className="text-sm font-medium text-gh-text">Internal</div>
               <div className="text-xs text-gh-text-secondary mt-0.5">Only visible to internal team members.</div>
             </div>
-          </label>
+            <div className="flex items-center gap-2 shrink-0">
+              <span className="text-xs text-gh-text-muted">{internal ? 'On' : 'Off'}</span>
+              <button type="button" onClick={() => setInternal(!internal)}
+                className={`relative w-[50px] h-[26px] rounded-full transition-colors border ${
+                  internal
+                    ? 'bg-gh-accent-blue border-gh-accent-blue'
+                    : 'bg-gh-overlay border-gh-border'
+                }`}>
+                <span className={`absolute top-[3px] left-[3px] w-[18px] h-[18px] bg-white rounded-full shadow-sm transition-transform duration-200 ${
+                  internal ? 'translate-x-[24px]' : 'translate-x-0'
+                }`} />
+              </button>
+            </div>
+          </div>
           {/* Public */}
-          <label
-            className={`flex items-start gap-3 p-3 rounded-md border cursor-pointer transition-all ${
-              isPublic
-                ? 'border-gh-accent-green/50 bg-gh-accent-green/5'
-                : 'border-gh-border hover:border-gh-text-muted'
-            }`}>
-            <input type="radio" name="visibility-public" checked={isPublic} onChange={() => setIsPublic(!isPublic)}
-              className="mt-0.5 accent-[#238636]" />
+          <div className="flex items-center justify-between gap-4 px-4 py-3">
             <div>
-              <div className="text-sm font-medium text-gh-text flex items-center gap-2">
-                <svg className="w-4 h-4 text-gh-text-secondary" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
-                Public
-              </div>
+              <div className="text-sm font-medium text-gh-text">Public</div>
               <div className="text-xs text-gh-text-secondary mt-0.5">Accessible to all platform users.</div>
             </div>
-          </label>
+            <div className="flex items-center gap-2 shrink-0">
+              <span className="text-xs text-gh-text-muted">{isPublic ? 'On' : 'Off'}</span>
+              <button type="button" onClick={() => setIsPublic(!isPublic)}
+                className={`relative w-[50px] h-[26px] rounded-full transition-colors border ${
+                  isPublic
+                    ? 'bg-gh-accent-green border-gh-accent-green'
+                    : 'bg-gh-overlay border-gh-border'
+                }`}>
+                <span className={`absolute top-[3px] left-[3px] w-[18px] h-[18px] bg-white rounded-full shadow-sm transition-transform duration-200 ${
+                  isPublic ? 'translate-x-[24px]' : 'translate-x-0'
+                }`} />
+              </button>
+            </div>
+          </div>
         </div>
       </div>
 
