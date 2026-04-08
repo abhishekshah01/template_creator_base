@@ -81,7 +81,8 @@ export default function CreateTemplate() {
 
       if (info.is_paused) {
         setJobPaused(true);
-        setStatusFor(1, `Job is paused (${info.pod_status}). Resume the job on the platform before proceeding.`, 'error');
+        setPodStatus(info.pod_status || 'PAUSED');
+        setStatuses(prev => ({ ...prev, 1: null }));
         return;
       }
 
@@ -94,7 +95,14 @@ export default function CreateTemplate() {
       if (coll.collections.length > 0) setInspectorOpen(true);
       completeStep(1);
     } catch (e) {
-      setStatusFor(1, e.message, 'error');
+      const msg = e.message || '';
+      if (msg.toLowerCase().includes('timed out') || msg.toLowerCase().includes('pod exec failed')) {
+        setJobPaused(true);
+        setPodStatus(podStatus || 'POD_NOT_FOUND');
+        setStatuses(prev => ({ ...prev, 1: null }));
+      } else {
+        setStatusFor(1, msg, 'error');
+      }
     } finally {
       setLoading('');
     }
@@ -246,11 +254,11 @@ export default function CreateTemplate() {
             </button>
           </div>
           {jobPaused && (
-            <div className="mb-3 bg-[#9e6a03]/15 border border-[#9e6a03]/30 rounded-md px-3 py-2 text-[12px] text-[#d29922] flex items-center gap-2">
+            <div className="mb-3 bg-[#9e6a03]/15 border border-[#9e6a03]/30 rounded-md px-3 py-[5px] text-[14px] text-[#d29922] flex items-center gap-2">
               <svg className="w-4 h-4 shrink-0" viewBox="0 0 16 16" fill="currentColor">
                 <path d="M6.457 1.047c.659-1.234 2.427-1.234 3.086 0l6.082 11.378A1.75 1.75 0 0 1 14.082 15H1.918a1.75 1.75 0 0 1-1.543-2.575Zm1.763.707a.25.25 0 0 0-.44 0L1.698 13.132a.25.25 0 0 0 .22.368h12.164a.25.25 0 0 0 .22-.368Zm.53 3.996v2.5a.75.75 0 0 1-1.5 0v-2.5a.75.75 0 0 1 1.5 0ZM9 11a1 1 0 1 1-2 0 1 1 0 0 1 2 0Z" />
               </svg>
-              <strong>Job is paused</strong> ({podStatus}). Resume first, then retry.
+              Job is paused ({podStatus || 'POD_NOT_FOUND'}). Resume first, then retry.
             </div>
           )}
           <StatusBar {...(statuses[1] || {})} />
