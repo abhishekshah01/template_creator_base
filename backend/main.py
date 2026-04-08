@@ -195,7 +195,7 @@ async def get_job_info(req: JobRequest):
 
     # Determine if job is running
     pod_has_error = "error" in pod_info
-    is_running = pod_status in ("RUNNING", "POD_READY") and not pod_has_error
+    is_running = pod_status in ("RUNNING", "POD_READY", "POD_RUNNING") and not pod_has_error
     # If pod_status is None but envcore returned no error, assume running
     if pod_status is None and not pod_has_error:
         is_running = True
