@@ -144,7 +144,12 @@ export default function Sidebar({ activePage, onNavigate, bearerToken, onTokenCh
         {showToken && (
           <textarea
             value={bearerToken}
-            onChange={e => onTokenChange(e.target.value)}
+            onChange={e => {
+              let val = e.target.value.trim();
+              // Strip "Bearer " prefix if user accidentally pastes it
+              if (val.toLowerCase().startsWith('bearer ')) val = val.slice(7).trim();
+              onTokenChange(val);
+            }}
             placeholder="Paste bearer token here..."
             rows={3}
             className="w-full px-2 py-1.5 bg-gh-canvas border border-gh-border rounded-md text-[11px] text-gh-text-secondary outline-none focus:border-gh-accent-blue placeholder:text-gh-text-muted font-mono resize-none"

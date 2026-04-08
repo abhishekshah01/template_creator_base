@@ -92,16 +92,16 @@ export default function AllConfigs({ onNavigate, bearerToken, onTokenExpired }) 
       const list = Array.isArray(data) ? data : (data?.configs || data?.data || data?.results || []);
       setConfigs(Array.isArray(list) ? list : []);
     } catch (e) {
-      if (e instanceof AuthError) { onTokenExpired(); }
       setError(e.message);
     } finally {
       setLoading(false);
     }
   }
 
+  // Fetch on initial mount if token exists
   useEffect(() => {
     if (bearerToken) fetchConfigs();
-  }, [bearerToken]);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const filtered = configs.filter(c => {
     if (tab === 'internal' && !c.internal) return false;
@@ -238,17 +238,23 @@ export default function AllConfigs({ onNavigate, bearerToken, onTokenExpired }) 
                       has summary
                     </span>
                   )}
+                  {config.summary_source_job_id && (
+                    <span className="text-[11px] font-mono font-medium px-[7px] py-[1px] rounded-full leading-tight"
+                      style={{ backgroundColor: 'rgba(139,148,158,0.15)', color: '#8b949e', border: '1px solid rgba(139,148,158,0.3)' }}>
+                      {config.summary_source_job_id}
+                    </span>
+                  )}
                 </div>
 
                 {/* Summary preview */}
                 {preview && (
-                  <div className="text-xs text-gh-text-secondary mt-1 leading-relaxed truncate max-w-[600px]">
+                  <div className="text-xs text-[#c9d1d9] mt-1 leading-relaxed truncate max-w-[600px]">
                     {preview}
                   </div>
                 )}
 
                 {/* Meta line */}
-                <div className="flex items-center gap-2 text-xs text-gh-text-muted mt-1 flex-wrap">
+                <div className="flex items-center gap-2 text-xs text-gh-text-secondary mt-1 flex-wrap">
                   <span>{envVarCount} env vars</span>
                   {config.created_at && (
                     <>
@@ -260,14 +266,6 @@ export default function AllConfigs({ onNavigate, bearerToken, onTokenExpired }) 
                     <>
                       <span>·</span>
                       <span>updated {timeAgo(config.updated_at)}</span>
-                    </>
-                  )}
-                  {config.summary_source_job_id && (
-                    <>
-                      <span>·</span>
-                      <span className="font-mono text-gh-text-disabled">
-                        job:{config.summary_source_job_id.slice(0, 8)}
-                      </span>
                     </>
                   )}
                 </div>

@@ -422,17 +422,25 @@ CATEGORY_CONFIG_URL = "https://agent-service-leadgen1-1035522277200.us-central1.
 @app.post("/api/list-category-configs")
 async def list_category_configs(req: BearerTokenRequest):
     """List all category configs via the agent service API."""
+    url = CATEGORY_CONFIG_URL
+    headers = {
+        "Content-Type": "application/json",
+        "Authorization": f"Bearer {req.bearer_token}",
+    }
     try:
         resp = httpx.get(
-            f"{CATEGORY_CONFIG_URL}/",
-            headers={
-                "Content-Type": "application/json",
-                "Authorization": f"Bearer {req.bearer_token}",
-            },
+            url,
+            headers=headers,
             timeout=30,
+            follow_redirects=True,
         )
     except Exception as e:
         raise HTTPException(502, f"Failed to reach category config API: {e}")
+
+    print(f"[list-configs] GET {url} -> {resp.status_code} (final url: {resp.url})")
+    print(f"[list-configs] Token (first 20 chars): {req.bearer_token[:20]}...")
+    print(f"[list-configs] Response body (first 500 chars): {resp.text[:500]}")
+    print(f"[list-configs] Response type: {type(resp.json()) if resp.status_code < 400 else 'error'}")
 
     if resp.status_code >= 400:
         raise HTTPException(resp.status_code, f"Failed to fetch configs: {resp.text[:500]}")
@@ -444,14 +452,11 @@ async def list_category_configs(req: BearerTokenRequest):
 
     # Handle both plain array and wrapped responses like {"configs": [...]}
     if isinstance(data, dict):
-        # Try common wrapper keys
         for key in ("configs", "data", "results", "items", "category_configs"):
             if key in data and isinstance(data[key], list):
                 return data[key]
-        # If it's a single config object, wrap it
         if "template_name" in data:
             return [data]
-        # Return as-is and let frontend handle
         return data
 
     return data
