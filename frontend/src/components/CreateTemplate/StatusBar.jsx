@@ -1,5 +1,5 @@
 export default function StatusBar({ message, type }) {
-  if (!message) return null;
+  if (!message || message === 'failed') return null;
 
   const styles = {
     info: 'bg-[#1f6feb]/10 text-[#58a6ff] border-[#1f6feb]/30',

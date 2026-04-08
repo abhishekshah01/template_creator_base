@@ -81,8 +81,10 @@ export default function CreateTemplate() {
 
       if (info.is_paused) {
         setJobPaused(true);
+        setStep(1);
+        setTimes(prev => { const { 1: _, ...rest } = prev; return rest; });
         setPodStatus(info.pod_status || 'PAUSED');
-        setStatuses(prev => ({ ...prev, 1: null }));
+        setStatusFor(1, 'failed', 'error');
         return;
       }
 
@@ -95,11 +97,13 @@ export default function CreateTemplate() {
       if (coll.collections.length > 0) setInspectorOpen(true);
       completeStep(1);
     } catch (e) {
+      setStep(1);
+      setTimes(prev => { const { 1: _, ...rest } = prev; return rest; });
       const msg = e.message || '';
       if (msg.toLowerCase().includes('timed out') || msg.toLowerCase().includes('pod exec failed')) {
         setJobPaused(true);
         setPodStatus(podStatus || 'POD_NOT_FOUND');
-        setStatuses(prev => ({ ...prev, 1: null }));
+        setStatusFor(1, 'failed', 'error');
       } else {
         setStatusFor(1, msg, 'error');
       }
@@ -233,7 +237,7 @@ export default function CreateTemplate() {
 
       {/* Step 1 */}
       <div ref={el => stepsRef.current[1] = el}>
-        <StepCard number={1} title="Identify Job" time={times[1]} status={stepStatus(1)}>
+        <StepCard number={1} title="Identify Job" time={times[1]} status={stepStatus(1)} hasError={statuses[1]?.type === 'error'}>
           <div className="flex gap-3 items-end mb-3">
             <div className="flex-[2]">
               <label className={labelCls}>Job ID <span className="text-[#f85149]">*</span></label>
@@ -283,7 +287,7 @@ export default function CreateTemplate() {
 
       {/* Step 2 */}
       <div ref={el => stepsRef.current[2] = el}>
-        <StepCard number={2} title="Clear Database Collections" time={times[2]} status={stepStatus(2)}>
+        <StepCard number={2} title="Clear Database Collections" time={times[2]} status={stepStatus(2)} hasError={statuses[2]?.type === 'error'}>
           <p className={`${helperCls} mb-3`}>Select collections to delete. Unselected will be preserved.</p>
           <div className="flex gap-1.5 mb-2">
             <button onClick={() => selectAll(true)}
@@ -344,7 +348,7 @@ export default function CreateTemplate() {
 
       {/* Step 3 */}
       <div ref={el => stepsRef.current[3] = el}>
-        <StepCard number={3} title="Pause Job" time={times[3]} status={stepStatus(3)}>
+        <StepCard number={3} title="Pause Job" time={times[3]} status={stepStatus(3)} hasError={statuses[3]?.type === 'error'}>
           <div className="bg-[#9e6a03]/15 border border-[#9e6a03]/30 rounded-md px-3 py-2 mb-3 text-[12px] text-[#d29922] flex items-center gap-2">
             <svg className="w-4 h-4 shrink-0" viewBox="0 0 16 16" fill="currentColor">
               <path d="M6.457 1.047c.659-1.234 2.427-1.234 3.086 0l6.082 11.378A1.75 1.75 0 0 1 14.082 15H1.918a1.75 1.75 0 0 1-1.543-2.575Zm1.763.707a.25.25 0 0 0-.44 0L1.698 13.132a.25.25 0 0 0 .22.368h12.164a.25.25 0 0 0 .22-.368Zm.53 3.996v2.5a.75.75 0 0 1-1.5 0v-2.5a.75.75 0 0 1 1.5 0ZM9 11a1 1 0 1 1-2 0 1 1 0 0 1 2 0Z" />
@@ -362,7 +366,7 @@ export default function CreateTemplate() {
 
       {/* Step 4 */}
       <div ref={el => stepsRef.current[4] = el}>
-        <StepCard number={4} title="Create Template" time={times[4]} status={stepStatus(4)}>
+        <StepCard number={4} title="Create Template" time={times[4]} status={stepStatus(4)} hasError={statuses[4]?.type === 'error'}>
           <p className={`${helperCls} mb-3`}>Runs the creation script on the dev VM. Sanitizes .env and stores in GCS.</p>
           <button onClick={createTemplate} disabled={loading === 'create'} className={btnPrimary}>
             {loading === 'create' && <div className={spinner} />}
