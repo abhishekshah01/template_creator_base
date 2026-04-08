@@ -51,6 +51,7 @@ class EnvVarsRequest(BaseModel):
 
 class CategoryConfigRequest(BaseModel):
     template_name: str
+    config: dict = {}
     default_env_config: dict
     summary_source_job_id: str
     internal: bool = True
@@ -335,7 +336,17 @@ async def create_template(req: CreateTemplateRequest):
         f"'"
     )
 
-    # Use gcloud compute ssh (works when running locally with gcloud auth)
+    # Activate service account if key file exists
+    if config.GCP_SA_KEY_FILE and os.path.exists(config.GCP_SA_KEY_FILE):
+        try:
+            subprocess.run(
+                ["gcloud", "auth", "activate-service-account", f"--key-file={config.GCP_SA_KEY_FILE}", "--quiet"],
+                capture_output=True, text=True, timeout=30,
+            )
+        except Exception as e:
+            print(f"[create-template] Warning: SA activation failed: {e}")
+
+    # Use gcloud compute ssh
     gcloud_cmd = [
         "gcloud", "compute", "ssh", config.VM_HOST,
         f"--zone={config.VM_ZONE}",
@@ -467,6 +478,7 @@ async def create_category_config(req: CategoryConfigRequest):
     """Create a category config entry via the agent service API."""
     payload = {
         "template_name": req.template_name,
+        "config": req.config,
         "default_env_config": req.default_env_config,
         "summary_source_job_id": req.summary_source_job_id,
         "internal": req.internal,

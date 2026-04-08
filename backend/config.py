@@ -67,3 +67,6 @@ TEMPLATE_SCRIPT_PATH = os.environ.get(
     "TEMPLATE_SCRIPT_PATH",
     "/home/sritam_emergent_sh/create_template_gcs.sh",
 )
+
+# --- GCP Service Account key file (for gcloud auth without manual login) ---
+GCP_SA_KEY_FILE = os.environ.get("GCP_SA_KEY_FILE", os.path.join(os.path.dirname(__file__), "..", "sa-key.json"))

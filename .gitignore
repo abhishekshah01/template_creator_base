@@ -5,5 +5,7 @@ __pycache__/
 template-bot-key
 template-bot-key.pub
 *.pem
+sa-key.json
 node_modules/
 dist/
+
