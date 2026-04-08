@@ -138,7 +138,7 @@ export default function CreateConfig({ bearerToken, onTokenExpired, onNavigate }
         </p>
         <input type="text" value={templateName} onChange={e => setTemplateName(e.target.value)}
           placeholder="e.g. propnex-crm-v0"
-          className="w-full max-w-md px-3 py-[5px] bg-gh-canvas border border-gh-border rounded-md text-sm text-gh-text outline-none focus:border-gh-accent-blue focus:shadow-[0_0_0_3px_rgba(31,111,235,0.3)] placeholder:text-gh-text-muted transition-shadow" />
+          className="w-full px-3 py-[5px] bg-gh-canvas border border-gh-border rounded-md text-sm text-gh-text outline-none focus:border-gh-accent-blue focus:shadow-[0_0_0_3px_rgba(31,111,235,0.3)] placeholder:text-gh-text-muted transition-shadow" />
       </div>
 
       {/* Summary Source Job ID — required */}
@@ -149,7 +149,7 @@ export default function CreateConfig({ bearerToken, onTokenExpired, onNavigate }
         <p className="text-xs text-gh-text-secondary mb-2">
           The job ID to use as the source for this config. Also used to fetch env variables from the pod.
         </p>
-        <div className="flex gap-2 max-w-lg">
+        <div className="flex gap-2">
           <input type="text" value={jobId} onChange={e => setJobId(e.target.value)}
             onKeyDown={e => e.key === 'Enter' && fetchEnvVars()}
             placeholder="e.g. 71503f24-6251-4e30-97a8-fe4603c14d7f"
@@ -183,7 +183,7 @@ export default function CreateConfig({ bearerToken, onTokenExpired, onNavigate }
         <p className="text-xs text-gh-text-secondary mb-3">
           Control who can access this template config.
         </p>
-        <div className="max-w-lg border border-gh-border rounded-md overflow-hidden">
+        <div className="border border-gh-border rounded-md overflow-hidden">
           {/* Internal */}
           <div className="flex items-center justify-between gap-4 px-4 py-3 border-b border-gh-border">
             <div>
