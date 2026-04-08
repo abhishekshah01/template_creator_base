@@ -61,6 +61,9 @@ class TemplateSummaryRequest(BaseModel):
     template_name: str
     bearer_token: str
 
+class BearerTokenRequest(BaseModel):
+    bearer_token: str
+
 
 # ---------------------------------------------------------------------------
 # Helpers — Pod Exec (reuses envcore pattern from mono/mcp/tools/pods.py)
@@ -414,6 +417,32 @@ async def get_env_variables(req: EnvVarsRequest):
 
 
 CATEGORY_CONFIG_URL = "https://agent-service-leadgen1-1035522277200.us-central1.run.app/internal/category-config"
+
+
+@app.post("/api/list-category-configs")
+async def list_category_configs(req: BearerTokenRequest):
+    """List all category configs via the agent service API."""
+    try:
+        resp = httpx.get(
+            f"{CATEGORY_CONFIG_URL}/",
+            headers={
+                "Content-Type": "application/json",
+                "Authorization": f"Bearer {req.bearer_token}",
+            },
+            timeout=30,
+        )
+    except Exception as e:
+        raise HTTPException(502, f"Failed to reach category config API: {e}")
+
+    if resp.status_code >= 400:
+        raise HTTPException(resp.status_code, f"Failed to fetch configs: {resp.text[:500]}")
+
+    try:
+        data = resp.json()
+    except Exception:
+        data = []
+
+    return data
 
 
 @app.post("/api/category-config")

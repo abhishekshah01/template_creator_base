@@ -37,4 +37,6 @@ export const api = {
   createCategoryConfig: (payload) => request('/category-config', payload),
   generateTemplateSummary: (templateName, bearerToken) =>
     request('/template-summary', { template_name: templateName, bearer_token: bearerToken }),
+  listCategoryConfigs: (bearerToken) =>
+    request('/list-category-configs', { bearer_token: bearerToken }),
 };

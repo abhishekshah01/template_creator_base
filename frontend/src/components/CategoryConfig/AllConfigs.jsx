@@ -1,71 +1,9 @@
-import { useState } from 'react';
-
-// Dummy data matching real API shape
-const DUMMY_CONFIGS = [
-  {
-    id: 1,
-    template_name: 'propnex_crm_scratch-v0',
-    config: { app_summary: '<analysis>**original_problem_statement:** \nBuild a real estate CRM template that can be sold to customers. They start using this template on Emergent and can customize it for their own needs. The CRM should be designed for a mid-sized real estate agency with a hierarchical structure (Admin > Manager > Agent).\n\n**PRODUCT REQUIREMENTS...' },
-    default_env_config: { DB_NAME: 'propnex_crm', MONGO_URL: 'mongodb://localhost:27017', CORS_ORIGINS: '*' },
-    public: false, internal: true,
-    summary_source_job_id: '71503f24-6251-4e30-97a8-fe4603c14d7f',
-    created_at: '2026-04-07T10:33:34.741710Z',
-    updated_at: '2026-04-07T10:35:56.918297Z',
-  },
-  {
-    id: 2,
-    template_name: 'lumina-stays-v1',
-    config: { app_summary: 'Hospitality management system for hotel booking, reservations, and admin panel with payment integration and multi-property support.' },
-    default_env_config: { DB_NAME: 'lumina_stays', MONGO_URL: 'mongodb://localhost:27017', CORS_ORIGINS: '*', JWT_ALGORITHM: 'HS256', JWT_SECRET_KEY: 'your_secret' },
-    public: true, internal: true,
-    summary_source_job_id: 'a2c8f1e0-3b5d-4a1e-9c7f-2d4e6f8a0b1c',
-    created_at: '2026-04-01T08:12:00.000000Z',
-    updated_at: '2026-04-06T14:22:10.000000Z',
-  },
-  {
-    id: 3,
-    template_name: 'lead-gen-v2',
-    config: null,
-    default_env_config: { DB_NAME: 'leadgen', MONGO_URL: 'mongodb://localhost:27017', CORS_ORIGINS: '*', RATELIMIT_ENABLED: 'True', SECRET_KEY: 'change-me', MAX_BODY_SIZE: '5242880' },
-    public: true, internal: false,
-    summary_source_job_id: null,
-    created_at: '2026-03-15T12:00:00.000000Z',
-    updated_at: '2026-03-15T12:00:00.000000Z',
-  },
-  {
-    id: 4,
-    template_name: 'real-estate-v0',
-    config: { app_summary: 'Property listing and search application with map integration, favorites, and agent contact system.' },
-    default_env_config: { DB_NAME: 'real_estate', MONGO_URL: 'mongodb://localhost:27017', CORS_ORIGINS: '*', EMERGENT_AUTH_URL: 'https://auth.emergentagent.com' },
-    public: false, internal: true,
-    summary_source_job_id: 'f5d2e1a0-9b8c-4d3e-a7f6-1c2d3e4f5a6b',
-    created_at: '2026-03-20T09:30:00.000000Z',
-    updated_at: '2026-04-02T11:45:00.000000Z',
-  },
-  {
-    id: 5,
-    template_name: 'booking-engine-v1',
-    config: { app_summary: 'Hotel booking engine with availability calendar, room management, and Stripe payment integration for direct bookings.' },
-    default_env_config: { DB_NAME: 'booking_engine', MONGO_URL: 'mongodb://localhost:27017', CORS_ORIGINS: '*', STRIPE_KEY: 'sk_test_xxx', JWT_SECRET_KEY: 'booking_secret' },
-    public: true, internal: true,
-    summary_source_job_id: 'c3b2a1d0-5e4f-6a7b-8c9d-0e1f2a3b4c5d',
-    created_at: '2026-02-28T16:00:00.000000Z',
-    updated_at: '2026-03-25T10:15:00.000000Z',
-  },
-  {
-    id: 6,
-    template_name: 'analytics-dashboard-v0',
-    config: null,
-    default_env_config: { DB_NAME: 'analytics', MONGO_URL: 'mongodb://localhost:27017', CORS_ORIGINS: 'http://localhost:3000' },
-    public: false, internal: true,
-    summary_source_job_id: null,
-    created_at: '2026-02-10T11:00:00.000000Z',
-    updated_at: '2026-02-10T11:00:00.000000Z',
-  },
-];
+import { useState, useEffect } from 'react';
+import { api, AuthError } from '../../api';
 
 // --- Helpers ---
 function timeAgo(dateStr) {
+  if (!dateStr) return '';
   const now = new Date();
   const date = new Date(dateStr);
   const seconds = Math.floor((now - date) / 1000);
@@ -84,11 +22,9 @@ function timeAgo(dateStr) {
 function extractSummaryPreview(config) {
   if (!config?.app_summary) return null;
   let text = config.app_summary;
-  // Strip analysis tags and markdown
   text = text.replace(/<\/?analysis>/g, '');
   text = text.replace(/\*\*[^*]+\*\*/g, '');
   text = text.replace(/\n/g, ' ').replace(/\s+/g, ' ').trim();
-  // Take first ~120 chars
   if (text.length > 120) text = text.slice(0, 120).trim() + '...';
   return text || null;
 }
@@ -129,24 +65,56 @@ function DatabaseIcon({ className }) {
     </svg>
   );
 }
+function RefreshIcon({ className }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <path d="M1 4v6h6" /><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10" />
+    </svg>
+  );
+}
 
-export default function AllConfigs({ onNavigate }) {
+export default function AllConfigs({ onNavigate, bearerToken, onTokenExpired }) {
+  const [configs, setConfigs] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
   const [search, setSearch] = useState('');
   const [tab, setTab] = useState('all');
 
-  const filtered = DUMMY_CONFIGS.filter(c => {
+  async function fetchConfigs() {
+    if (!bearerToken) {
+      setError('Set your API token in the sidebar first.');
+      return;
+    }
+    setLoading(true);
+    setError(null);
+    try {
+      const data = await api.listCategoryConfigs(bearerToken);
+      setConfigs(Array.isArray(data) ? data : []);
+    } catch (e) {
+      if (e instanceof AuthError) { onTokenExpired(); }
+      setError(e.message);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    if (bearerToken) fetchConfigs();
+  }, [bearerToken]);
+
+  const filtered = configs.filter(c => {
     if (tab === 'internal' && !c.internal) return false;
     if (tab === 'public' && !c.public) return false;
     if (search) {
       const q = search.toLowerCase();
-      return c.template_name.toLowerCase().includes(q) || (c.config?.app_summary || '').toLowerCase().includes(q);
+      return c.template_name?.toLowerCase().includes(q) || (c.config?.app_summary || '').toLowerCase().includes(q);
     }
     return true;
   });
 
-  const allCount = DUMMY_CONFIGS.length;
-  const internalCount = DUMMY_CONFIGS.filter(c => c.internal).length;
-  const publicCount = DUMMY_CONFIGS.filter(c => c.public).length;
+  const allCount = configs.length;
+  const internalCount = configs.filter(c => c.internal).length;
+  const publicCount = configs.filter(c => c.public).length;
 
   return (
     <div>
@@ -154,6 +122,13 @@ export default function AllConfigs({ onNavigate }) {
       <div className="mb-4">
         <h1 className="text-2xl font-semibold text-gh-text">Category Configs</h1>
       </div>
+
+      {/* Token warning */}
+      {!bearerToken && (
+        <div className="mb-4 px-4 py-3 rounded-md text-sm border bg-gh-accent-amber/15 text-gh-accent-amber-text border-gh-accent-amber/30">
+          Set your API token in the sidebar to load configs.
+        </div>
+      )}
 
       {/* Search bar + action buttons */}
       <div className="flex items-center gap-2 mb-4">
@@ -165,6 +140,10 @@ export default function AllConfigs({ onNavigate }) {
               className="flex-1 bg-transparent text-sm text-gh-text outline-none placeholder:text-gh-text-muted" />
           </div>
         </div>
+        <button onClick={fetchConfigs} disabled={loading}
+          className="flex items-center gap-1.5 px-3 py-[7px] bg-gh-btn border border-gh-border rounded-md text-sm text-gh-text hover:bg-gh-btn-hover transition-colors disabled:opacity-50">
+          <RefreshIcon className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+        </button>
         <button className="flex items-center gap-1.5 px-3 py-[7px] bg-gh-btn border border-gh-border rounded-md text-sm text-gh-text hover:bg-gh-btn-hover transition-colors">
           <TagIcon className="w-4 h-4" />
           <span>Labels</span>
@@ -174,6 +153,13 @@ export default function AllConfigs({ onNavigate }) {
           New config
         </button>
       </div>
+
+      {/* Error */}
+      {error && (
+        <div className="mb-4 px-4 py-3 rounded-md text-sm border bg-gh-accent-red/10 text-gh-accent-red-text border-gh-accent-red/30">
+          {error}
+        </div>
+      )}
 
       {/* Table */}
       <div className="border border-gh-border rounded-md overflow-hidden">
@@ -209,8 +195,16 @@ export default function AllConfigs({ onNavigate }) {
           </div>
         </div>
 
+        {/* Loading state */}
+        {loading && configs.length === 0 && (
+          <div className="text-center py-16">
+            <div className="w-5 h-5 border-2 border-gh-border border-t-gh-accent-blue-text rounded-full animate-spin mx-auto mb-3" />
+            <div className="text-sm text-gh-text-secondary">Loading configs...</div>
+          </div>
+        )}
+
         {/* Config rows */}
-        {filtered.map(config => {
+        {!loading && filtered.map(config => {
           const envVarCount = Object.keys(config.default_env_config || {}).length;
           const preview = extractSummaryPreview(config.config);
           const hasSummary = !!config.config?.app_summary;
@@ -219,7 +213,6 @@ export default function AllConfigs({ onNavigate }) {
             <div key={config.id}
               onClick={() => onNavigate('config-detail', config.id)}
               className="flex items-start gap-3 px-4 py-3 border-b border-gh-border-muted hover:bg-gh-surface-hover cursor-pointer transition-colors group">
-              {/* Main content */}
               <div className="flex-1 min-w-0">
                 {/* Title + labels */}
                 <div className="flex items-center gap-2 flex-wrap">
@@ -256,9 +249,13 @@ export default function AllConfigs({ onNavigate }) {
                 {/* Meta line */}
                 <div className="flex items-center gap-2 text-xs text-gh-text-muted mt-1 flex-wrap">
                   <span>{envVarCount} env vars</span>
-                  <span>·</span>
-                  <span>created {timeAgo(config.created_at)}</span>
-                  {config.created_at !== config.updated_at && (
+                  {config.created_at && (
+                    <>
+                      <span>·</span>
+                      <span>created {timeAgo(config.created_at)}</span>
+                    </>
+                  )}
+                  {config.updated_at && config.created_at !== config.updated_at && (
                     <>
                       <span>·</span>
                       <span>updated {timeAgo(config.updated_at)}</span>
@@ -278,16 +275,25 @@ export default function AllConfigs({ onNavigate }) {
           );
         })}
 
-        {filtered.length === 0 && (
+        {/* Empty states */}
+        {!loading && configs.length > 0 && filtered.length === 0 && (
           <div className="text-center py-16">
             <DatabaseIcon className="w-6 h-6 text-gh-text-muted mx-auto mb-3" />
             <div className="text-lg font-medium text-gh-text mb-1">No results matched your search.</div>
             <div className="text-sm text-gh-text-secondary">Try a different search term or filter.</div>
           </div>
         )}
+
+        {!loading && configs.length === 0 && !error && bearerToken && (
+          <div className="text-center py-16">
+            <DatabaseIcon className="w-6 h-6 text-gh-text-muted mx-auto mb-3" />
+            <div className="text-lg font-medium text-gh-text mb-1">No configs yet.</div>
+            <div className="text-sm text-gh-text-secondary">Create your first category config to get started.</div>
+          </div>
+        )}
       </div>
 
-      {filtered.length > 0 && (
+      {!loading && filtered.length > 0 && (
         <div className="mt-4 text-center text-xs text-gh-text-muted">
           Showing {filtered.length} of {allCount} configs
         </div>

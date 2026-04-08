@@ -31,7 +31,7 @@ export default function App() {
       case 'update-category':
         return <UpdateCategory bearerToken={bearerToken} onTokenExpired={() => updateToken('')} />;
       case 'config-all':
-        return <ConfigAll onNavigate={navigate} />;
+        return <ConfigAll onNavigate={navigate} bearerToken={bearerToken} onTokenExpired={() => updateToken('')} />;
       case 'config-create':
         return <ConfigCreate bearerToken={bearerToken} onTokenExpired={() => updateToken('')} />;
       case 'config-summary':

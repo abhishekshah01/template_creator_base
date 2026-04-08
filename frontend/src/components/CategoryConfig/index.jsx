@@ -1,8 +1,8 @@
 import AllConfigs from './AllConfigs';
 import ConfigDetail from './ConfigDetail';
 
-export function ConfigAll({ onNavigate }) {
-  return <AllConfigs onNavigate={onNavigate} />;
+export function ConfigAll({ onNavigate, bearerToken, onTokenExpired }) {
+  return <AllConfigs onNavigate={onNavigate} bearerToken={bearerToken} onTokenExpired={onTokenExpired} />;
 }
 
 export function ConfigCreate({ bearerToken, onTokenExpired }) {
