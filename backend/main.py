@@ -55,6 +55,11 @@ class CollectionDataRequest(BaseModel):
     collection_name: str
     limit: int = 20
 
+class MongoshRequest(BaseModel):
+    job_id: str
+    db_name: str
+    command: str
+
 class CategoryConfigRequest(BaseModel):
     template_name: str
     config: dict = {}
@@ -340,6 +345,36 @@ async def get_collection_data(req: CollectionDataRequest):
         "limit": limit,
         "documents": documents,
     }
+
+
+# Read-only commands allowed in the mongosh terminal
+_BLOCKED_COMMANDS = ["drop", "delete", "remove", "insert", "update", "replace", "rename", "createIndex", "dropIndex"]
+
+
+@app.post("/api/mongosh")
+async def run_mongosh(req: MongoshRequest):
+    """Run a read-only mongosh command in a job's pod."""
+    env_id = _get_env_id(req.job_id)
+    if not env_id:
+        raise HTTPException(404, f"No environment found for job {req.job_id}")
+
+    # Block destructive commands
+    cmd_lower = req.command.lower()
+    for blocked in _BLOCKED_COMMANDS:
+        if blocked.lower() in cmd_lower:
+            return {"output": f"Error: '{blocked}' commands are blocked in the terminal. Use the UI controls for destructive operations.", "error": True}
+
+    # Wrap the command to target the correct database
+    full_cmd = f'mongosh --quiet --eval \'db = db.getSiblingDB("{req.db_name}"); {req.command}\''
+    try:
+        result = _pod_exec(env_id, full_cmd, timeout=15)
+        stdout = result.get("stdout", "").strip()
+        stderr = result.get("stderr", "").strip()
+        if stderr and not stdout:
+            return {"output": stderr, "error": True}
+        return {"output": stdout or "(no output)", "error": False}
+    except Exception as e:
+        return {"output": str(e), "error": True}
 
 
 @app.post("/api/pause-job")

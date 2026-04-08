@@ -103,7 +103,7 @@ export default function App() {
         <div className={`w-[2px] h-full mx-auto transition-colors ${isDragging ? 'bg-[#1f6feb]' : 'bg-transparent group-hover:bg-[#1f6feb]'}`} />
       </div>
       <main style={{ marginLeft: sidebarWidth }} className="flex-1 min-h-screen">
-        <div className="max-w-4xl mx-auto px-6 py-8">
+        <div className={`px-6 py-8 ${activePage === 'create-template' ? '' : 'max-w-4xl mx-auto'}`}>
           {renderPage()}
         </div>
       </main>

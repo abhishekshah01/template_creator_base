@@ -3,6 +3,7 @@ import { api } from '../../api';
 import StepCard from './StepCard';
 import StatusBar from './StatusBar';
 import ProgressBar from './ProgressBar';
+import InspectorPanel from './InspectorPanel';
 
 function now() {
   return new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
@@ -26,7 +27,10 @@ export default function CreateTemplate() {
   const [jobPaused, setJobPaused] = useState(false);
   const [podStatus, setPodStatus] = useState('');
 
-  // Collection viewer
+  // Inspector panel (split-screen)
+  const [inspectorOpen, setInspectorOpen] = useState(false);
+
+  // Collection viewer (slide-over modal — kept as fallback)
   const [viewerOpen, setViewerOpen] = useState(false);
   const [viewerCollection, setViewerCollection] = useState('');
   const [viewerData, setViewerData] = useState(null);
@@ -90,6 +94,7 @@ export default function CreateTemplate() {
       setCollections(coll.collections);
       setSelected(new Set());
       setStatusFor(1, `Found ${coll.collections.length} collection(s) in "${coll.db_name}"`, 'success');
+      if (coll.collections.length > 0) setInspectorOpen(true);
       completeStep(1);
     } catch (e) {
       setStatusFor(1, e.message, 'error');
@@ -212,13 +217,26 @@ export default function CreateTemplate() {
 
   return (
     <>
-    <div className="max-w-[680px]">
+    <div className={`flex gap-4 ${inspectorOpen ? '' : 'justify-center'}`} style={{ minHeight: 'calc(100vh - 64px)' }}>
+    {/* Left: Workflow */}
+    <div className={inspectorOpen ? 'flex-1 min-w-0 max-w-[620px]' : 'w-full max-w-[680px]'}>
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
         <h1 className="text-[20px] font-semibold text-[#e6edf3]">Create Template</h1>
-        <button onClick={reset} className={btnDefault}>
-          Reset
-        </button>
+        <div className="flex items-center gap-2">
+          {collections.length > 0 && (
+            <button onClick={() => setInspectorOpen(!inspectorOpen)}
+              className={`${btnDefault} ${inspectorOpen ? '!border-[#58a6ff] !text-[#58a6ff]' : ''}`}
+              title={inspectorOpen ? 'Close Inspector' : 'Open Inspector'}>
+              <svg className="w-4 h-4" viewBox="0 0 16 16" fill="currentColor">
+                <path d="M.75 1h14.5a.75.75 0 0 1 .75.75v12.5a.75.75 0 0 1-.75.75H.75a.75.75 0 0 1-.75-.75V1.75A.75.75 0 0 1 .75 1Zm0 1.5v11h5.75v-11Zm7.25 0v11h6.5v-11Z" />
+              </svg>
+            </button>
+          )}
+          <button onClick={reset} className={btnDefault}>
+            Reset
+          </button>
+        </div>
       </div>
       <p className={`${helperCls} mb-4`}>
         Automate template creation from an ephemeral job environment. Required fields are marked with an asterisk (*).
@@ -384,91 +402,19 @@ export default function CreateTemplate() {
       </div>
     </div>
 
-      {/* Collection Data Slide-over Panel */}
-      {viewerOpen && (
-        <>
-          {/* Backdrop */}
-          <div className="fixed inset-0 bg-black/50 z-40" onClick={closeViewer} />
+    {/* Right: Inspector Panel */}
+    {inspectorOpen && (
+      <div className="w-[460px] shrink-0 sticky top-0 h-[calc(100vh-64px)]">
+        <InspectorPanel
+          jobId={jobId}
+          dbName={dbName}
+          collections={collections}
+          onClose={() => setInspectorOpen(false)}
+        />
+      </div>
+    )}
 
-          {/* Panel */}
-          <div className="fixed top-0 right-0 h-screen w-[480px] bg-[#0d1117] border-l border-[#30363d] z-50 flex flex-col shadow-2xl">
-            {/* Header */}
-            <div className="flex items-center justify-between px-4 py-3 border-b border-[#30363d] bg-[#161b22]">
-              <div className="flex items-center gap-2 min-w-0">
-                <svg className="w-4 h-4 text-[#8b949e] shrink-0" viewBox="0 0 16 16" fill="currentColor">
-                  <path d="M8 1c-3.68 0-6 1.316-6 3v8c0 1.684 2.32 3 6 3s6-1.316 6-3V4c0-1.684-2.32-3-6-3ZM2.5 9.756V7.244C3.626 7.88 5.592 8.25 8 8.25s4.374-.37 5.5-1.006v2.512C12.334 10.576 10.24 11 8 11s-4.334-.424-5.5-1.244ZM13.5 4c0 .55-1.639 1.75-5.5 1.75S2.5 4.55 2.5 4 4.139 2.25 8 2.25 13.5 3.45 13.5 4Zm0 8c0 .55-1.639 1.75-5.5 1.75S2.5 12.55 2.5 12v-2.756C3.626 10.076 5.592 10.5 8 10.5s4.374-.424 5.5-1.256Z" />
-                </svg>
-                <span className="text-[14px] font-semibold text-[#e6edf3] truncate">{viewerCollection}</span>
-                {viewerData && (
-                  <span className="text-[11px] px-[6px] py-[1px] rounded-full bg-[#21262d] text-[#8b949e] border border-[#30363d] shrink-0">
-                    {viewerData.count} docs
-                  </span>
-                )}
-              </div>
-              <button onClick={closeViewer}
-                className="p-1 rounded hover:bg-[#21262d] text-[#8b949e] hover:text-[#e6edf3] transition-colors">
-                <svg className="w-4 h-4" viewBox="0 0 16 16" fill="currentColor">
-                  <path d="M3.72 3.72a.75.75 0 0 1 1.06 0L8 6.94l3.22-3.22a.749.749 0 0 1 1.275.326.749.749 0 0 1-.215.734L9.06 8l3.22 3.22a.749.749 0 0 1-.326 1.275.749.749 0 0 1-.734-.215L8 9.06l-3.22 3.22a.751.751 0 0 1-1.042-.018.751.751 0 0 1-.018-1.042L6.94 8 3.72 4.78a.75.75 0 0 1 0-1.06Z" />
-                </svg>
-              </button>
-            </div>
-
-            {/* Info bar */}
-            <div className="px-4 py-2 border-b border-[#21262d] bg-[#161b22] flex items-center gap-3 text-[12px] text-[#8b949e]">
-              <span>Database: <span className="text-[#e6edf3] font-mono">{dbName}</span></span>
-              {viewerData && (
-                <>
-                  <span>·</span>
-                  <span>Showing {Math.min(viewerData.limit, viewerData.documents?.length || 0)} of {viewerData.count}</span>
-                </>
-              )}
-            </div>
-
-            {/* Content */}
-            <div className="flex-1 overflow-y-auto p-4">
-              {viewerLoading && (
-                <div className="flex items-center justify-center py-12">
-                  <div className="w-5 h-5 border-2 border-[#30363d] border-t-[#58a6ff] rounded-full animate-spin" />
-                  <span className="ml-3 text-[13px] text-[#8b949e]">Loading documents...</span>
-                </div>
-              )}
-
-              {viewerError && (
-                <div className="px-3 py-2 rounded-md text-[12px] bg-[#da3633]/10 text-[#f85149] border border-[#da3633]/30">
-                  {viewerError}
-                </div>
-              )}
-
-              {viewerData && !viewerLoading && (
-                viewerData.documents?.length > 0 ? (
-                  <div className="space-y-2">
-                    {viewerData.documents.map((doc, i) => (
-                      <div key={i} className="border border-[#30363d] rounded-md overflow-hidden">
-                        <div className="flex items-center justify-between px-3 py-1.5 bg-[#161b22] border-b border-[#21262d]">
-                          <span className="text-[11px] text-[#8b949e] font-mono">
-                            {doc._id?.$oid || doc._id || `Document ${i + 1}`}
-                          </span>
-                          <span className="text-[10px] text-[#484f58]">#{i + 1}</span>
-                        </div>
-                        <pre className="p-3 text-[11px] text-[#c9d1d9] font-mono whitespace-pre-wrap overflow-x-auto leading-relaxed">
-                          {JSON.stringify(doc, null, 2)}
-                        </pre>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="text-center py-12">
-                    <svg className="w-6 h-6 text-[#484f58] mx-auto mb-2" viewBox="0 0 16 16" fill="currentColor">
-                      <path d="M8 1c-3.68 0-6 1.316-6 3v8c0 1.684 2.32 3 6 3s6-1.316 6-3V4c0-1.684-2.32-3-6-3Z" />
-                    </svg>
-                    <div className="text-[13px] text-[#484f58]">Collection is empty</div>
-                  </div>
-                )
-              )}
-            </div>
-          </div>
-        </>
-      )}
+    </div>
     </>
   );
 }
