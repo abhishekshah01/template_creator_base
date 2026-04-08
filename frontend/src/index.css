@@ -1,7 +1,55 @@
 @import "tailwindcss";
 
+@theme {
+  /* GitHub Dark Theme */
+  --color-gh-canvas: #0d1117;
+  --color-gh-canvas-subtle: #161b22;
+  --color-gh-canvas-inset: #010409;
+  --color-gh-surface: #161b22;
+  --color-gh-surface-hover: #1f242b;
+  --color-gh-overlay: #21262d;
+  --color-gh-border: #30363d;
+  --color-gh-border-muted: #21262d;
+  --color-gh-text: #e6edf3;
+  --color-gh-text-secondary: #8b949e;
+  --color-gh-text-muted: #484f58;
+  --color-gh-text-disabled: #6e7681;
+  --color-gh-accent-blue: #1f6feb;
+  --color-gh-accent-blue-text: #58a6ff;
+  --color-gh-accent-green: #238636;
+  --color-gh-accent-green-text: #3fb950;
+  --color-gh-accent-red: #da3633;
+  --color-gh-accent-red-text: #f85149;
+  --color-gh-accent-amber: #9e6a03;
+  --color-gh-accent-amber-text: #d29922;
+  --color-gh-accent-purple: #8957e5;
+  --color-gh-accent-purple-text: #bc8cff;
+  --color-gh-btn: #21262d;
+  --color-gh-btn-hover: #30363d;
+  --color-gh-btn-primary: #238636;
+  --color-gh-btn-primary-hover: #2ea043;
+  --color-gh-btn-danger: #da3633;
+  --color-gh-btn-danger-hover: #b62324;
+}
+
 body {
   margin: 0;
-  background: #0f172a;
-  color: #e2e8f0;
+  background: #0d1117;
+  color: #e6edf3;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #30363d;
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #484f58;
 }

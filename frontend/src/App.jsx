@@ -44,7 +44,7 @@ export default function App() {
   }
 
   return (
-    <div className="flex min-h-screen bg-slate-950 text-slate-200 font-sans">
+    <div className="flex min-h-screen bg-gh-canvas text-gh-text font-sans">
       <Sidebar activePage={activePage} onNavigate={navigate} bearerToken={bearerToken} onTokenChange={updateToken} />
       <main className="ml-60 flex-1 min-h-screen">
         <div className="max-w-4xl mx-auto px-6 py-8">

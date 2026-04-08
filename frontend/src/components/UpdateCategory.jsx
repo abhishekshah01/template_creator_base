@@ -114,9 +114,9 @@ export default function UpdateCategory({ bearerToken, onTokenExpired }) {
   }
 
   const SOURCE_BADGE = {
-    envcore: { label: 'ENVCORE', cls: 'bg-blue-500/15 text-blue-400 border-blue-500/30' },
-    modified: { label: 'MODIFIED', cls: 'bg-amber-500/15 text-amber-400 border-amber-500/30' },
-    manual: { label: 'MANUAL', cls: 'bg-purple-500/15 text-purple-400 border-purple-500/30' },
+    envcore: { label: 'ENVCORE', cls: 'bg-gh-accent-blue/15 text-gh-accent-blue-text border-gh-accent-blue/30' },
+    modified: { label: 'MODIFIED', cls: 'bg-gh-accent-amber/15 text-gh-accent-amber-text border-gh-accent-amber/30' },
+    manual: { label: 'MANUAL', cls: 'bg-gh-accent-purple/15 text-gh-accent-purple-text border-gh-accent-purple/30' },
   };
 
   return (
@@ -124,74 +124,74 @@ export default function UpdateCategory({ bearerToken, onTokenExpired }) {
       <h2 className="text-lg font-medium mb-5">Update Category Config</h2>
 
       {/* Job ID & Template Name */}
-      <div className="bg-slate-800 border border-slate-700 rounded-xl p-5 mb-3">
+      <div className="bg-gh-surface border border-gh-border rounded-md p-5 mb-3">
         <h3 className="text-sm font-medium mb-3">Job & Template Details</h3>
 
         {!bearerToken && (
-          <div className="mb-3 px-3.5 py-2.5 rounded-lg text-xs flex items-center gap-2 border bg-amber-950/50 text-amber-300 border-amber-900/50">
+          <div className="mb-3 px-3.5 py-2.5 rounded-md text-xs flex items-center gap-2 border bg-gh-accent-amber/15 text-gh-accent-amber-text border-gh-accent-amber/30">
             Set your API token in the sidebar before submitting.
           </div>
         )}
 
         <div className="flex gap-3 mb-3">
           <div className="flex-[2]">
-            <label className="block text-[11px] text-slate-500 uppercase tracking-wider mb-1 font-medium">Job ID</label>
+            <label className="block text-[11px] text-gh-text-secondary uppercase tracking-wider mb-1 font-medium">Job ID</label>
             <input type="text" value={jobId} onChange={e => setJobId(e.target.value)}
               onKeyDown={e => e.key === 'Enter' && fetchEnvVars()}
               placeholder="e.g. 54ae01c4-d111-447a-baa4-c35854d2c5f1"
-              className="w-full px-3 py-2 bg-slate-950 border border-slate-700 rounded-lg text-sm text-slate-200 outline-none focus:border-blue-500 placeholder:text-slate-600" />
+              className="w-full px-3 py-2 bg-gh-canvas border border-gh-border rounded-md text-sm text-gh-text outline-none focus:border-gh-accent-blue placeholder:text-gh-text-muted" />
           </div>
           <div className="flex-1">
-            <label className="block text-[11px] text-slate-500 uppercase tracking-wider mb-1 font-medium">Template Name</label>
+            <label className="block text-[11px] text-gh-text-secondary uppercase tracking-wider mb-1 font-medium">Template Name</label>
             <input type="text" value={templateName} onChange={e => setTemplateName(e.target.value)}
               placeholder="e.g. lead-gen-v2"
-              className="w-full px-3 py-2 bg-slate-950 border border-slate-700 rounded-lg text-sm text-slate-200 outline-none focus:border-blue-500 placeholder:text-slate-600" />
+              className="w-full px-3 py-2 bg-gh-canvas border border-gh-border rounded-md text-sm text-gh-text outline-none focus:border-gh-accent-blue placeholder:text-gh-text-muted" />
           </div>
         </div>
-        <div className="mt-3 pt-3 border-t border-slate-700">
-          <label className="block text-[11px] text-slate-500 uppercase tracking-wider mb-2.5 font-medium">Visibility</label>
+        <div className="mt-3 pt-3 border-t border-gh-border">
+          <label className="block text-[11px] text-gh-text-secondary uppercase tracking-wider mb-2.5 font-medium">Visibility</label>
           <div className="flex flex-col gap-2">
             <div onClick={() => setInternal(!internal)}
-              className={`flex items-center justify-between gap-3 px-3.5 py-3 rounded-lg cursor-pointer transition-all border ${
+              className={`flex items-center justify-between gap-3 px-3.5 py-3 rounded-md cursor-pointer transition-all border ${
                 internal
-                  ? 'bg-blue-950/40 border-blue-500/30'
-                  : 'bg-slate-900 border-slate-700 hover:border-slate-600'
+                  ? 'bg-gh-accent-blue/15 border-gh-accent-blue/30'
+                  : 'bg-gh-overlay border-gh-border hover:border-gh-text-muted'
               }`}>
               <div className="flex items-center gap-3">
-                <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-sm transition-colors ${
-                  internal ? 'bg-blue-500/20 text-blue-400' : 'bg-slate-800 text-slate-500'
+                <div className={`w-8 h-8 rounded-md flex items-center justify-center text-sm transition-colors ${
+                  internal ? 'bg-gh-accent-blue/20 text-gh-accent-blue-text' : 'bg-gh-surface text-gh-text-secondary'
                 }`}>
                   <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
                 </div>
                 <div>
-                  <div className={`text-sm font-medium transition-colors ${internal ? 'text-blue-200' : 'text-slate-300'}`}>Internal</div>
-                  <div className="text-[11px] text-slate-500">Only visible to internal team members</div>
+                  <div className={`text-sm font-medium transition-colors ${internal ? 'text-gh-accent-blue-text' : 'text-gh-text'}`}>Internal</div>
+                  <div className="text-[11px] text-gh-text-secondary">Only visible to internal team members</div>
                 </div>
               </div>
               <button type="button"
-                className={`relative w-10 h-[22px] rounded-full transition-colors shrink-0 ${internal ? 'bg-blue-600' : 'bg-slate-600'}`}>
+                className={`relative w-10 h-[22px] rounded-full transition-colors shrink-0 ${internal ? 'bg-gh-accent-blue' : 'bg-gh-overlay'}`}>
                 <span className={`absolute top-[3px] left-[3px] w-4 h-4 bg-white rounded-full shadow-sm transition-transform duration-200 ${internal ? 'translate-x-[18px]' : 'translate-x-0'}`} />
               </button>
             </div>
             <div onClick={() => setIsPublic(!isPublic)}
-              className={`flex items-center justify-between gap-3 px-3.5 py-3 rounded-lg cursor-pointer transition-all border ${
+              className={`flex items-center justify-between gap-3 px-3.5 py-3 rounded-md cursor-pointer transition-all border ${
                 isPublic
-                  ? 'bg-emerald-950/40 border-emerald-500/30'
-                  : 'bg-slate-900 border-slate-700 hover:border-slate-600'
+                  ? 'bg-gh-accent-green/10 border-gh-accent-green/30'
+                  : 'bg-gh-overlay border-gh-border hover:border-gh-text-muted'
               }`}>
               <div className="flex items-center gap-3">
-                <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-sm transition-colors ${
-                  isPublic ? 'bg-emerald-500/20 text-emerald-400' : 'bg-slate-800 text-slate-500'
+                <div className={`w-8 h-8 rounded-md flex items-center justify-center text-sm transition-colors ${
+                  isPublic ? 'bg-gh-accent-green/20 text-gh-accent-green-text' : 'bg-gh-surface text-gh-text-secondary'
                 }`}>
                   <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
                 </div>
                 <div>
-                  <div className={`text-sm font-medium transition-colors ${isPublic ? 'text-emerald-200' : 'text-slate-300'}`}>Public</div>
-                  <div className="text-[11px] text-slate-500">Accessible to all platform users</div>
+                  <div className={`text-sm font-medium transition-colors ${isPublic ? 'text-gh-accent-green-text' : 'text-gh-text'}`}>Public</div>
+                  <div className="text-[11px] text-gh-text-secondary">Accessible to all platform users</div>
                 </div>
               </div>
               <button type="button"
-                className={`relative w-10 h-[22px] rounded-full transition-colors shrink-0 ${isPublic ? 'bg-emerald-600' : 'bg-slate-600'}`}>
+                className={`relative w-10 h-[22px] rounded-full transition-colors shrink-0 ${isPublic ? 'bg-gh-accent-green' : 'bg-gh-overlay'}`}>
                 <span className={`absolute top-[3px] left-[3px] w-4 h-4 bg-white rounded-full shadow-sm transition-transform duration-200 ${isPublic ? 'translate-x-[18px]' : 'translate-x-0'}`} />
               </button>
             </div>
@@ -200,26 +200,26 @@ export default function UpdateCategory({ bearerToken, onTokenExpired }) {
       </div>
 
       {/* Env Variables */}
-      <div className="bg-slate-800 border border-slate-700 rounded-xl p-5 mb-3">
+      <div className="bg-gh-surface border border-gh-border rounded-md p-5 mb-3">
         <h3 className="text-sm font-medium mb-3">Default Env Config</h3>
-        <p className="text-xs text-slate-500 mb-3">
+        <p className="text-xs text-gh-text-secondary mb-3">
           Fetch env variables from the job's pod, then select which ones to include in the category config.
         </p>
         <button onClick={fetchEnvVars} disabled={loading === 'fetch'}
-          className="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 disabled:opacity-50 flex items-center gap-2">
+          className="px-4 py-2 bg-gh-accent-blue text-white text-sm rounded-md hover:bg-gh-accent-blue disabled:opacity-50 flex items-center gap-2">
           {loading === 'fetch' && <div className="w-3.5 h-3.5 border-2 border-blue-300/30 border-t-white rounded-full animate-spin" />}
           {loading === 'fetch' ? 'Fetching...' : 'Fetch Env Variables'}
         </button>
 
         {fetchStatus && (
-          <div className={`mt-3 px-3.5 py-2.5 rounded-lg text-xs flex items-center gap-2 border ${
-            { info: 'bg-blue-950 text-blue-300 border-blue-900',
-              success: 'bg-green-950 text-green-300 border-green-900',
-              error: 'bg-red-950/50 text-red-300 border-red-900/50',
-              loading: 'bg-slate-800 text-slate-400 border-slate-700',
+          <div className={`mt-3 px-3.5 py-2.5 rounded-md text-xs flex items-center gap-2 border ${
+            { info: 'bg-gh-accent-blue/10 text-gh-accent-blue-text border-gh-accent-blue/30',
+              success: 'bg-gh-accent-green/10 text-gh-accent-green-text border-gh-accent-green/30',
+              error: 'bg-gh-accent-red/10 text-gh-accent-red-text border-gh-accent-red/30',
+              loading: 'bg-gh-surface text-gh-text-secondary border-gh-border',
             }[fetchStatus.type] || ''}`}>
             {fetchStatus.type === 'loading' && (
-              <div className="w-3.5 h-3.5 border-2 border-slate-600 border-t-blue-300 rounded-full animate-spin shrink-0" />
+              <div className="w-3.5 h-3.5 border-2 border-gh-text-muted border-t-gh-accent-blue-text rounded-full animate-spin shrink-0" />
             )}
             <span>{fetchStatus.message}</span>
           </div>
@@ -229,24 +229,24 @@ export default function UpdateCategory({ bearerToken, onTokenExpired }) {
           <>
             {/* Toolbar */}
             <div className="flex items-center gap-2 mt-4 mb-2 flex-wrap">
-              <span className="text-[11px] bg-blue-500/15 text-blue-300 border border-blue-500/25 px-2 py-0.5 rounded-md font-medium">
+              <span className="text-[11px] bg-gh-accent-blue/15 text-gh-accent-blue-text border border-gh-accent-blue/30 px-2 py-0.5 rounded-md font-medium">
                 {selected.size} selected
               </span>
               <button onClick={() => selectAll(true)}
-                className="text-[11px] text-slate-400 hover:text-slate-200 transition-colors">Select All</button>
+                className="text-[11px] text-gh-text-secondary hover:text-gh-text transition-colors">Select All</button>
               <button onClick={() => selectAll(false)}
-                className="text-[11px] text-slate-400 hover:text-slate-200 transition-colors">Deselect All</button>
-              <div className="ml-auto flex items-center gap-1.5 bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5">
-                <svg className="w-3 h-3 text-slate-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" /></svg>
+                className="text-[11px] text-gh-text-secondary hover:text-gh-text transition-colors">Deselect All</button>
+              <div className="ml-auto flex items-center gap-1.5 bg-gh-overlay border border-gh-border rounded-md px-2.5 py-1.5">
+                <svg className="w-3 h-3 text-gh-text-secondary" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" /></svg>
                 <input type="text" value={filter} onChange={e => setFilter(e.target.value)}
                   placeholder="Filter variables..."
-                  className="bg-transparent text-[11px] text-slate-200 outline-none placeholder:text-slate-600 w-28" />
+                  className="bg-transparent text-[11px] text-gh-text outline-none placeholder:text-gh-text-muted w-28" />
               </div>
             </div>
 
             {/* Table header */}
-            <div className="border border-slate-700 rounded-t-lg bg-slate-900/60">
-              <div className="flex items-center gap-3 px-3.5 py-2.5 text-[10px] text-slate-500 uppercase tracking-wider font-semibold">
+            <div className="border border-gh-border rounded-t-md bg-gh-overlay">
+              <div className="flex items-center gap-3 px-3.5 py-2.5 text-[10px] text-gh-text-secondary uppercase tracking-wider font-semibold">
                 <div className="w-5 shrink-0" />
                 <div className="w-[160px] shrink-0">Key Name</div>
                 <div className="flex-1">Current Value</div>
@@ -255,23 +255,23 @@ export default function UpdateCategory({ bearerToken, onTokenExpired }) {
             </div>
 
             {/* Table rows */}
-            <div ref={listRef} className="max-h-[380px] overflow-y-auto border border-t-0 border-slate-700 rounded-b-lg">
+            <div ref={listRef} className="max-h-[380px] overflow-y-auto border border-t-0 border-gh-border rounded-b-md">
               {filtered.map((v) => {
                 const idx = v._idx;
                 const badge = SOURCE_BADGE[v.source] || SOURCE_BADGE.envcore;
                 const isSelected = selected.has(idx);
                 return (
                   <div key={idx} onClick={() => toggleVar(idx)}
-                    className={`flex items-center gap-3 pr-3.5 py-2.5 border-b border-slate-700/50 last:border-b-0 transition-all cursor-pointer ${
+                    className={`flex items-center gap-3 pr-3.5 py-2.5 border-b border-gh-border last:border-b-0 transition-all cursor-pointer ${
                       isSelected
-                        ? 'bg-blue-950/20 border-l-2 border-l-blue-500 pl-[12px]'
-                        : 'hover:bg-slate-800/40 border-l-2 border-l-transparent pl-[12px]'
+                        ? 'bg-gh-accent-blue/10 border-l-2 border-l-gh-accent-blue pl-[12px]'
+                        : 'hover:bg-gh-surface-hover border-l-2 border-l-transparent pl-[12px]'
                     }`}>
                     <div className="w-5 shrink-0 flex justify-center" onClick={e => e.stopPropagation()}>
                       <div onClick={() => toggleVar(idx)}
                         className={`w-[18px] h-[18px] rounded flex items-center justify-center transition-all cursor-pointer ${
                           isSelected
-                            ? 'bg-blue-600 border border-blue-500'
+                            ? 'bg-gh-accent-blue border border-gh-accent-blue'
                             : 'bg-transparent border border-slate-600 hover:border-slate-400'
                         }`}>
                         {isSelected && (
@@ -285,9 +285,9 @@ export default function UpdateCategory({ bearerToken, onTokenExpired }) {
                       {v.source === 'manual' ? (
                         <input type="text" value={v.key} onChange={e => updateKey(idx, e.target.value)}
                           placeholder="KEY_NAME"
-                          className="w-full px-2 py-1 bg-slate-900/80 border border-slate-700/60 rounded text-xs text-purple-300 outline-none focus:border-blue-500 font-mono font-medium placeholder:text-slate-600" />
+                          className="w-full px-2 py-1 bg-gh-overlay border border-gh-border rounded text-xs text-gh-accent-purple-text outline-none focus:border-gh-accent-blue font-mono font-medium placeholder:text-gh-text-muted" />
                       ) : (
-                        <span className={`text-xs font-mono font-medium ${isSelected ? 'text-blue-300' : 'text-slate-300'}`}>
+                        <span className={`text-xs font-mono font-medium ${isSelected ? 'text-gh-accent-blue-text' : 'text-gh-text'}`}>
                           {v.key}
                         </span>
                       )}
@@ -295,7 +295,7 @@ export default function UpdateCategory({ bearerToken, onTokenExpired }) {
                     <div className="flex-1 min-w-0" onClick={e => e.stopPropagation()}>
                       <input type="text" value={v.value}
                         onChange={e => updateValue(idx, e.target.value)}
-                        className="w-full px-2.5 py-1.5 bg-slate-900/80 border border-slate-700/60 rounded-lg text-xs text-slate-200 outline-none focus:border-blue-500 font-mono" />
+                        className="w-full px-2.5 py-1.5 bg-gh-overlay border border-gh-border rounded-md text-xs text-gh-text outline-none focus:border-gh-accent-blue font-mono" />
                     </div>
                     <div className="w-[80px] shrink-0 flex justify-center">
                       <span className={`text-[9px] px-1.5 py-0.5 rounded border font-medium uppercase tracking-wider ${badge.cls}`}>
@@ -306,14 +306,14 @@ export default function UpdateCategory({ bearerToken, onTokenExpired }) {
                 );
               })}
               {filtered.length === 0 && (
-                <div className="text-xs text-slate-500 text-center py-6">No variables match your filter</div>
+                <div className="text-xs text-gh-text-secondary text-center py-6">No variables match your filter</div>
               )}
             </div>
 
             {/* Add variable */}
             <div className="mt-3">
               <button onClick={addVariable}
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600/15 border border-blue-500/25 text-blue-300 text-xs rounded-lg hover:bg-blue-600/25 transition-colors font-medium">
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-gh-accent-blue/15 border border-gh-accent-blue/30 text-gh-accent-blue-text text-xs rounded-md hover:bg-blue-600/25 transition-colors font-medium">
                 <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg>
                 New Variable
               </button>
@@ -323,33 +323,33 @@ export default function UpdateCategory({ bearerToken, onTokenExpired }) {
       </div>
 
       {/* Submit */}
-      <div className="bg-slate-800 border border-slate-700 rounded-xl p-5 mb-3">
+      <div className="bg-gh-surface border border-gh-border rounded-md p-5 mb-3">
         <button onClick={submitConfig} disabled={loading === 'submit'}
-          className="px-4 py-2 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700 disabled:opacity-50 flex items-center gap-2">
+          className="px-4 py-2 bg-gh-btn-primary text-white text-sm rounded-md hover:bg-gh-btn-primary-hover disabled:opacity-50 flex items-center gap-2">
           {loading === 'submit' && <div className="w-3.5 h-3.5 border-2 border-green-300/30 border-t-white rounded-full animate-spin" />}
           {loading === 'submit' ? 'Creating...' : 'Create Category Config'}
         </button>
 
         {submitStatus && (
-          <div className={`mt-3 px-3.5 py-2.5 rounded-lg text-xs flex items-center gap-2 border ${
-            { info: 'bg-blue-950 text-blue-300 border-blue-900',
-              success: 'bg-green-950 text-green-300 border-green-900',
-              error: 'bg-red-950/50 text-red-300 border-red-900/50',
-              loading: 'bg-slate-800 text-slate-400 border-slate-700',
+          <div className={`mt-3 px-3.5 py-2.5 rounded-md text-xs flex items-center gap-2 border ${
+            { info: 'bg-gh-accent-blue/10 text-gh-accent-blue-text border-gh-accent-blue/30',
+              success: 'bg-gh-accent-green/10 text-gh-accent-green-text border-gh-accent-green/30',
+              error: 'bg-gh-accent-red/10 text-gh-accent-red-text border-gh-accent-red/30',
+              loading: 'bg-gh-surface text-gh-text-secondary border-gh-border',
             }[submitStatus.type] || ''}`}>
             {submitStatus.type === 'loading' && (
-              <div className="w-3.5 h-3.5 border-2 border-slate-600 border-t-blue-300 rounded-full animate-spin shrink-0" />
+              <div className="w-3.5 h-3.5 border-2 border-gh-text-muted border-t-gh-accent-blue-text rounded-full animate-spin shrink-0" />
             )}
             <span>{submitStatus.message}</span>
           </div>
         )}
 
         {result && (
-          <div className="mt-4 p-3.5 bg-green-950 border border-green-900 rounded-lg">
-            <div className="text-sm text-green-300 font-medium flex items-center gap-2 mb-2">
+          <div className="mt-4 p-3.5 bg-gh-accent-green/10 border border-gh-accent-green/30 rounded-md">
+            <div className="text-sm text-gh-accent-green-text font-medium flex items-center gap-2 mb-2">
               <CheckCircle className="w-4 h-4" /> Category config created!
             </div>
-            <pre className="text-xs text-green-400 bg-slate-950 px-3.5 py-2.5 rounded-md overflow-x-auto font-mono whitespace-pre-wrap">
+            <pre className="text-xs text-gh-accent-green-text bg-gh-canvas px-3.5 py-2.5 rounded-md overflow-x-auto font-mono whitespace-pre-wrap">
               {JSON.stringify(result, null, 2)}
             </pre>
           </div>

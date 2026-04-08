@@ -189,7 +189,7 @@ export default function CreateTemplate() {
     <>
       <div className="flex items-center justify-between mb-5">
         <h2 className="text-lg font-medium">Create Template</h2>
-        <button onClick={reset} className="flex items-center gap-1.5 px-3 py-1.5 rounded-md border border-slate-700 text-slate-400 text-xs hover:text-slate-200 hover:border-slate-500 transition-colors">
+        <button onClick={reset} className="flex items-center gap-1.5 px-3 py-1.5 rounded-md border border-gh-border text-gh-text-secondary text-xs hover:text-gh-text hover:border-gh-text-muted transition-colors">
           <RefreshCw className="w-3.5 h-3.5" /> Reset
         </button>
       </div>
@@ -201,27 +201,27 @@ export default function CreateTemplate() {
         <StepCard number={1} title="Identify Job" time={times[1]} status={stepStatus(1)}>
           <div className="flex gap-3 mb-3">
             <div className="flex-[2]">
-              <label className="block text-[11px] text-slate-500 uppercase tracking-wider mb-1 font-medium">Job ID</label>
+              <label className="block text-[11px] text-gh-text-secondary uppercase tracking-wider mb-1 font-medium">Job ID</label>
               <input type="text" value={jobId} onChange={e => setJobId(e.target.value)}
                 onKeyDown={e => e.key === 'Enter' && fetchJob()}
                 placeholder="e.g. 54ae01c4-d111-447a-baa4-c35854d2c5f1"
-                className="w-full px-3 py-2 bg-slate-950 border border-slate-700 rounded-lg text-sm text-slate-200 outline-none focus:border-blue-500 placeholder:text-slate-600" />
+                className="w-full px-3 py-2 bg-gh-canvas border border-gh-border rounded-md text-sm text-gh-text outline-none focus:border-gh-accent-blue placeholder:text-gh-text-muted" />
             </div>
             <div className="flex-1">
-              <label className="block text-[11px] text-slate-500 uppercase tracking-wider mb-1 font-medium">Template Name</label>
+              <label className="block text-[11px] text-gh-text-secondary uppercase tracking-wider mb-1 font-medium">Template Name</label>
               <input type="text" value={templateName} onChange={e => setTemplateName(e.target.value)}
                 onKeyDown={e => e.key === 'Enter' && fetchJob()}
                 placeholder="e.g. lead-gen-v2"
-                className="w-full px-3 py-2 bg-slate-950 border border-slate-700 rounded-lg text-sm text-slate-200 outline-none focus:border-blue-500 placeholder:text-slate-600" />
+                className="w-full px-3 py-2 bg-gh-canvas border border-gh-border rounded-md text-sm text-gh-text outline-none focus:border-gh-accent-blue placeholder:text-gh-text-muted" />
             </div>
           </div>
           <button onClick={fetchJob} disabled={loading === 'fetch'}
-            className="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 disabled:opacity-50 flex items-center gap-2">
-            {loading === 'fetch' && <div className="w-3.5 h-3.5 border-2 border-blue-300/30 border-t-white rounded-full animate-spin" />}
+            className="px-4 py-2 bg-gh-accent-blue text-white text-sm rounded-md hover:bg-gh-accent-blue disabled:opacity-50 flex items-center gap-2">
+            {loading === 'fetch' && <div className="w-3.5 h-3.5 border-2 border-gh-accent-blue/30 border-t-white rounded-full animate-spin" />}
             {loading === 'fetch' ? 'Working...' : 'Fetch Job Info'}
           </button>
           {jobPaused && (
-            <div className="mt-3 bg-amber-900/30 border border-amber-800/50 rounded-lg px-3.5 py-3 text-xs text-amber-400 flex items-center gap-2">
+            <div className="mt-3 bg-gh-accent-amber/15 border border-gh-accent-amber/30 rounded-md px-3.5 py-3 text-xs text-gh-accent-amber-text flex items-center gap-2">
               <AlertTriangle className="w-4 h-4 shrink-0" />
               <div>
                 <strong>Job is paused</strong> (status: {podStatus}). Resume the job on the Emergent platform first, then click "Fetch Job Info" again.
@@ -230,9 +230,9 @@ export default function CreateTemplate() {
           )}
           {userId && (
             <div className="flex gap-2 mt-2.5 flex-wrap">
-              <span className="text-[11px] bg-slate-950 border border-slate-700 px-2.5 py-1 rounded-md text-slate-400">User: <strong className="text-slate-200">{userId.slice(0, 8)}...</strong></span>
-              <span className="text-[11px] bg-slate-950 border border-slate-700 px-2.5 py-1 rounded-md text-slate-400">Env: <strong className="text-slate-200">{envId.slice(0, 8)}...</strong></span>
-              <span className="text-[11px] bg-slate-950 border border-slate-700 px-2.5 py-1 rounded-md text-slate-400">Pod: <strong className="text-slate-200">{podName.slice(0, 12)}...</strong></span>
+              <span className="text-[11px] bg-gh-canvas border border-gh-border px-2.5 py-1 rounded-md text-gh-text-secondary">User: <strong className="text-gh-text">{userId.slice(0, 8)}...</strong></span>
+              <span className="text-[11px] bg-gh-canvas border border-gh-border px-2.5 py-1 rounded-md text-gh-text-secondary">Env: <strong className="text-gh-text">{envId.slice(0, 8)}...</strong></span>
+              <span className="text-[11px] bg-gh-canvas border border-gh-border px-2.5 py-1 rounded-md text-gh-text-secondary">Pod: <strong className="text-gh-text">{podName.slice(0, 12)}...</strong></span>
             </div>
           )}
           <StatusBar {...(statuses[1] || {})} />
@@ -242,34 +242,34 @@ export default function CreateTemplate() {
       {/* Step 2 */}
       <div ref={el => stepsRef.current[2] = el}>
         <StepCard number={2} title="Clear Database Collections" time={times[2]} status={stepStatus(2)}>
-          <p className="text-xs text-slate-500 mb-3">Select which collections to delete. Unselected collections will be preserved.</p>
+          <p className="text-xs text-gh-text-secondary mb-3">Select which collections to delete. Unselected collections will be preserved.</p>
           <div className="flex gap-2 mb-2">
-            <button onClick={() => selectAll(true)} className="px-3 py-1.5 bg-slate-900 border border-slate-700 text-slate-400 text-xs rounded-lg hover:bg-slate-700 hover:text-slate-200">Select All</button>
-            <button onClick={() => selectAll(false)} className="px-3 py-1.5 bg-slate-900 border border-slate-700 text-slate-400 text-xs rounded-lg hover:bg-slate-700 hover:text-slate-200">Deselect All</button>
+            <button onClick={() => selectAll(true)} className="px-3 py-1.5 bg-gh-overlay border border-gh-border text-gh-text-secondary text-xs rounded-md hover:bg-gh-overlay hover:text-gh-text">Select All</button>
+            <button onClick={() => selectAll(false)} className="px-3 py-1.5 bg-gh-overlay border border-gh-border text-gh-text-secondary text-xs rounded-md hover:bg-gh-overlay hover:text-gh-text">Deselect All</button>
           </div>
-          <div ref={listRef} className={`max-h-[260px] overflow-y-auto border rounded-lg ${showScrollHint ? 'border-blue-500 border-b-2' : 'border-slate-700'}`}>
+          <div ref={listRef} className={`max-h-[260px] overflow-y-auto border rounded-md ${showScrollHint ? 'border-gh-accent-blue border-b-2' : 'border-gh-border'}`}>
             {collections.length === 0
-              ? <p className="text-xs text-slate-500 p-3.5 text-center">No collections found. Database is already empty.</p>
+              ? <p className="text-xs text-gh-text-secondary p-3.5 text-center">No collections found. Database is already empty.</p>
               : collections.map(c => (
                   <div key={c.name} onClick={() => toggleCollection(c.name)}
-                    className="flex items-center gap-2.5 px-3.5 py-2.5 text-sm border-b border-slate-900 last:border-b-0 cursor-pointer hover:bg-slate-700/50 transition-colors">
+                    className="flex items-center gap-2.5 px-3.5 py-2.5 text-sm border-b border-gh-border-muted last:border-b-0 cursor-pointer hover:bg-gh-btn/50 transition-colors">
                     <input type="checkbox" checked={selected.has(c.name)} readOnly
                       className="w-4 h-4 accent-red-600 pointer-events-none" />
-                    <span className="text-slate-200">{c.name}</span>
+                    <span className="text-gh-text">{c.name}</span>
                   </div>
                 ))
             }
           </div>
-          {showScrollHint && <p className="text-center text-[11px] text-slate-500 py-1.5">Scroll to see all {collections.length} collections</p>}
+          {showScrollHint && <p className="text-center text-[11px] text-gh-text-secondary py-1.5">Scroll to see all {collections.length} collections</p>}
           <div className="flex gap-2 mt-3">
             {collections.length > 0 && (
               <button onClick={deleteSelected} disabled={loading === 'delete' || selected.size === 0}
-                className="px-4 py-2 bg-red-600 text-white text-sm rounded-lg hover:bg-red-700 disabled:opacity-50 flex items-center gap-2">
-                {loading === 'delete' && <div className="w-3.5 h-3.5 border-2 border-red-300/30 border-t-white rounded-full animate-spin" />}
+                className="px-4 py-2 bg-gh-accent-red text-white text-sm rounded-md hover:bg-gh-accent-red disabled:opacity-50 flex items-center gap-2">
+                {loading === 'delete' && <div className="w-3.5 h-3.5 border-2 border-gh-accent-red/30 border-t-white rounded-full animate-spin" />}
                 {loading === 'delete' ? 'Working...' : `Delete Selected (${selected.size})`}
               </button>
             )}
-            <button onClick={skipDelete} className="px-3 py-2 text-xs text-slate-500 border border-slate-700 rounded-lg hover:text-slate-300 hover:border-slate-500">
+            <button onClick={skipDelete} className="px-3 py-2 text-xs text-gh-text-secondary border border-gh-border rounded-md hover:text-gh-text hover:border-gh-text-muted">
               Skip (DB already clean)
             </button>
           </div>
@@ -280,14 +280,14 @@ export default function CreateTemplate() {
       {/* Step 3 */}
       <div ref={el => stepsRef.current[3] = el}>
         <StepCard number={3} title="Pause Job (Trigger Restic Backup)" time={times[3]} status={stepStatus(3)}>
-          <div className="bg-amber-900/30 border border-amber-800/50 rounded-lg px-3.5 py-2.5 mb-3 text-xs text-amber-400 flex items-center gap-2">
+          <div className="bg-gh-accent-amber/15 border border-gh-accent-amber/30 rounded-md px-3.5 py-2.5 mb-3 text-xs text-gh-accent-amber-text flex items-center gap-2">
             <AlertTriangle className="w-4 h-4 shrink-0" />
             Do NOT refresh the app preview before pausing! The preview will re-seed the database.
           </div>
-          <p className="text-xs text-slate-500 mb-3">Pausing creates a restic snapshot of the current (cleaned) state.</p>
+          <p className="text-xs text-gh-text-secondary mb-3">Pausing creates a restic snapshot of the current (cleaned) state.</p>
           <button onClick={pauseJob} disabled={loading === 'pause'}
-            className="px-4 py-2 bg-amber-600 text-white text-sm rounded-lg hover:bg-amber-700 disabled:opacity-50 flex items-center gap-2">
-            {loading === 'pause' && <div className="w-3.5 h-3.5 border-2 border-amber-300/30 border-t-white rounded-full animate-spin" />}
+            className="px-4 py-2 bg-gh-accent-amber text-white text-sm rounded-md hover:bg-gh-accent-amber disabled:opacity-50 flex items-center gap-2">
+            {loading === 'pause' && <div className="w-3.5 h-3.5 border-2 border-gh-accent-amber/30 border-t-white rounded-full animate-spin" />}
             {loading === 'pause' ? 'Working...' : 'Pause Job'}
           </button>
           <StatusBar {...(statuses[3] || {})} />
@@ -297,24 +297,24 @@ export default function CreateTemplate() {
       {/* Step 4 */}
       <div ref={el => stepsRef.current[4] = el}>
         <StepCard number={4} title="Create Template" time={times[4]} status={stepStatus(4)}>
-          <p className="text-xs text-slate-500 mb-3">Runs the template creation script on the dev VM. Auto-sanitizes .env secrets and stores in GCS.</p>
+          <p className="text-xs text-gh-text-secondary mb-3">Runs the template creation script on the dev VM. Auto-sanitizes .env secrets and stores in GCS.</p>
           <button onClick={createTemplate} disabled={loading === 'create'}
-            className="px-4 py-2 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700 disabled:opacity-50 flex items-center gap-2">
-            {loading === 'create' && <div className="w-3.5 h-3.5 border-2 border-green-300/30 border-t-white rounded-full animate-spin" />}
+            className="px-4 py-2 bg-gh-accent-green text-white text-sm rounded-md hover:bg-gh-btn-primary-hover disabled:opacity-50 flex items-center gap-2">
+            {loading === 'create' && <div className="w-3.5 h-3.5 border-2 border-gh-accent-green/30 border-t-white rounded-full animate-spin" />}
             {loading === 'create' ? 'Working...' : 'Create Template'}
           </button>
           <StatusBar {...(statuses[4] || {})} />
           {logOutput && (
-            <pre className="mt-3 bg-slate-950 border border-slate-700 rounded-lg p-3 text-xs text-slate-400 max-h-[200px] overflow-y-auto whitespace-pre-wrap font-mono">
+            <pre className="mt-3 bg-gh-canvas border border-gh-border rounded-md p-3 text-xs text-gh-text-secondary max-h-[200px] overflow-y-auto whitespace-pre-wrap font-mono">
               {logOutput}
             </pre>
           )}
           {gcsPath && (
-            <div className="mt-4 p-3.5 bg-green-950 border border-green-900 rounded-lg">
-              <div className="text-sm text-green-300 font-medium flex items-center gap-2 mb-2">
+            <div className="mt-4 p-3.5 bg-gh-accent-green/10 border border-gh-accent-green/30 rounded-md">
+              <div className="text-sm text-gh-accent-green-text font-medium flex items-center gap-2 mb-2">
                 <CheckCircle className="w-4 h-4" /> Template created successfully!
               </div>
-              <div className="font-mono text-xs text-green-400 bg-slate-950 px-3.5 py-2.5 rounded-md break-all">{gcsPath}</div>
+              <div className="font-mono text-xs text-gh-accent-green-text bg-gh-canvas px-3.5 py-2.5 rounded-md break-all">{gcsPath}</div>
             </div>
           )}
         </StepCard>

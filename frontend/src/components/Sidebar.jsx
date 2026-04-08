@@ -73,16 +73,15 @@ export default function Sidebar({ activePage, onNavigate, bearerToken, onTokenCh
     setCollapsed(prev => ({ ...prev, [section]: !prev[section] }));
   }
 
-  // Auto-expand section if active page is inside it
   function isSectionActive(group) {
     return group.items.some(item => item.id === activePage);
   }
 
   return (
-    <aside className="w-60 bg-slate-950 border-r border-slate-800 h-screen fixed top-0 left-0 flex flex-col">
-      <div className="px-4 pt-5 pb-4 border-b border-slate-800">
-        <h1 className="text-base font-semibold text-slate-200">Template Manager</h1>
-        <span className="inline-block mt-1.5 text-[10px] px-2 py-0.5 rounded-full bg-amber-900/50 text-amber-400 font-medium uppercase tracking-wider">
+    <aside className="w-60 bg-gh-surface border-r border-gh-border h-screen fixed top-0 left-0 flex flex-col">
+      <div className="px-4 pt-5 pb-4 border-b border-gh-border">
+        <h1 className="text-base font-semibold text-gh-text">Template Manager</h1>
+        <span className="inline-block mt-1.5 text-[10px] px-2 py-0.5 rounded-full bg-gh-accent-amber/20 text-gh-accent-amber-text font-medium uppercase tracking-wider">
           eph-leadgen1
         </span>
       </div>
@@ -97,15 +96,15 @@ export default function Sidebar({ activePage, onNavigate, bearerToken, onTokenCh
               {group.collapsible ? (
                 <button
                   onClick={() => toggleSection(group.section)}
-                  className={`w-full flex items-center gap-2 px-3 py-1.5 rounded-lg text-[10px] font-semibold uppercase tracking-widest transition-colors cursor-pointer ${
-                    sectionActive ? 'text-blue-400' : 'text-slate-500 hover:text-slate-300'
+                  className={`w-full flex items-center gap-2 px-3 py-1.5 rounded-md text-[10px] font-semibold uppercase tracking-widest transition-colors cursor-pointer ${
+                    sectionActive ? 'text-gh-accent-blue-text' : 'text-gh-text-secondary hover:text-gh-text'
                   }`}>
                   {group.icon && <group.icon className="w-3.5 h-3.5" />}
                   <span className="flex-1 text-left">{group.section}</span>
                   <Chevron className="w-3 h-3" open={isOpen} />
                 </button>
               ) : (
-                <div className="text-[10px] font-semibold text-slate-600 uppercase tracking-widest px-3 pb-1.5">
+                <div className="text-[10px] font-semibold text-gh-text-muted uppercase tracking-widest px-3 pb-1.5">
                   {group.section}
                 </div>
               )}
@@ -116,11 +115,11 @@ export default function Sidebar({ activePage, onNavigate, bearerToken, onTokenCh
                     <button
                       key={item.id}
                       onClick={() => onNavigate(item.id)}
-                      className={`w-full flex items-center gap-2.5 py-2 rounded-lg text-[13px] transition-all mb-0.5 cursor-pointer ${
+                      className={`w-full flex items-center gap-2.5 py-2 rounded-md text-[13px] transition-all mb-0.5 cursor-pointer ${
                         group.collapsible ? 'pl-6 pr-3' : 'px-3'
                       } ${activePage === item.id
-                        ? 'bg-blue-900/40 text-blue-300'
-                        : 'text-slate-400 hover:bg-slate-800 hover:text-slate-200'
+                        ? 'bg-gh-overlay text-gh-text'
+                        : 'text-gh-text-secondary hover:bg-gh-surface-hover hover:text-gh-text'
                       }`}
                     >
                       <item.icon className="w-4 h-4 shrink-0" />
@@ -135,10 +134,10 @@ export default function Sidebar({ activePage, onNavigate, bearerToken, onTokenCh
       </nav>
 
       {/* Bearer Token Config */}
-      <div className="px-3 py-3 border-t border-slate-800">
+      <div className="px-3 py-3 border-t border-gh-border">
         <button onClick={() => setShowToken(!showToken)}
-          className="flex items-center gap-2 w-full text-[11px] text-slate-500 hover:text-slate-300 transition-colors mb-2 cursor-pointer">
-          <div className={`w-2 h-2 rounded-full shrink-0 ${bearerToken ? 'bg-green-500' : 'bg-red-500'}`} />
+          className="flex items-center gap-2 w-full text-[11px] text-gh-text-secondary hover:text-gh-text transition-colors mb-2 cursor-pointer">
+          <div className={`w-2 h-2 rounded-full shrink-0 ${bearerToken ? 'bg-gh-accent-green-text' : 'bg-gh-accent-red-text'}`} />
           <span>API Token {bearerToken ? '(set)' : '(not set)'}</span>
           <svg className={`w-3 h-3 ml-auto transition-transform ${showToken ? 'rotate-180' : ''}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="6 9 12 15 18 9" /></svg>
         </button>
@@ -148,12 +147,12 @@ export default function Sidebar({ activePage, onNavigate, bearerToken, onTokenCh
             onChange={e => onTokenChange(e.target.value)}
             placeholder="Paste bearer token here..."
             rows={3}
-            className="w-full px-2 py-1.5 bg-slate-900 border border-slate-700 rounded-md text-[11px] text-slate-300 outline-none focus:border-blue-500 placeholder:text-slate-600 font-mono resize-none"
+            className="w-full px-2 py-1.5 bg-gh-canvas border border-gh-border rounded-md text-[11px] text-gh-text-secondary outline-none focus:border-gh-accent-blue placeholder:text-gh-text-muted font-mono resize-none"
           />
         )}
       </div>
 
-      <div className="px-4 py-3 border-t border-slate-800 text-[11px] text-slate-600">
+      <div className="px-4 py-3 border-t border-gh-border text-[11px] text-gh-text-muted">
         Template Manager v0.3
       </div>
     </aside>

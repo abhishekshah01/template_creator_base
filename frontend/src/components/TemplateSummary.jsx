@@ -31,50 +31,50 @@ export default function TemplateSummary({ bearerToken, onTokenExpired }) {
     <>
       <h2 className="text-lg font-medium mb-5">Template Summary</h2>
 
-      <div className="bg-slate-800 border border-slate-700 rounded-xl p-5 mb-3">
-        <p className="text-xs text-slate-500 mb-3">
+      <div className="bg-gh-surface border border-gh-border rounded-md p-5 mb-3">
+        <p className="text-xs text-gh-text-secondary mb-3">
           Generate an app summary for a template. This calls the agent service to produce metadata and description.
         </p>
         <div className="mb-3">
-          <label className="block text-[11px] text-slate-500 uppercase tracking-wider mb-1 font-medium">Template Name</label>
+          <label className="block text-[11px] text-gh-text-secondary uppercase tracking-wider mb-1 font-medium">Template Name</label>
           <input type="text" value={templateName} onChange={e => setTemplateName(e.target.value)}
             onKeyDown={e => e.key === 'Enter' && generateSummary()}
             placeholder="e.g. real-estate-v0"
-            className="w-full px-3 py-2 bg-slate-950 border border-slate-700 rounded-lg text-sm text-slate-200 outline-none focus:border-blue-500 placeholder:text-slate-600" />
+            className="w-full px-3 py-2 bg-gh-canvas border border-gh-border rounded-md text-sm text-gh-text outline-none focus:border-gh-accent-blue placeholder:text-gh-text-muted" />
         </div>
 
         {!bearerToken && (
-          <div className="mb-3 px-3.5 py-2.5 rounded-lg text-xs flex items-center gap-2 border bg-amber-950/50 text-amber-300 border-amber-900/50">
+          <div className="mb-3 px-3.5 py-2.5 rounded-md text-xs flex items-center gap-2 border bg-gh-accent-amber/15 text-gh-accent-amber-text border-gh-accent-amber/30">
             Set your API token in the sidebar before generating.
           </div>
         )}
 
         <button onClick={generateSummary} disabled={loading}
-          className="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 disabled:opacity-50 flex items-center gap-2">
-          {loading && <div className="w-3.5 h-3.5 border-2 border-blue-300/30 border-t-white rounded-full animate-spin" />}
+          className="px-4 py-2 bg-gh-accent-blue text-white text-sm rounded-md hover:bg-gh-accent-blue disabled:opacity-50 flex items-center gap-2">
+          {loading && <div className="w-3.5 h-3.5 border-2 border-gh-accent-blue/30 border-t-white rounded-full animate-spin" />}
           {loading ? 'Generating...' : 'Generate Summary'}
         </button>
 
         {status && (
-          <div className={`mt-3 px-3.5 py-2.5 rounded-lg text-xs flex items-center gap-2 border ${
-            { info: 'bg-blue-950 text-blue-300 border-blue-900',
-              success: 'bg-green-950 text-green-300 border-green-900',
-              error: 'bg-red-950/50 text-red-300 border-red-900/50',
-              loading: 'bg-slate-800 text-slate-400 border-slate-700',
+          <div className={`mt-3 px-3.5 py-2.5 rounded-md text-xs flex items-center gap-2 border ${
+            { info: 'bg-gh-accent-blue/10 text-gh-accent-blue-text border-gh-accent-blue/30',
+              success: 'bg-gh-accent-green/10 text-gh-accent-green-text border-gh-accent-green/30',
+              error: 'bg-gh-accent-red/10 text-gh-accent-red-text border-gh-accent-red/30',
+              loading: 'bg-gh-surface text-gh-text-secondary border-gh-border',
             }[status.type] || ''}`}>
             {status.type === 'loading' && (
-              <div className="w-3.5 h-3.5 border-2 border-slate-600 border-t-blue-300 rounded-full animate-spin shrink-0" />
+              <div className="w-3.5 h-3.5 border-2 border-gh-text-muted border-t-gh-accent-blue-text rounded-full animate-spin shrink-0" />
             )}
             <span>{status.message}</span>
           </div>
         )}
 
         {result && (
-          <div className="mt-4 p-3.5 bg-green-950 border border-green-900 rounded-lg">
-            <div className="text-sm text-green-300 font-medium flex items-center gap-2 mb-2">
+          <div className="mt-4 p-3.5 bg-gh-accent-green/10 border border-gh-accent-green/30 rounded-md">
+            <div className="text-sm text-gh-accent-green-text font-medium flex items-center gap-2 mb-2">
               <CheckCircle className="w-4 h-4" /> Summary generated!
             </div>
-            <pre className="text-xs text-green-400 bg-slate-950 px-3.5 py-2.5 rounded-md overflow-x-auto font-mono whitespace-pre-wrap">
+            <pre className="text-xs text-gh-accent-green-text bg-gh-canvas px-3.5 py-2.5 rounded-md overflow-x-auto font-mono whitespace-pre-wrap">
               {JSON.stringify(result, null, 2)}
             </pre>
           </div>
