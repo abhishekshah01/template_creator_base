@@ -32,6 +32,10 @@
   --color-gh-btn-danger-hover: #b62324;
 }
 
+html {
+  font-size: 110%;
+}
+
 body {
   margin: 0;
   background: #0d1117;

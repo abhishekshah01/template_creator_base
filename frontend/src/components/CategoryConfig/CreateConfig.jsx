@@ -191,15 +191,26 @@ export default function CreateConfig({ bearerToken, onTokenExpired, onNavigate }
               <div className="text-xs text-gh-text-secondary mt-0.5">Only visible to internal team members.</div>
             </div>
             <div className="flex items-center gap-2 shrink-0">
-              <span className="text-xs text-gh-text-muted">{internal ? 'On' : 'Off'}</span>
+              <span className="text-xs text-gh-text-secondary font-medium">{internal ? 'On' : 'Off'}</span>
               <button type="button" onClick={() => setInternal(!internal)}
-                className={`relative w-[50px] h-[26px] rounded-full transition-colors border ${
+                className={`relative w-[48px] h-[24px] rounded-full transition-colors border flex items-center ${
                   internal
                     ? 'bg-gh-accent-blue border-gh-accent-blue'
-                    : 'bg-gh-overlay border-gh-border'
+                    : 'bg-gh-canvas-subtle border-gh-border'
                 }`}>
-                <span className={`absolute top-[3px] left-[3px] w-[18px] h-[18px] bg-white rounded-full shadow-sm transition-transform duration-200 ${
-                  internal ? 'translate-x-[24px]' : 'translate-x-0'
+                {/* | symbol (on side) */}
+                <span className={`absolute left-[8px] text-[10px] font-bold leading-none transition-opacity ${
+                  internal ? 'opacity-100 text-white' : 'opacity-0'
+                }`}>|</span>
+                {/* ○ symbol (off side) */}
+                <span className={`absolute right-[7px] text-[9px] leading-none transition-opacity ${
+                  internal ? 'opacity-0' : 'opacity-100 text-gh-text-muted'
+                }`}>○</span>
+                {/* Knob */}
+                <span className={`absolute top-[3px] w-[16px] h-[16px] rounded-[4px] shadow-sm transition-all duration-200 ${
+                  internal
+                    ? 'left-[28px] bg-gh-surface'
+                    : 'left-[3px] bg-gh-overlay'
                 }`} />
               </button>
             </div>
@@ -211,15 +222,23 @@ export default function CreateConfig({ bearerToken, onTokenExpired, onNavigate }
               <div className="text-xs text-gh-text-secondary mt-0.5">Accessible to all platform users.</div>
             </div>
             <div className="flex items-center gap-2 shrink-0">
-              <span className="text-xs text-gh-text-muted">{isPublic ? 'On' : 'Off'}</span>
+              <span className="text-xs text-gh-text-secondary font-medium">{isPublic ? 'On' : 'Off'}</span>
               <button type="button" onClick={() => setIsPublic(!isPublic)}
-                className={`relative w-[50px] h-[26px] rounded-full transition-colors border ${
+                className={`relative w-[48px] h-[24px] rounded-full transition-colors border flex items-center ${
                   isPublic
                     ? 'bg-gh-accent-green border-gh-accent-green'
-                    : 'bg-gh-overlay border-gh-border'
+                    : 'bg-gh-canvas-subtle border-gh-border'
                 }`}>
-                <span className={`absolute top-[3px] left-[3px] w-[18px] h-[18px] bg-white rounded-full shadow-sm transition-transform duration-200 ${
-                  isPublic ? 'translate-x-[24px]' : 'translate-x-0'
+                <span className={`absolute left-[8px] text-[10px] font-bold leading-none transition-opacity ${
+                  isPublic ? 'opacity-100 text-white' : 'opacity-0'
+                }`}>|</span>
+                <span className={`absolute right-[7px] text-[9px] leading-none transition-opacity ${
+                  isPublic ? 'opacity-0' : 'opacity-100 text-gh-text-muted'
+                }`}>○</span>
+                <span className={`absolute top-[3px] w-[16px] h-[16px] rounded-[4px] shadow-sm transition-all duration-200 ${
+                  isPublic
+                    ? 'left-[28px] bg-gh-surface'
+                    : 'left-[3px] bg-gh-overlay'
                 }`} />
               </button>
             </div>
