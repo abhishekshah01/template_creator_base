@@ -89,7 +89,8 @@ export default function AllConfigs({ onNavigate, bearerToken, onTokenExpired }) 
     setError(null);
     try {
       const data = await api.listCategoryConfigs(bearerToken);
-      setConfigs(Array.isArray(data) ? data : []);
+      const list = Array.isArray(data) ? data : (data?.configs || data?.data || data?.results || []);
+      setConfigs(Array.isArray(list) ? list : []);
     } catch (e) {
       if (e instanceof AuthError) { onTokenExpired(); }
       setError(e.message);

@@ -442,6 +442,18 @@ async def list_category_configs(req: BearerTokenRequest):
     except Exception:
         data = []
 
+    # Handle both plain array and wrapped responses like {"configs": [...]}
+    if isinstance(data, dict):
+        # Try common wrapper keys
+        for key in ("configs", "data", "results", "items", "category_configs"):
+            if key in data and isinstance(data[key], list):
+                return data[key]
+        # If it's a single config object, wrap it
+        if "template_name" in data:
+            return [data]
+        # Return as-is and let frontend handle
+        return data
+
     return data
 
 
