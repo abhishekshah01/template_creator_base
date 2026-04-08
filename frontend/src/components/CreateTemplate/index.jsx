@@ -198,7 +198,7 @@ export default function CreateTemplate() {
       {/* Step 1 */}
       <div ref={el => stepsRef.current[1] = el}>
         <StepCard number={1} title="Identify Job" time={times[1]} status={stepStatus(1)}>
-          <div className="flex gap-3 mb-3">
+          <div className="flex gap-3 items-end mb-3">
             <div className="flex-[2]">
               <label className={labelCls}>Job ID <span className="text-[#f85149]">*</span></label>
               <input type="text" value={jobId} onChange={e => setJobId(e.target.value)}
@@ -213,20 +213,21 @@ export default function CreateTemplate() {
                 placeholder="lead-gen-v2"
                 className={inputCls} />
             </div>
+            <button onClick={fetchJob} disabled={loading === 'fetch'} className={`${btnDefault} shrink-0`}>
+              Fetch Job Info
+            </button>
           </div>
-          <button onClick={fetchJob} disabled={loading === 'fetch'} className={btnDefault}>
-            Fetch Job Info
-          </button>
           {jobPaused && (
-            <div className="mt-3 bg-[#9e6a03]/15 border border-[#9e6a03]/30 rounded-md px-3 py-2 text-[12px] text-[#d29922] flex items-center gap-2">
+            <div className="mb-3 bg-[#9e6a03]/15 border border-[#9e6a03]/30 rounded-md px-3 py-2 text-[12px] text-[#d29922] flex items-center gap-2">
               <svg className="w-4 h-4 shrink-0" viewBox="0 0 16 16" fill="currentColor">
                 <path d="M6.457 1.047c.659-1.234 2.427-1.234 3.086 0l6.082 11.378A1.75 1.75 0 0 1 14.082 15H1.918a1.75 1.75 0 0 1-1.543-2.575Zm1.763.707a.25.25 0 0 0-.44 0L1.698 13.132a.25.25 0 0 0 .22.368h12.164a.25.25 0 0 0 .22-.368Zm.53 3.996v2.5a.75.75 0 0 1-1.5 0v-2.5a.75.75 0 0 1 1.5 0ZM9 11a1 1 0 1 1-2 0 1 1 0 0 1 2 0Z" />
               </svg>
               <strong>Job is paused</strong> ({podStatus}). Resume first, then retry.
             </div>
           )}
+          <StatusBar {...(statuses[1] || {})} />
           {userId && (
-            <div className="flex gap-2 mt-2.5 flex-wrap">
+            <div className="flex gap-2 mt-3 flex-wrap">
               <span className="inline-flex items-center gap-1.5 text-[12px] px-2.5 py-[3px] rounded-full font-mono"
                 style={{ backgroundColor: 'rgba(31,111,235,0.15)', color: '#58a6ff', border: '1px solid rgba(31,111,235,0.3)' }}>
                 User <span className="text-[#c9d1d9]">{userId}</span>
@@ -241,7 +242,6 @@ export default function CreateTemplate() {
               </span>
             </div>
           )}
-          <StatusBar {...(statuses[1] || {})} />
         </StepCard>
       </div>
 
