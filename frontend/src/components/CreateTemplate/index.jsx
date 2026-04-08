@@ -3,7 +3,6 @@ import { api } from '../../api';
 import StepCard from './StepCard';
 import StatusBar from './StatusBar';
 import ProgressBar from './ProgressBar';
-import { RefreshCw, AlertTriangle, CheckCircle } from '../Icons';
 
 function now() {
   return new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
@@ -174,102 +173,114 @@ export default function CreateTemplate() {
   }
 
   const listRef = useRef(null);
-  const [showScrollHint, setShowScrollHint] = useState(false);
-
-  useEffect(() => {
-    const el = listRef.current;
-    if (!el || collections.length === 0) return;
-    const check = () => setShowScrollHint(el.scrollHeight > el.clientHeight && el.scrollTop + el.clientHeight < el.scrollHeight - 10);
-    check();
-    el.addEventListener('scroll', check);
-    return () => el.removeEventListener('scroll', check);
-  }, [collections]);
 
   return (
-    <>
-      <div className="flex items-center justify-between mb-5">
-        <h2 className="text-lg font-medium">Create Template</h2>
-        <button onClick={reset} className="flex items-center gap-1.5 px-3 py-1.5 rounded-md border border-gh-border text-gh-text-secondary text-xs hover:text-gh-text hover:border-gh-text-muted transition-colors">
-          <RefreshCw className="w-3.5 h-3.5" /> Reset
+    <div className="max-w-[768px]">
+      {/* Page header */}
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h1 className="text-2xl font-semibold text-[#e6edf3]">Create Template</h1>
+          <p className="text-sm text-[#8b949e] mt-1">Automate template creation from an ephemeral job environment.</p>
+        </div>
+        <button onClick={reset}
+          className="flex items-center gap-1.5 px-3 py-[5px] bg-[#21262d] border border-[#30363d] rounded-md text-sm text-[#c9d1d9] hover:bg-[#30363d] hover:border-[#484f58] transition-colors">
+          <svg className="w-4 h-4" viewBox="0 0 16 16" fill="currentColor">
+            <path d="M3.38 8A4.62 4.62 0 0 1 8 3.38a4.63 4.63 0 0 1 3.97 2.24.75.75 0 1 0 1.3-.75A6.13 6.13 0 0 0 8 1.88 6.12 6.12 0 0 0 1.88 8 6.12 6.12 0 0 0 8 14.12a6.13 6.13 0 0 0 5.27-3.01.75.75 0 1 0-1.3-.74A4.63 4.63 0 0 1 8 12.62 4.62 4.62 0 0 1 3.38 8Z" />
+            <path d="M7.4 6.15a.75.75 0 0 1 1.06 0l1.5 1.5a.75.75 0 0 1 0 1.06l-1.5 1.5a.75.75 0 1 1-1.06-1.06l.72-.72H4.75a.75.75 0 0 1 0-1.5h3.37l-.72-.72a.75.75 0 0 1 0-1.06Z" />
+          </svg>
+          Reset
         </button>
       </div>
 
       <ProgressBar currentStep={step} />
 
-      {/* Step 1 */}
+      {/* Step 1: Identify Job */}
       <div ref={el => stepsRef.current[1] = el}>
         <StepCard number={1} title="Identify Job" time={times[1]} status={stepStatus(1)}>
           <div className="flex gap-3 mb-3">
             <div className="flex-[2]">
-              <label className="block text-[11px] text-gh-text-secondary uppercase tracking-wider mb-1 font-medium">Job ID</label>
+              <label className="block text-sm font-medium text-[#e6edf3] mb-1.5">
+                Job ID <span className="text-[#f85149]">*</span>
+              </label>
               <input type="text" value={jobId} onChange={e => setJobId(e.target.value)}
                 onKeyDown={e => e.key === 'Enter' && fetchJob()}
                 placeholder="e.g. 54ae01c4-d111-447a-baa4-c35854d2c5f1"
-                className="w-full px-3 py-2 bg-gh-canvas border border-gh-border rounded-md text-sm text-gh-text outline-none focus:border-gh-accent-blue placeholder:text-gh-text-muted" />
+                className="w-full px-3 py-[5px] bg-[#0d1117] border border-[#30363d] rounded-md text-sm text-[#e6edf3] outline-none focus:border-[#1f6feb] focus:shadow-[0_0_0_3px_rgba(31,111,235,0.3)] placeholder:text-[#484f58] font-mono transition-shadow" />
             </div>
             <div className="flex-1">
-              <label className="block text-[11px] text-gh-text-secondary uppercase tracking-wider mb-1 font-medium">Template Name</label>
+              <label className="block text-sm font-medium text-[#e6edf3] mb-1.5">
+                Template Name <span className="text-[#f85149]">*</span>
+              </label>
               <input type="text" value={templateName} onChange={e => setTemplateName(e.target.value)}
                 onKeyDown={e => e.key === 'Enter' && fetchJob()}
                 placeholder="e.g. lead-gen-v2"
-                className="w-full px-3 py-2 bg-gh-canvas border border-gh-border rounded-md text-sm text-gh-text outline-none focus:border-gh-accent-blue placeholder:text-gh-text-muted" />
+                className="w-full px-3 py-[5px] bg-[#0d1117] border border-[#30363d] rounded-md text-sm text-[#e6edf3] outline-none focus:border-[#1f6feb] focus:shadow-[0_0_0_3px_rgba(31,111,235,0.3)] placeholder:text-[#484f58] transition-shadow" />
             </div>
           </div>
           <button onClick={fetchJob} disabled={loading === 'fetch'}
-            className="px-4 py-2 bg-gh-accent-blue text-white text-sm rounded-md hover:bg-gh-accent-blue disabled:opacity-50 flex items-center gap-2">
-            {loading === 'fetch' && <div className="w-3.5 h-3.5 border-2 border-gh-accent-blue/30 border-t-white rounded-full animate-spin" />}
+            className="px-4 py-[5px] bg-[#21262d] border border-[#30363d] text-sm text-[#c9d1d9] rounded-md hover:bg-[#30363d] hover:border-[#484f58] disabled:opacity-50 transition-colors flex items-center gap-2">
+            {loading === 'fetch' && <div className="w-3.5 h-3.5 border-2 border-[#30363d] border-t-[#e6edf3] rounded-full animate-spin" />}
             {loading === 'fetch' ? 'Working...' : 'Fetch Job Info'}
           </button>
           {jobPaused && (
-            <div className="mt-3 bg-gh-accent-amber/15 border border-gh-accent-amber/30 rounded-md px-3.5 py-3 text-xs text-gh-accent-amber-text flex items-center gap-2">
-              <AlertTriangle className="w-4 h-4 shrink-0" />
+            <div className="mt-3 bg-[#9e6a03]/15 border border-[#9e6a03]/30 rounded-md px-3 py-2.5 text-xs text-[#d29922] flex items-center gap-2">
+              <svg className="w-4 h-4 shrink-0" viewBox="0 0 16 16" fill="currentColor">
+                <path d="M6.457 1.047c.659-1.234 2.427-1.234 3.086 0l6.082 11.378A1.75 1.75 0 0 1 14.082 15H1.918a1.75 1.75 0 0 1-1.543-2.575Zm1.763.707a.25.25 0 0 0-.44 0L1.698 13.132a.25.25 0 0 0 .22.368h12.164a.25.25 0 0 0 .22-.368Zm.53 3.996v2.5a.75.75 0 0 1-1.5 0v-2.5a.75.75 0 0 1 1.5 0ZM9 11a1 1 0 1 1-2 0 1 1 0 0 1 2 0Z" />
+              </svg>
               <div>
-                <strong>Job is paused</strong> (status: {podStatus}). Resume the job on the Emergent platform first, then click "Fetch Job Info" again.
+                <strong>Job is paused</strong> (status: {podStatus}). Resume the job first, then click "Fetch Job Info" again.
               </div>
             </div>
           )}
           {userId && (
-            <div className="flex gap-2 mt-2.5 flex-wrap">
-              <span className="text-[11px] bg-gh-canvas border border-gh-border px-2.5 py-1 rounded-md text-gh-text-secondary">User: <strong className="text-gh-text">{userId.slice(0, 8)}...</strong></span>
-              <span className="text-[11px] bg-gh-canvas border border-gh-border px-2.5 py-1 rounded-md text-gh-text-secondary">Env: <strong className="text-gh-text">{envId.slice(0, 8)}...</strong></span>
-              <span className="text-[11px] bg-gh-canvas border border-gh-border px-2.5 py-1 rounded-md text-gh-text-secondary">Pod: <strong className="text-gh-text">{podName.slice(0, 12)}...</strong></span>
+            <div className="flex gap-2 mt-3 flex-wrap">
+              {[
+                { label: 'User', value: userId.slice(0, 8) },
+                { label: 'Env', value: envId.slice(0, 8) },
+                { label: 'Pod', value: podName.slice(0, 12) },
+              ].map(tag => (
+                <span key={tag.label} className="text-[11px] bg-[#161b22] border border-[#30363d] px-2 py-[3px] rounded-md text-[#8b949e] font-mono">
+                  {tag.label}: <span className="text-[#e6edf3]">{tag.value}...</span>
+                </span>
+              ))}
             </div>
           )}
           <StatusBar {...(statuses[1] || {})} />
         </StepCard>
       </div>
 
-      {/* Step 2 */}
+      {/* Step 2: Clear Database */}
       <div ref={el => stepsRef.current[2] = el}>
         <StepCard number={2} title="Clear Database Collections" time={times[2]} status={stepStatus(2)}>
-          <p className="text-xs text-gh-text-secondary mb-3">Select which collections to delete. Unselected collections will be preserved.</p>
+          <p className="text-xs text-[#8b949e] mb-3">Select which collections to delete. Unselected collections will be preserved.</p>
           <div className="flex gap-2 mb-2">
-            <button onClick={() => selectAll(true)} className="px-3 py-1.5 bg-gh-overlay border border-gh-border text-gh-text-secondary text-xs rounded-md hover:bg-gh-overlay hover:text-gh-text">Select All</button>
-            <button onClick={() => selectAll(false)} className="px-3 py-1.5 bg-gh-overlay border border-gh-border text-gh-text-secondary text-xs rounded-md hover:bg-gh-overlay hover:text-gh-text">Deselect All</button>
+            <button onClick={() => selectAll(true)} className="px-3 py-[3px] bg-[#21262d] border border-[#30363d] text-[#c9d1d9] text-xs rounded-md hover:bg-[#30363d] transition-colors">Select All</button>
+            <button onClick={() => selectAll(false)} className="px-3 py-[3px] bg-[#21262d] border border-[#30363d] text-[#c9d1d9] text-xs rounded-md hover:bg-[#30363d] transition-colors">Deselect All</button>
           </div>
-          <div ref={listRef} className={`max-h-[260px] overflow-y-auto border rounded-md ${showScrollHint ? 'border-gh-accent-blue border-b-2' : 'border-gh-border'}`}>
+          <div ref={listRef} className="max-h-[260px] overflow-y-auto border border-[#30363d] rounded-md">
             {collections.length === 0
-              ? <p className="text-xs text-gh-text-secondary p-3.5 text-center">No collections found. Database is already empty.</p>
+              ? <p className="text-xs text-[#484f58] p-4 text-center">No collections found. Database is already empty.</p>
               : collections.map(c => (
                   <div key={c.name} onClick={() => toggleCollection(c.name)}
-                    className="flex items-center gap-2.5 px-3.5 py-2.5 text-sm border-b border-gh-border-muted last:border-b-0 cursor-pointer hover:bg-gh-btn/50 transition-colors">
+                    className={`flex items-center gap-2.5 px-3 py-2 text-sm border-b border-[#21262d] last:border-b-0 cursor-pointer transition-colors ${
+                      selected.has(c.name) ? 'bg-[#da3633]/5' : 'hover:bg-[#161b22]'
+                    }`}>
                     <input type="checkbox" checked={selected.has(c.name)} readOnly
-                      className="w-4 h-4 accent-red-600 pointer-events-none" />
-                    <span className="text-gh-text">{c.name}</span>
+                      className="w-[14px] h-[14px] accent-[#da3633] pointer-events-none" />
+                    <span className={`font-mono text-xs ${selected.has(c.name) ? 'text-[#f85149]' : 'text-[#e6edf3]'}`}>{c.name}</span>
                   </div>
                 ))
             }
           </div>
-          {showScrollHint && <p className="text-center text-[11px] text-gh-text-secondary py-1.5">Scroll to see all {collections.length} collections</p>}
           <div className="flex gap-2 mt-3">
             {collections.length > 0 && (
               <button onClick={deleteSelected} disabled={loading === 'delete' || selected.size === 0}
-                className="px-4 py-2 bg-gh-accent-red text-white text-sm rounded-md hover:bg-gh-accent-red disabled:opacity-50 flex items-center gap-2">
-                {loading === 'delete' && <div className="w-3.5 h-3.5 border-2 border-gh-accent-red/30 border-t-white rounded-full animate-spin" />}
+                className="px-4 py-[5px] bg-[#da3633] text-white text-sm rounded-md hover:bg-[#b62324] disabled:opacity-50 transition-colors flex items-center gap-2">
+                {loading === 'delete' && <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />}
                 {loading === 'delete' ? 'Working...' : `Delete Selected (${selected.size})`}
               </button>
             )}
-            <button onClick={skipDelete} className="px-3 py-2 text-xs text-gh-text-secondary border border-gh-border rounded-md hover:text-gh-text hover:border-gh-text-muted">
+            <button onClick={skipDelete} className="px-3 py-[5px] bg-[#21262d] border border-[#30363d] text-xs text-[#c9d1d9] rounded-md hover:bg-[#30363d] transition-colors">
               Skip (DB already clean)
             </button>
           </div>
@@ -277,48 +288,53 @@ export default function CreateTemplate() {
         </StepCard>
       </div>
 
-      {/* Step 3 */}
+      {/* Step 3: Pause Job */}
       <div ref={el => stepsRef.current[3] = el}>
         <StepCard number={3} title="Pause Job (Trigger Restic Backup)" time={times[3]} status={stepStatus(3)}>
-          <div className="bg-gh-accent-amber/15 border border-gh-accent-amber/30 rounded-md px-3.5 py-2.5 mb-3 text-xs text-gh-accent-amber-text flex items-center gap-2">
-            <AlertTriangle className="w-4 h-4 shrink-0" />
+          <div className="bg-[#9e6a03]/15 border border-[#9e6a03]/30 rounded-md px-3 py-2.5 mb-3 text-xs text-[#d29922] flex items-center gap-2">
+            <svg className="w-4 h-4 shrink-0" viewBox="0 0 16 16" fill="currentColor">
+              <path d="M6.457 1.047c.659-1.234 2.427-1.234 3.086 0l6.082 11.378A1.75 1.75 0 0 1 14.082 15H1.918a1.75 1.75 0 0 1-1.543-2.575Zm1.763.707a.25.25 0 0 0-.44 0L1.698 13.132a.25.25 0 0 0 .22.368h12.164a.25.25 0 0 0 .22-.368Zm.53 3.996v2.5a.75.75 0 0 1-1.5 0v-2.5a.75.75 0 0 1 1.5 0ZM9 11a1 1 0 1 1-2 0 1 1 0 0 1 2 0Z" />
+            </svg>
             Do NOT refresh the app preview before pausing! The preview will re-seed the database.
           </div>
-          <p className="text-xs text-gh-text-secondary mb-3">Pausing creates a restic snapshot of the current (cleaned) state.</p>
+          <p className="text-xs text-[#8b949e] mb-3">Pausing creates a restic snapshot of the current (cleaned) state.</p>
           <button onClick={pauseJob} disabled={loading === 'pause'}
-            className="px-4 py-2 bg-gh-accent-amber text-white text-sm rounded-md hover:bg-gh-accent-amber disabled:opacity-50 flex items-center gap-2">
-            {loading === 'pause' && <div className="w-3.5 h-3.5 border-2 border-gh-accent-amber/30 border-t-white rounded-full animate-spin" />}
+            className="px-4 py-[5px] bg-[#9e6a03] text-white text-sm rounded-md hover:bg-[#845306] disabled:opacity-50 transition-colors flex items-center gap-2">
+            {loading === 'pause' && <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />}
             {loading === 'pause' ? 'Working...' : 'Pause Job'}
           </button>
           <StatusBar {...(statuses[3] || {})} />
         </StepCard>
       </div>
 
-      {/* Step 4 */}
+      {/* Step 4: Create Template */}
       <div ref={el => stepsRef.current[4] = el}>
         <StepCard number={4} title="Create Template" time={times[4]} status={stepStatus(4)}>
-          <p className="text-xs text-gh-text-secondary mb-3">Runs the template creation script on the dev VM. Auto-sanitizes .env secrets and stores in GCS.</p>
+          <p className="text-xs text-[#8b949e] mb-3">Runs the template creation script on the dev VM. Auto-sanitizes .env secrets and stores in GCS.</p>
           <button onClick={createTemplate} disabled={loading === 'create'}
-            className="px-4 py-2 bg-gh-accent-green text-white text-sm rounded-md hover:bg-gh-btn-primary-hover disabled:opacity-50 flex items-center gap-2">
-            {loading === 'create' && <div className="w-3.5 h-3.5 border-2 border-gh-accent-green/30 border-t-white rounded-full animate-spin" />}
+            className="px-4 py-[5px] bg-[#238636] text-white text-sm font-medium rounded-md hover:bg-[#2ea043] disabled:opacity-50 transition-colors flex items-center gap-2">
+            {loading === 'create' && <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />}
             {loading === 'create' ? 'Working...' : 'Create Template'}
           </button>
           <StatusBar {...(statuses[4] || {})} />
           {logOutput && (
-            <pre className="mt-3 bg-gh-canvas border border-gh-border rounded-md p-3 text-xs text-gh-text-secondary max-h-[200px] overflow-y-auto whitespace-pre-wrap font-mono">
+            <pre className="mt-3 bg-[#0d1117] border border-[#30363d] rounded-md p-3 text-xs text-[#8b949e] max-h-[200px] overflow-y-auto whitespace-pre-wrap font-mono">
               {logOutput}
             </pre>
           )}
           {gcsPath && (
-            <div className="mt-4 p-3.5 bg-gh-accent-green/10 border border-gh-accent-green/30 rounded-md">
-              <div className="text-sm text-gh-accent-green-text font-medium flex items-center gap-2 mb-2">
-                <CheckCircle className="w-4 h-4" /> Template created successfully!
+            <div className="mt-4 p-3 bg-[#238636]/10 border border-[#238636]/30 rounded-md">
+              <div className="text-sm text-[#3fb950] font-medium flex items-center gap-2 mb-2">
+                <svg className="w-4 h-4" viewBox="0 0 16 16" fill="currentColor">
+                  <path d="M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0Z" />
+                </svg>
+                Template created successfully!
               </div>
-              <div className="font-mono text-xs text-gh-accent-green-text bg-gh-canvas px-3.5 py-2.5 rounded-md break-all">{gcsPath}</div>
+              <div className="font-mono text-xs text-[#3fb950] bg-[#0d1117] px-3 py-2 rounded-md break-all">{gcsPath}</div>
             </div>
           )}
         </StepCard>
       </div>
-    </>
+    </div>
   );
 }
