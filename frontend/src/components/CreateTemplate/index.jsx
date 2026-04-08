@@ -26,6 +26,13 @@ export default function CreateTemplate() {
   const [jobPaused, setJobPaused] = useState(false);
   const [podStatus, setPodStatus] = useState('');
 
+  // Collection viewer
+  const [viewerOpen, setViewerOpen] = useState(false);
+  const [viewerCollection, setViewerCollection] = useState('');
+  const [viewerData, setViewerData] = useState(null);
+  const [viewerLoading, setViewerLoading] = useState(false);
+  const [viewerError, setViewerError] = useState('');
+
   const stepsRef = useRef({});
 
   function scrollToStep(n) {
@@ -128,6 +135,29 @@ export default function CreateTemplate() {
     });
   }
 
+  async function viewCollection(name) {
+    setViewerOpen(true);
+    setViewerCollection(name);
+    setViewerData(null);
+    setViewerError('');
+    setViewerLoading(true);
+    try {
+      const data = await api.getCollectionData(jobId, dbName, name, 20);
+      setViewerData(data);
+    } catch (e) {
+      setViewerError(e.message);
+    } finally {
+      setViewerLoading(false);
+    }
+  }
+
+  function closeViewer() {
+    setViewerOpen(false);
+    setViewerCollection('');
+    setViewerData(null);
+    setViewerError('');
+  }
+
   function selectAll(checked) {
     setSelected(checked ? new Set(collections.map(c => c.name)) : new Set());
   }
@@ -181,6 +211,7 @@ export default function CreateTemplate() {
   const spinner = "w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin";
 
   return (
+    <>
     <div className="max-w-[680px]">
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
@@ -266,7 +297,7 @@ export default function CreateTemplate() {
                   const checked = selected.has(c.name);
                   return (
                     <div key={c.name} onClick={() => toggleCollection(c.name)}
-                      className={`flex items-center gap-2.5 px-3 py-[7px] text-[13px] border-b border-[#21262d] last:border-b-0 cursor-pointer transition-colors ${
+                      className={`flex items-center gap-2.5 px-3 py-[7px] text-[13px] border-b border-[#21262d] last:border-b-0 cursor-pointer transition-colors group ${
                         checked ? 'bg-[#da3633]/5' : 'hover:bg-[#161b22]'
                       }`}>
                       <div className={`w-[16px] h-[16px] rounded-[4px] flex items-center justify-center shrink-0 transition-all ${
@@ -280,7 +311,14 @@ export default function CreateTemplate() {
                           </svg>
                         )}
                       </div>
-                      <span className={`font-mono text-[12px] ${checked ? 'text-[#f85149]' : 'text-[#e6edf3]'}`}>{c.name}</span>
+                      <span className={`font-mono text-[12px] flex-1 ${checked ? 'text-[#f85149]' : 'text-[#e6edf3]'}`}>{c.name}</span>
+                      <button onClick={e => { e.stopPropagation(); viewCollection(c.name); }}
+                        className="p-1 rounded hover:bg-[#30363d] text-[#484f58] hover:text-[#e6edf3] transition-colors opacity-0 group-hover:opacity-100"
+                        title="View collection data">
+                        <svg className="w-4 h-4" viewBox="0 0 16 16" fill="currentColor">
+                          <path d="M8 2c1.981 0 3.671.992 4.933 2.078 1.27 1.091 2.187 2.345 2.637 3.023a1.62 1.62 0 0 1 0 1.798c-.45.678-1.367 1.932-2.637 3.023C11.67 13.008 9.981 14 8 14c-1.981 0-3.671-.992-4.933-2.078C1.797 10.83.88 9.576.43 8.898a1.62 1.62 0 0 1 0-1.798c.45-.677 1.367-1.931 2.637-3.022C4.33 2.992 6.019 2 8 2ZM1.679 7.932a.12.12 0 0 0 0 .136c.411.622 1.241 1.75 2.366 2.717C5.176 11.758 6.527 12.5 8 12.5c1.473 0 2.825-.742 3.955-1.715 1.124-.967 1.954-2.096 2.366-2.717a.12.12 0 0 0 0-.136c-.412-.621-1.242-1.75-2.366-2.717C10.824 4.242 9.473 3.5 8 3.5c-1.473 0-2.824.742-3.955 1.715-1.124.967-1.954 2.096-2.366 2.717ZM8 10a2 2 0 1 1-.001-3.999A2 2 0 0 1 8 10Z" />
+                        </svg>
+                      </button>
                     </div>
                   );
                 })
@@ -345,5 +383,92 @@ export default function CreateTemplate() {
         </StepCard>
       </div>
     </div>
+
+      {/* Collection Data Slide-over Panel */}
+      {viewerOpen && (
+        <>
+          {/* Backdrop */}
+          <div className="fixed inset-0 bg-black/50 z-40" onClick={closeViewer} />
+
+          {/* Panel */}
+          <div className="fixed top-0 right-0 h-screen w-[480px] bg-[#0d1117] border-l border-[#30363d] z-50 flex flex-col shadow-2xl">
+            {/* Header */}
+            <div className="flex items-center justify-between px-4 py-3 border-b border-[#30363d] bg-[#161b22]">
+              <div className="flex items-center gap-2 min-w-0">
+                <svg className="w-4 h-4 text-[#8b949e] shrink-0" viewBox="0 0 16 16" fill="currentColor">
+                  <path d="M8 1c-3.68 0-6 1.316-6 3v8c0 1.684 2.32 3 6 3s6-1.316 6-3V4c0-1.684-2.32-3-6-3ZM2.5 9.756V7.244C3.626 7.88 5.592 8.25 8 8.25s4.374-.37 5.5-1.006v2.512C12.334 10.576 10.24 11 8 11s-4.334-.424-5.5-1.244ZM13.5 4c0 .55-1.639 1.75-5.5 1.75S2.5 4.55 2.5 4 4.139 2.25 8 2.25 13.5 3.45 13.5 4Zm0 8c0 .55-1.639 1.75-5.5 1.75S2.5 12.55 2.5 12v-2.756C3.626 10.076 5.592 10.5 8 10.5s4.374-.424 5.5-1.256Z" />
+                </svg>
+                <span className="text-[14px] font-semibold text-[#e6edf3] truncate">{viewerCollection}</span>
+                {viewerData && (
+                  <span className="text-[11px] px-[6px] py-[1px] rounded-full bg-[#21262d] text-[#8b949e] border border-[#30363d] shrink-0">
+                    {viewerData.count} docs
+                  </span>
+                )}
+              </div>
+              <button onClick={closeViewer}
+                className="p-1 rounded hover:bg-[#21262d] text-[#8b949e] hover:text-[#e6edf3] transition-colors">
+                <svg className="w-4 h-4" viewBox="0 0 16 16" fill="currentColor">
+                  <path d="M3.72 3.72a.75.75 0 0 1 1.06 0L8 6.94l3.22-3.22a.749.749 0 0 1 1.275.326.749.749 0 0 1-.215.734L9.06 8l3.22 3.22a.749.749 0 0 1-.326 1.275.749.749 0 0 1-.734-.215L8 9.06l-3.22 3.22a.751.751 0 0 1-1.042-.018.751.751 0 0 1-.018-1.042L6.94 8 3.72 4.78a.75.75 0 0 1 0-1.06Z" />
+                </svg>
+              </button>
+            </div>
+
+            {/* Info bar */}
+            <div className="px-4 py-2 border-b border-[#21262d] bg-[#161b22] flex items-center gap-3 text-[12px] text-[#8b949e]">
+              <span>Database: <span className="text-[#e6edf3] font-mono">{dbName}</span></span>
+              {viewerData && (
+                <>
+                  <span>·</span>
+                  <span>Showing {Math.min(viewerData.limit, viewerData.documents?.length || 0)} of {viewerData.count}</span>
+                </>
+              )}
+            </div>
+
+            {/* Content */}
+            <div className="flex-1 overflow-y-auto p-4">
+              {viewerLoading && (
+                <div className="flex items-center justify-center py-12">
+                  <div className="w-5 h-5 border-2 border-[#30363d] border-t-[#58a6ff] rounded-full animate-spin" />
+                  <span className="ml-3 text-[13px] text-[#8b949e]">Loading documents...</span>
+                </div>
+              )}
+
+              {viewerError && (
+                <div className="px-3 py-2 rounded-md text-[12px] bg-[#da3633]/10 text-[#f85149] border border-[#da3633]/30">
+                  {viewerError}
+                </div>
+              )}
+
+              {viewerData && !viewerLoading && (
+                viewerData.documents?.length > 0 ? (
+                  <div className="space-y-2">
+                    {viewerData.documents.map((doc, i) => (
+                      <div key={i} className="border border-[#30363d] rounded-md overflow-hidden">
+                        <div className="flex items-center justify-between px-3 py-1.5 bg-[#161b22] border-b border-[#21262d]">
+                          <span className="text-[11px] text-[#8b949e] font-mono">
+                            {doc._id?.$oid || doc._id || `Document ${i + 1}`}
+                          </span>
+                          <span className="text-[10px] text-[#484f58]">#{i + 1}</span>
+                        </div>
+                        <pre className="p-3 text-[11px] text-[#c9d1d9] font-mono whitespace-pre-wrap overflow-x-auto leading-relaxed">
+                          {JSON.stringify(doc, null, 2)}
+                        </pre>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-12">
+                    <svg className="w-6 h-6 text-[#484f58] mx-auto mb-2" viewBox="0 0 16 16" fill="currentColor">
+                      <path d="M8 1c-3.68 0-6 1.316-6 3v8c0 1.684 2.32 3 6 3s6-1.316 6-3V4c0-1.684-2.32-3-6-3Z" />
+                    </svg>
+                    <div className="text-[13px] text-[#484f58]">Collection is empty</div>
+                  </div>
+                )
+              )}
+            </div>
+          </div>
+        </>
+      )}
+    </>
   );
 }

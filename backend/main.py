@@ -49,6 +49,12 @@ class CreateTemplateRequest(BaseModel):
 class EnvVarsRequest(BaseModel):
     job_id: str
 
+class CollectionDataRequest(BaseModel):
+    job_id: str
+    db_name: str
+    collection_name: str
+    limit: int = 20
+
 class CategoryConfigRequest(BaseModel):
     template_name: str
     config: dict = {}
@@ -284,6 +290,56 @@ async def delete_collections(req: DeleteCollectionsRequest):
         })
 
     return {"job_id": req.job_id, "results": results}
+
+
+@app.post("/api/collection-data")
+async def get_collection_data(req: CollectionDataRequest):
+    """Fetch documents from a MongoDB collection in a job's pod."""
+    env_id = _get_env_id(req.job_id)
+    if not env_id:
+        raise HTTPException(404, f"No environment found for job {req.job_id}")
+
+    # Sanitize collection name
+    safe_name = re.sub(r"[^a-zA-Z0-9_]", "", req.collection_name)
+    if safe_name != req.collection_name:
+        raise HTTPException(400, "Invalid collection name")
+
+    limit = min(req.limit, 100)  # Cap at 100 docs
+
+    # Get document count
+    count_cmd = f"mongosh --quiet --eval 'print(db.getSiblingDB(\"{req.db_name}\").{safe_name}.countDocuments())'"
+    count_result = _pod_exec(env_id, count_cmd)
+    count_str = count_result.get("stdout", "0").strip()
+    try:
+        doc_count = int(count_str.split("\n")[-1])
+    except (ValueError, IndexError):
+        doc_count = 0
+
+    # Get documents
+    find_cmd = f"mongosh --quiet --eval 'JSON.stringify(db.getSiblingDB(\"{req.db_name}\").{safe_name}.find().limit({limit}).toArray())'"
+    result = _pod_exec(env_id, find_cmd, timeout=30)
+    stdout = result.get("stdout", "").strip()
+
+    documents = []
+    try:
+        documents = json.loads(stdout)
+    except (json.JSONDecodeError, TypeError):
+        for line in stdout.split("\n"):
+            line = line.strip()
+            if line.startswith("["):
+                try:
+                    documents = json.loads(line)
+                    break
+                except json.JSONDecodeError:
+                    continue
+
+    return {
+        "collection": req.collection_name,
+        "db_name": req.db_name,
+        "count": doc_count,
+        "limit": limit,
+        "documents": documents,
+    }
 
 
 @app.post("/api/pause-job")
