@@ -46,6 +46,21 @@ class CreateTemplateRequest(BaseModel):
     user_id: str
     template_name: str
 
+class EnvVarsRequest(BaseModel):
+    job_id: str
+
+class CategoryConfigRequest(BaseModel):
+    template_name: str
+    default_env_config: dict
+    summary_source_job_id: str
+    internal: bool = True
+    public: bool = False
+    bearer_token: str
+
+class TemplateSummaryRequest(BaseModel):
+    template_name: str
+    bearer_token: str
+
 
 # ---------------------------------------------------------------------------
 # Helpers — Pod Exec (reuses envcore pattern from mono/mcp/tools/pods.py)
@@ -366,3 +381,107 @@ async def create_template(req: CreateTemplateRequest):
         raise HTTPException(504, "Template creation timed out (5 min limit)")
     except FileNotFoundError:
         raise HTTPException(500, "gcloud CLI not found. Install Google Cloud SDK or configure SSH key.")
+
+
+@app.post("/api/env-variables")
+async def get_env_variables(req: EnvVarsRequest):
+    """Fetch environment variables from a job's pod .env file."""
+    env_id = _get_env_id(req.job_id)
+    if not env_id:
+        raise HTTPException(404, f"No environment found for job {req.job_id}")
+
+    # Read .env file from the pod
+    cmd = "cat /app/backend/.env 2>/dev/null || cat /app/.env 2>/dev/null || echo ''"
+    result = _pod_exec(env_id, cmd)
+    stdout = result.get("stdout", "").strip()
+
+    env_vars = {}
+    for line in stdout.split("\n"):
+        line = line.strip()
+        if not line or line.startswith("#"):
+            continue
+        if "=" in line:
+            key, value = line.split("=", 1)
+            key = key.strip()
+            value = value.strip().strip('"').strip("'")
+            if key:
+                env_vars[key] = value
+
+    return {
+        "job_id": req.job_id,
+        "env_variables": env_vars,
+    }
+
+
+CATEGORY_CONFIG_URL = "https://agent-service-leadgen1-1035522277200.us-central1.run.app/internal/category-config"
+
+
+@app.post("/api/category-config")
+async def create_category_config(req: CategoryConfigRequest):
+    """Create a category config entry via the agent service API."""
+    payload = {
+        "template_name": req.template_name,
+        "default_env_config": req.default_env_config,
+        "summary_source_job_id": req.summary_source_job_id,
+        "internal": req.internal,
+        "public": req.public,
+    }
+
+    try:
+        resp = httpx.post(
+            CATEGORY_CONFIG_URL,
+            json=payload,
+            headers={
+                "Content-Type": "application/json",
+                "Authorization": f"Bearer {req.bearer_token}",
+            },
+            timeout=30,
+        )
+    except Exception as e:
+        raise HTTPException(502, f"Failed to reach category config API: {e}")
+
+    if resp.status_code >= 400:
+        raise HTTPException(resp.status_code, f"Category config creation failed: {resp.text[:500]}")
+
+    try:
+        data = resp.json()
+    except Exception:
+        data = {"message": resp.text}
+
+    return {
+        "status": "success",
+        "response": data,
+    }
+
+
+TEMPLATE_SUMMARY_URL = "https://agent-service-leadgen1-1035522277200.us-central1.run.app/internal/category-config/template-app-summary"
+
+
+@app.post("/api/template-summary")
+async def generate_template_summary(req: TemplateSummaryRequest):
+    """Generate a template app summary via the agent service API."""
+    try:
+        resp = httpx.post(
+            TEMPLATE_SUMMARY_URL,
+            json={"template_name": req.template_name},
+            headers={
+                "Content-Type": "application/json",
+                "Authorization": f"Bearer {req.bearer_token}",
+            },
+            timeout=120,
+        )
+    except Exception as e:
+        raise HTTPException(502, f"Failed to reach template summary API: {e}")
+
+    if resp.status_code >= 400:
+        raise HTTPException(resp.status_code, f"Template summary generation failed: {resp.text[:500]}")
+
+    try:
+        data = resp.json()
+    except Exception:
+        data = {"message": resp.text}
+
+    return {
+        "status": "success",
+        "response": data,
+    }

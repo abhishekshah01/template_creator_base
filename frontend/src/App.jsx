@@ -12,14 +12,21 @@ const pages = {
 
 export default function App() {
   const [activePage, setActivePage] = useState('create-template');
+  const [bearerToken, setBearerToken] = useState(() => localStorage.getItem('bearer_token') || '');
+
+  function updateToken(token) {
+    setBearerToken(token);
+    localStorage.setItem('bearer_token', token);
+  }
+
   const Page = pages[activePage];
 
   return (
     <div className="flex min-h-screen bg-slate-950 text-slate-200 font-sans">
-      <Sidebar activePage={activePage} onNavigate={setActivePage} />
+      <Sidebar activePage={activePage} onNavigate={setActivePage} bearerToken={bearerToken} onTokenChange={updateToken} />
       <main className="ml-60 flex-1 min-h-screen">
         <div className="max-w-3xl mx-auto px-6 py-8">
-          <Page />
+          <Page bearerToken={bearerToken} onTokenExpired={() => updateToken('')} />
         </div>
       </main>
     </div>
