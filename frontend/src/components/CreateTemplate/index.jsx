@@ -68,6 +68,9 @@ export default function CreateTemplate() {
 
     setLoading('fetch');
     setJobPaused(false);
+    setUserId('');
+    setEnvId('');
+    setPodName('');
     setStatusFor(1, 'Fetching job details...', 'loading');
     try {
       const info = await api.getJobInfo(jobId);
