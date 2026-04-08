@@ -250,22 +250,40 @@ export default function CreateTemplate() {
         <StepCard number={2} title="Clear Database Collections" time={times[2]} status={stepStatus(2)}>
           <p className={`${helperCls} mb-3`}>Select collections to delete. Unselected will be preserved.</p>
           <div className="flex gap-1.5 mb-2">
-            <button onClick={() => selectAll(true)} className={btnGhost}>Select All</button>
-            <button onClick={() => selectAll(false)} className={btnGhost}>Deselect All</button>
+            <button onClick={() => selectAll(true)}
+              className={`${btnGhost} ${selected.size > 0 && selected.size === collections.length ? '!border-[#58a6ff] !text-[#58a6ff] !bg-[#1f6feb]/10' : ''}`}>
+              Select All
+            </button>
+            <button onClick={() => selectAll(false)}
+              className={btnGhost}>
+              Deselect All
+            </button>
           </div>
           <div ref={listRef} className="max-h-[240px] overflow-y-auto border border-[#30363d] rounded-md">
             {collections.length === 0
               ? <p className="text-[12px] text-[#484f58] p-4 text-center">No collections found.</p>
-              : collections.map(c => (
-                  <div key={c.name} onClick={() => toggleCollection(c.name)}
-                    className={`flex items-center gap-2.5 px-3 py-[6px] text-[13px] border-b border-[#21262d] last:border-b-0 cursor-pointer transition-colors ${
-                      selected.has(c.name) ? 'bg-[#da3633]/5' : 'hover:bg-[#161b22]'
-                    }`}>
-                    <input type="checkbox" checked={selected.has(c.name)} readOnly
-                      className="w-[14px] h-[14px] accent-[#da3633] pointer-events-none" />
-                    <span className={`font-mono text-[12px] ${selected.has(c.name) ? 'text-[#f85149]' : 'text-[#e6edf3]'}`}>{c.name}</span>
-                  </div>
-                ))
+              : collections.map(c => {
+                  const checked = selected.has(c.name);
+                  return (
+                    <div key={c.name} onClick={() => toggleCollection(c.name)}
+                      className={`flex items-center gap-2.5 px-3 py-[7px] text-[13px] border-b border-[#21262d] last:border-b-0 cursor-pointer transition-colors ${
+                        checked ? 'bg-[#da3633]/5' : 'hover:bg-[#161b22]'
+                      }`}>
+                      <div className={`w-[16px] h-[16px] rounded-[4px] flex items-center justify-center shrink-0 transition-all ${
+                        checked
+                          ? 'bg-[#da3633] border border-[#da3633]'
+                          : 'bg-transparent border border-[#484f58]'
+                      }`}>
+                        {checked && (
+                          <svg className="w-3 h-3 text-white" viewBox="0 0 16 16" fill="currentColor">
+                            <path d="M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0Z" />
+                          </svg>
+                        )}
+                      </div>
+                      <span className={`font-mono text-[12px] ${checked ? 'text-[#f85149]' : 'text-[#e6edf3]'}`}>{c.name}</span>
+                    </div>
+                  );
+                })
             }
           </div>
           <div className="flex gap-2 mt-3">

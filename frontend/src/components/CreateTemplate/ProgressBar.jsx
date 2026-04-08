@@ -34,15 +34,15 @@ export default function ProgressBar({ currentStep, totalSteps = 4, onStepClick }
                 className={`${isClickable ? 'cursor-pointer group' : ''}`}
                 onClick={() => isClickable && onStepClick?.(step)}
               >
-                <div className={`w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold shrink-0 transition-all duration-300 ${
+                <div className={`w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold shrink-0 transition-all duration-300 bg-transparent border-2 ${
                   isComplete
-                    ? 'bg-[#238636] text-white group-hover:bg-[#2ea043] group-hover:scale-110'
+                    ? 'border-[#238636] text-[#3fb950] group-hover:scale-110'
                     : isActive
-                      ? 'bg-[#1f6feb] text-white step-active-pulse'
-                      : 'bg-[#21262d] text-[#484f58] border-2 border-[#30363d]'
+                      ? 'border-[#1f6feb] text-[#58a6ff] step-active-pulse'
+                      : 'border-[#30363d] text-[#484f58]'
                 }`}>
                   {isComplete ? (
-                    <svg className="w-4 h-4" viewBox="0 0 16 16" fill="currentColor">
+                    <svg className="w-4 h-4 text-[#3fb950]" viewBox="0 0 16 16" fill="currentColor">
                       <path d="M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0Z" />
                     </svg>
                   ) : step}
