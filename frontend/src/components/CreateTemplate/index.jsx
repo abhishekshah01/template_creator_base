@@ -192,7 +192,7 @@ export default function CreateTemplate() {
         </button>
       </div>
 
-      <ProgressBar currentStep={step} />
+      <ProgressBar currentStep={step} onStepClick={(n) => scrollToStep(n)} />
 
       {/* Step 1: Identify Job */}
       <div ref={el => stepsRef.current[1] = el}>
