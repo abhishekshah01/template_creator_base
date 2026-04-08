@@ -36,7 +36,7 @@ export default function StepCard({ number, title, time, status, children }) {
         )}
       </div>
       {/* Body */}
-      <div className={`px-4 py-3 ${isComplete && status === 'locked' ? 'opacity-60 pointer-events-none' : ''}`}>
+      <div className="px-4 py-3">
         {children}
       </div>
     </div>

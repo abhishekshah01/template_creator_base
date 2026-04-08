@@ -227,14 +227,17 @@ export default function CreateTemplate() {
           )}
           {userId && (
             <div className="flex gap-2 mt-2.5 flex-wrap">
-              <span className="inline-flex items-center gap-1.5 text-[12px] bg-[#161b22] border border-[#30363d] px-2.5 py-[3px] rounded-full text-[#8b949e] font-mono">
-                <span className="text-[#484f58]">User</span> <span className="text-[#e6edf3]">{userId}</span>
+              <span className="inline-flex items-center gap-1.5 text-[12px] px-2.5 py-[3px] rounded-full font-mono"
+                style={{ backgroundColor: 'rgba(31,111,235,0.15)', color: '#58a6ff', border: '1px solid rgba(31,111,235,0.3)' }}>
+                User <span className="text-[#c9d1d9]">{userId}</span>
               </span>
-              <span className="inline-flex items-center gap-1.5 text-[12px] bg-[#161b22] border border-[#30363d] px-2.5 py-[3px] rounded-full text-[#8b949e] font-mono">
-                <span className="text-[#484f58]">Env</span> <span className="text-[#e6edf3]">{envId}</span>
+              <span className="inline-flex items-center gap-1.5 text-[12px] px-2.5 py-[3px] rounded-full font-mono"
+                style={{ backgroundColor: 'rgba(35,134,54,0.15)', color: '#3fb950', border: '1px solid rgba(35,134,54,0.3)' }}>
+                Env <span className="text-[#c9d1d9]">{envId}</span>
               </span>
-              <span className="inline-flex items-center gap-1.5 text-[12px] bg-[#161b22] border border-[#30363d] px-2.5 py-[3px] rounded-full text-[#8b949e] font-mono">
-                <span className="text-[#484f58]">Pod</span> <span className="text-[#e6edf3]">{podName}</span>
+              <span className="inline-flex items-center gap-1.5 text-[12px] px-2.5 py-[3px] rounded-full font-mono"
+                style={{ backgroundColor: 'rgba(137,87,229,0.15)', color: '#bc8cff', border: '1px solid rgba(137,87,229,0.3)' }}>
+                Pod <span className="text-[#c9d1d9]">{podName}</span>
               </span>
             </div>
           )}
