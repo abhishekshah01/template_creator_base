@@ -200,8 +200,8 @@ export default function CreateTemplate() {
   const inputCls = "w-full px-3 py-[5px] bg-[#0d1117] border border-[#30363d] rounded-md text-[14px] text-[#e6edf3] outline-none focus:border-[#1f6feb] focus:shadow-[0_0_0_3px_rgba(31,111,235,0.3)] placeholder:text-[#484f58] transition-shadow";
   const btnPrimary = "px-3 py-[5px] bg-[#238636] text-white text-[14px] font-medium rounded-md hover:bg-[#2ea043] disabled:opacity-50 transition-colors flex items-center gap-2";
   const btnDefault = "px-3 py-[5px] bg-[#21262d] border border-[#30363d] text-[14px] text-[#c9d1d9] rounded-md hover:bg-[#30363d] hover:border-[#484f58] disabled:opacity-50 transition-colors flex items-center gap-2";
-  const btnDanger = "px-3 py-[5px] bg-[#da3633] text-white text-[14px] rounded-md hover:bg-[#b62324] disabled:opacity-50 transition-colors flex items-center gap-2";
-  const btnGhost = "px-3 py-[5px] text-[12px] text-[#8b949e] border border-[#30363d] rounded-md hover:text-[#e6edf3] hover:bg-[#21262d] transition-colors";
+  const btnDanger = "px-3 py-[5px] bg-[#8b1a1a] text-white text-[14px] font-medium border border-[#da3633]/40 rounded-md hover:bg-[#a32424] disabled:opacity-50 transition-colors flex items-center gap-2";
+  const btnGhost = "px-3 py-[5px] text-[14px] text-[#c9d1d9] bg-[#21262d] border border-[#30363d] rounded-md hover:bg-[#30363d] hover:border-[#484f58] transition-colors";
   const labelCls = "block text-[14px] font-semibold text-[#e6edf3] mb-1";
   const helperCls = "text-[12px] text-[#8b949e]";
   const spinner = "w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin";
@@ -289,15 +289,16 @@ export default function CreateTemplate() {
       <div ref={el => stepsRef.current[2] = el}>
         <StepCard number={2} title="Clear Database Collections" time={times[2]} status={stepStatus(2)} hasError={statuses[2]?.type === 'error'}>
           <p className={`${helperCls} mb-3`}>Select collections to delete. Unselected will be preserved.</p>
-          <div className="flex gap-1.5 mb-2">
+          <div className="flex items-center gap-3 mb-2">
             <button onClick={() => selectAll(true)}
-              className={`${btnGhost} ${selected.size > 0 && selected.size === collections.length ? '!border-[#58a6ff] !text-[#58a6ff] !bg-[#1f6feb]/10' : ''}`}>
-              Select All
+              className="text-[13px] text-[#58a6ff] hover:underline">
+              Select all
             </button>
             <button onClick={() => selectAll(false)}
-              className={btnGhost}>
-              Deselect All
+              className="text-[13px] text-[#58a6ff] hover:underline">
+              Deselect all
             </button>
+            <span className="text-[12px] text-[#484f58] ml-auto">{selected.size} of {collections.length} selected</span>
           </div>
           <div ref={listRef} className="max-h-[240px] overflow-y-auto border border-[#30363d] rounded-md">
             {collections.length === 0

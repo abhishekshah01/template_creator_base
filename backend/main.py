@@ -363,13 +363,27 @@ async def run_mongosh(req: MongoshRequest):
         raise HTTPException(404, f"No environment found for job {req.job_id}")
 
     # Block destructive commands
-    cmd_lower = req.command.lower()
+    cmd_lower = req.command.lower().strip()
     for blocked in _BLOCKED_COMMANDS:
         if blocked.lower() in cmd_lower:
             return {"output": f"Error: '{blocked}' commands are blocked in the terminal. Use the UI controls for destructive operations.", "error": True}
 
-    # Wrap the command to target the correct database
-    full_cmd = f'mongosh --quiet --eval \'db = db.getSiblingDB("{req.db_name}"); {req.command}\''
+    # Translate mongosh REPL commands to JavaScript equivalents
+    js_command = req.command.strip()
+    if cmd_lower == 'show dbs' or cmd_lower == 'show databases':
+        js_command = 'db.adminCommand("listDatabases").databases.forEach(d => print(d.name + "  " + (d.sizeOnDisk/1024).toFixed(2) + " KiB"))'
+    elif cmd_lower == 'show collections' or cmd_lower == 'show tables':
+        js_command = f'db.getSiblingDB("{req.db_name}").getCollectionNames().forEach(c => print(c))'
+    elif cmd_lower.startswith('use '):
+        new_db = cmd_lower[4:].strip()
+        js_command = f'print("switched to db {new_db}")'
+    elif cmd_lower == 'db':
+        js_command = f'print("{req.db_name}")'
+    else:
+        # Direct JS — prefix with db switch
+        js_command = f'db = db.getSiblingDB("{req.db_name}"); {req.command}'
+
+    full_cmd = f'mongosh --quiet --eval \'{js_command}\''
     try:
         result = _pod_exec(env_id, full_cmd, timeout=15)
         stdout = result.get("stdout", "").strip()
