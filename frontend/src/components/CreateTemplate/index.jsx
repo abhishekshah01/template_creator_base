@@ -29,13 +29,7 @@ export default function CreateTemplate() {
 
   // Inspector panel (split-screen)
   const [inspectorOpen, setInspectorOpen] = useState(false);
-
-  // Collection viewer (slide-over modal — kept as fallback)
-  const [viewerOpen, setViewerOpen] = useState(false);
-  const [viewerCollection, setViewerCollection] = useState('');
-  const [viewerData, setViewerData] = useState(null);
-  const [viewerLoading, setViewerLoading] = useState(false);
-  const [viewerError, setViewerError] = useState('');
+  const [inspectCollection, setInspectCollection] = useState('');
 
   const stepsRef = useRef({});
 
@@ -140,27 +134,9 @@ export default function CreateTemplate() {
     });
   }
 
-  async function viewCollection(name) {
-    setViewerOpen(true);
-    setViewerCollection(name);
-    setViewerData(null);
-    setViewerError('');
-    setViewerLoading(true);
-    try {
-      const data = await api.getCollectionData(jobId, dbName, name, 20);
-      setViewerData(data);
-    } catch (e) {
-      setViewerError(e.message);
-    } finally {
-      setViewerLoading(false);
-    }
-  }
-
-  function closeViewer() {
-    setViewerOpen(false);
-    setViewerCollection('');
-    setViewerData(null);
-    setViewerError('');
+  function inspectCollectionFromEye(name) {
+    setInspectCollection(name);
+    if (!inspectorOpen) setInspectorOpen(true);
   }
 
   function selectAll(checked) {
@@ -217,9 +193,9 @@ export default function CreateTemplate() {
 
   return (
     <>
-    <div className={`flex gap-4 ${inspectorOpen ? '' : 'justify-center'}`} style={{ minHeight: 'calc(100vh - 64px)' }}>
+    <div className={`flex gap-6 ${inspectorOpen ? '' : 'justify-center'}`} style={{ minHeight: 'calc(100vh - 64px)' }}>
     {/* Left: Workflow */}
-    <div className={inspectorOpen ? 'flex-1 min-w-0 max-w-[620px]' : 'w-full max-w-[680px]'}>
+    <div className={inspectorOpen ? 'flex-1 min-w-0' : 'w-full max-w-[680px]'}>
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
         <h1 className="text-[20px] font-semibold text-[#e6edf3]">Create Template</h1>
@@ -330,7 +306,7 @@ export default function CreateTemplate() {
                         )}
                       </div>
                       <span className={`font-mono text-[12px] flex-1 ${checked ? 'text-[#f85149]' : 'text-[#e6edf3]'}`}>{c.name}</span>
-                      <button onClick={e => { e.stopPropagation(); viewCollection(c.name); }}
+                      <button onClick={e => { e.stopPropagation(); inspectCollectionFromEye(c.name); }}
                         className="p-1 rounded hover:bg-[#30363d] text-[#484f58] hover:text-[#e6edf3] transition-colors opacity-0 group-hover:opacity-100"
                         title="View collection data">
                         <svg className="w-4 h-4" viewBox="0 0 16 16" fill="currentColor">
@@ -404,11 +380,13 @@ export default function CreateTemplate() {
 
     {/* Right: Inspector Panel */}
     {inspectorOpen && (
-      <div className="w-[460px] shrink-0 sticky top-0 h-[calc(100vh-64px)]">
+      <div className="w-[480px] shrink-0 sticky top-0 h-[calc(100vh-64px)]">
         <InspectorPanel
           jobId={jobId}
           dbName={dbName}
           collections={collections}
+          inspectCollection={inspectCollection}
+          onInspected={() => setInspectCollection('')}
           onClose={() => setInspectorOpen(false)}
         />
       </div>

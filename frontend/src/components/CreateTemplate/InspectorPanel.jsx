@@ -47,12 +47,20 @@ function JsonValue({ value, indent = 0 }) {
   return <span>{String(value)}</span>;
 }
 
-export default function InspectorPanel({ jobId, dbName, collections, onClose }) {
+export default function InspectorPanel({ jobId, dbName, collections, inspectCollection, onInspected, onClose }) {
   // Document viewer state
   const [activeCollection, setActiveCollection] = useState('');
   const [viewerData, setViewerData] = useState(null);
   const [viewerLoading, setViewerLoading] = useState(false);
   const [viewerError, setViewerError] = useState('');
+
+  // React to external inspect request (eye icon click)
+  useEffect(() => {
+    if (inspectCollection && inspectCollection !== activeCollection) {
+      loadCollection(inspectCollection);
+      onInspected?.();
+    }
+  }, [inspectCollection]);
 
   // Terminal state
   const [termInput, setTermInput] = useState('');
