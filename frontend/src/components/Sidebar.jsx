@@ -1,41 +1,60 @@
 import { useState } from 'react';
-import { FileText, FilePlus, Settings } from './Icons';
 
-function Database({ className }) {
+// --- GitHub Octicons (16px filled) ---
+function WorkflowIcon({ className }) {
   return (
-    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-      <ellipse cx="12" cy="5" rx="9" ry="3" /><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3" /><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5" />
+    <svg className={className} viewBox="0 0 16 16" fill="currentColor">
+      <path d="M0 1.75C0 .784.784 0 1.75 0h12.5C15.216 0 16 .784 16 1.75v3.585a.746.746 0 0 1 0 .83v8.085A1.75 1.75 0 0 1 14.25 16H6.5a.75.75 0 0 1 0-1.5h7.75a.25.25 0 0 0 .25-.25V6.5h-13v1.75a.75.75 0 0 1-1.5 0ZM1.5 5h13V1.75a.25.25 0 0 0-.25-.25H1.75a.25.25 0 0 0-.25.25ZM0 12a3.5 3.5 0 0 1 3.5-3.5.75.75 0 0 1 0 1.5A2 2 0 0 0 1.5 12a2 2 0 0 0 2 2 .75.75 0 0 1 0 1.5A3.5 3.5 0 0 1 0 12Z" />
     </svg>
   );
 }
-function List({ className }) {
+function DatabaseIcon({ className }) {
   return (
-    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-      <line x1="8" y1="6" x2="21" y2="6" /><line x1="8" y1="12" x2="21" y2="12" /><line x1="8" y1="18" x2="21" y2="18" />
-      <line x1="3" y1="6" x2="3.01" y2="6" /><line x1="3" y1="12" x2="3.01" y2="12" /><line x1="3" y1="18" x2="3.01" y2="18" />
+    <svg className={className} viewBox="0 0 16 16" fill="currentColor">
+      <path d="M8 1c-3.68 0-6 1.316-6 3v8c0 1.684 2.32 3 6 3s6-1.316 6-3V4c0-1.684-2.32-3-6-3ZM2.5 9.756V7.244C3.626 7.88 5.592 8.25 8 8.25s4.374-.37 5.5-1.006v2.512C12.334 10.576 10.24 11 8 11s-4.334-.424-5.5-1.244ZM13.5 4c0 .55-1.639 1.75-5.5 1.75S2.5 4.55 2.5 4 4.139 2.25 8 2.25 13.5 3.45 13.5 4Zm0 8c0 .55-1.639 1.75-5.5 1.75S2.5 12.55 2.5 12v-2.756C3.626 10.076 5.592 10.5 8 10.5s4.374-.424 5.5-1.256Z" />
     </svg>
   );
 }
-function PlusCircle({ className }) {
+function ListIcon({ className }) {
   return (
-    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-      <circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="16" /><line x1="8" y1="12" x2="16" y2="12" />
+    <svg className={className} viewBox="0 0 16 16" fill="currentColor">
+      <path d="M2 4a1 1 0 1 0 0-2 1 1 0 0 0 0 2Zm3.75-1.5a.75.75 0 0 0 0 1.5h8.5a.75.75 0 0 0 0-1.5Zm0 5a.75.75 0 0 0 0 1.5h8.5a.75.75 0 0 0 0-1.5Zm0 5a.75.75 0 0 0 0 1.5h8.5a.75.75 0 0 0 0-1.5ZM3 8a1 1 0 1 1-2 0 1 1 0 0 1 2 0Zm-1 6a1 1 0 1 0 0-2 1 1 0 0 0 0 2Z" />
     </svg>
   );
 }
-function Sparkles({ className }) {
+function PlusCircleIcon({ className }) {
   return (
-    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-      <path d="M12 3l1.5 4.5L18 9l-4.5 1.5L12 15l-1.5-4.5L6 9l4.5-1.5L12 3z" />
-      <path d="M19 15l.5 1.5L21 17.5l-1.5.5L19 19.5l-.5-1.5L17 17.5l1.5-.5L19 15z" />
+    <svg className={className} viewBox="0 0 16 16" fill="currentColor">
+      <path d="M8 0a8 8 0 1 1 0 16A8 8 0 0 1 8 0ZM1.5 8a6.5 6.5 0 1 0 13 0 6.5 6.5 0 0 0-13 0Zm7.25-3.25v2.5h2.5a.75.75 0 0 1 0 1.5h-2.5v2.5a.75.75 0 0 1-1.5 0v-2.5h-2.5a.75.75 0 0 1 0-1.5h2.5v-2.5a.75.75 0 0 1 1.5 0Z" />
     </svg>
   );
 }
-function Chevron({ className, open }) {
+function SparkleIcon({ className }) {
   return (
-    <svg className={`${className} transition-transform duration-200 ${open ? 'rotate-90' : ''}`}
-      viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-      <polyline points="9 18 15 12 9 6" />
+    <svg className={className} viewBox="0 0 16 16" fill="currentColor">
+      <path d="M7.53 1.282a.5.5 0 0 1 .94 0l.478 1.306a7.492 7.492 0 0 0 4.464 4.464l1.305.478a.5.5 0 0 1 0 .94l-1.305.478a7.492 7.492 0 0 0-4.464 4.464l-.478 1.305a.5.5 0 0 1-.94 0l-.478-1.305a7.492 7.492 0 0 0-4.464-4.464L1.282 8.47a.5.5 0 0 1 0-.94l1.306-.478a7.492 7.492 0 0 0 4.464-4.464Z" />
+    </svg>
+  );
+}
+function FileIcon({ className }) {
+  return (
+    <svg className={className} viewBox="0 0 16 16" fill="currentColor">
+      <path d="M2 1.75C2 .784 2.784 0 3.75 0h6.586c.464 0 .909.184 1.237.513l2.914 2.914c.329.328.513.773.513 1.237v9.586A1.75 1.75 0 0 1 13.25 16h-9.5A1.75 1.75 0 0 1 2 14.25Zm1.75-.25a.25.25 0 0 0-.25.25v12.5c0 .138.112.25.25.25h9.5a.25.25 0 0 0 .25-.25V6h-2.75A1.75 1.75 0 0 1 9 4.25V1.5Zm6.75.062V4.25c0 .138.112.25.25.25h2.688l-.011-.013-2.914-2.914-.013-.011Z" />
+    </svg>
+  );
+}
+function KeyIcon({ className }) {
+  return (
+    <svg className={className} viewBox="0 0 16 16" fill="currentColor">
+      <path d="M10.5 0a5.499 5.499 0 1 1-1.288 10.848l-1.02 1.02a.749.749 0 0 1-.53.22H7v.75a.749.749 0 0 1-.22.53l-.5.5a.749.749 0 0 1-.53.22H5v.75a.749.749 0 0 1-.22.53l-1 1a.749.749 0 0 1-.53.22h-2A.75.75 0 0 1 .5 15.5v-2c0-.199.079-.389.22-.53l5.33-5.33A5.5 5.5 0 0 1 10.5 0ZM9 5.5a1.5 1.5 0 1 0 3 0 1.5 1.5 0 0 0-3 0Z" />
+    </svg>
+  );
+}
+function ChevronIcon({ className, open }) {
+  return (
+    <svg className={`${className} transition-transform duration-150 ${open ? '' : '-rotate-90'}`}
+      viewBox="0 0 16 16" fill="currentColor">
+      <path d="M12.78 5.22a.749.749 0 0 1 0 1.06l-4.25 4.25a.749.749 0 0 1-1.06 0L3.22 6.28a.749.749 0 1 1 1.06-1.06L8 8.939l3.72-3.719a.749.749 0 0 1 1.06 0Z" />
     </svg>
   );
 }
@@ -44,28 +63,28 @@ const navStructure = [
   {
     section: 'Workflows',
     items: [
-      { id: 'create-template', label: 'Create Template', icon: FilePlus },
+      { id: 'create-template', label: 'Create Template', icon: WorkflowIcon },
     ],
   },
   {
     section: 'Category Config',
-    icon: Database,
+    icon: DatabaseIcon,
     collapsible: true,
     items: [
-      { id: 'config-all', label: 'All Configs', icon: List },
-      { id: 'config-create', label: 'Create Config', icon: PlusCircle },
-      { id: 'config-summary', label: 'Generate Summary', icon: Sparkles },
+      { id: 'config-all', label: 'All Configs', icon: ListIcon },
+      { id: 'config-create', label: 'Create Config', icon: PlusCircleIcon },
+      { id: 'config-summary', label: 'Generate Summary', icon: SparkleIcon },
     ],
   },
   {
     section: 'Tools',
     items: [
-      { id: 'template-summary', label: 'Template Summary', icon: FileText },
+      { id: 'template-summary', label: 'Template Summary', icon: FileIcon },
     ],
   },
 ];
 
-export default function Sidebar({ activePage, onNavigate, bearerToken, onTokenChange }) {
+export default function Sidebar({ activePage, onNavigate, bearerToken, onTokenChange, width = 260 }) {
   const [showToken, setShowToken] = useState(false);
   const [collapsed, setCollapsed] = useState({});
 
@@ -78,87 +97,87 @@ export default function Sidebar({ activePage, onNavigate, bearerToken, onTokenCh
   }
 
   return (
-    <aside className="w-60 bg-gh-surface border-r border-gh-border h-screen fixed top-0 left-0 flex flex-col">
-      <div className="px-4 pt-5 pb-4 border-b border-gh-border">
-        <h1 className="text-base font-semibold text-gh-text">Template Manager</h1>
-        <span className="inline-block mt-1.5 text-[10px] px-2 py-0.5 rounded-full bg-gh-accent-amber/20 text-gh-accent-amber-text font-medium uppercase tracking-wider">
+    <aside className="bg-[#010409] border-r border-[#30363d] h-screen fixed top-0 left-0 flex flex-col" style={{ width }}>
+      {/* Header */}
+      <div className="px-4 pt-5 pb-4 border-b border-[#30363d]">
+        <h1 className="text-[15px] font-semibold text-[#e6edf3]">Template Manager</h1>
+        <span className="inline-block mt-2 text-[11px] px-2.5 py-[3px] rounded-md bg-[#238636]/15 text-[#3fb950] font-medium border border-[#238636]/30">
           eph-leadgen1
         </span>
       </div>
 
-      <nav className="flex-1 px-2 py-3 overflow-y-auto">
-        {navStructure.map(group => {
-          const isOpen = !collapsed[group.section] || isSectionActive(group);
+      {/* Navigation */}
+      <nav className="flex-1 px-3 py-3 overflow-y-auto">
+        {navStructure.map((group, gi) => {
+          const isOpen = group.collapsible ? (!collapsed[group.section] || isSectionActive(group)) : true;
           const sectionActive = isSectionActive(group);
 
           return (
-            <div key={group.section} className="mb-3">
+            <div key={group.section} className={gi > 0 ? 'mt-4' : ''}>
+              {/* Section header */}
               {group.collapsible ? (
                 <button
                   onClick={() => toggleSection(group.section)}
-                  className={`w-full flex items-center gap-2 px-3 py-1.5 rounded-md text-[10px] font-semibold uppercase tracking-widest transition-colors cursor-pointer ${
-                    sectionActive ? 'text-gh-accent-blue-text' : 'text-gh-text-secondary hover:text-gh-text'
+                  className={`w-full flex items-center gap-2 px-2 py-1 rounded-md text-[11px] font-bold uppercase tracking-wider transition-colors cursor-pointer mb-1 ${
+                    sectionActive ? 'text-[#58a6ff]' : 'text-[#8b949e] hover:text-[#e6edf3]'
                   }`}>
-                  {group.icon && <group.icon className="w-3.5 h-3.5" />}
+                  {group.icon && <group.icon className="w-4 h-4" />}
                   <span className="flex-1 text-left">{group.section}</span>
-                  <Chevron className="w-3 h-3" open={isOpen} />
+                  <ChevronIcon className="w-3.5 h-3.5" open={isOpen} />
                 </button>
               ) : (
-                <div className="text-[10px] font-semibold text-gh-text-muted uppercase tracking-widest px-3 pb-1.5">
+                <div className="text-[11px] font-bold text-[#484f58] uppercase tracking-wider px-2 mb-1">
                   {group.section}
                 </div>
               )}
 
-              {(!group.collapsible || isOpen) && (
-                <div className={group.collapsible ? 'mt-1' : ''}>
-                  {group.items.map(item => (
-                    <button
-                      key={item.id}
-                      onClick={() => onNavigate(item.id)}
-                      className={`w-full flex items-center gap-2.5 py-2 rounded-md text-[13px] transition-all mb-0.5 cursor-pointer ${
-                        group.collapsible ? 'pl-6 pr-3' : 'px-3'
-                      } ${activePage === item.id
-                        ? 'bg-gh-overlay text-gh-text'
-                        : 'text-gh-text-secondary hover:bg-gh-surface-hover hover:text-gh-text'
-                      }`}
-                    >
-                      <item.icon className="w-4 h-4 shrink-0" />
-                      <span className="flex-1 text-left">{item.label}</span>
-                    </button>
-                  ))}
-                </div>
-              )}
+              {/* Nav items */}
+              {isOpen && group.items.map(item => {
+                const isActive = activePage === item.id;
+                return (
+                  <button
+                    key={item.id}
+                    onClick={() => onNavigate(item.id)}
+                    className={`w-full flex items-center gap-2.5 py-[7px] rounded-md text-[14px] transition-all cursor-pointer mb-[2px] ${
+                      group.collapsible ? 'pl-7 pr-3' : 'px-2'
+                    } ${isActive
+                      ? 'bg-[#161b22] text-[#e6edf3] font-medium border border-[#30363d]'
+                      : 'text-[#8b949e] hover:bg-[#161b22] hover:text-[#e6edf3] border border-transparent'
+                    }`}
+                  >
+                    <item.icon className={`w-[16px] h-[16px] shrink-0 ${isActive ? 'text-[#e6edf3]' : 'text-[#6e7681]'}`} />
+                    <span className="flex-1 text-left">{item.label}</span>
+                  </button>
+                );
+              })}
             </div>
           );
         })}
       </nav>
 
-      {/* Bearer Token Config */}
-      <div className="px-3 py-3 border-t border-gh-border">
+      {/* API Token */}
+      <div className="px-3 py-3 border-t border-[#30363d]">
         <button onClick={() => setShowToken(!showToken)}
-          className="flex items-center gap-2 w-full text-[11px] text-gh-text-secondary hover:text-gh-text transition-colors mb-2 cursor-pointer">
-          <div className={`w-2 h-2 rounded-full shrink-0 ${bearerToken ? 'bg-gh-accent-green-text' : 'bg-gh-accent-red-text'}`} />
-          <span>API Token {bearerToken ? '(set)' : '(not set)'}</span>
-          <svg className={`w-3 h-3 ml-auto transition-transform ${showToken ? 'rotate-180' : ''}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="6 9 12 15 18 9" /></svg>
+          className="w-full flex items-center gap-2.5 px-2 py-[7px] rounded-md text-[14px] text-[#8b949e] hover:bg-[#161b22] hover:text-[#e6edf3] transition-colors cursor-pointer border border-transparent">
+          <KeyIcon className="w-[16px] h-[16px] shrink-0 text-[#6e7681]" />
+          <span className="flex-1 text-left">API Token</span>
+          <span className={`w-[8px] h-[8px] rounded-full shrink-0 ${bearerToken ? 'bg-[#3fb950]' : 'bg-[#f85149]'}`} />
         </button>
         {showToken && (
-          <textarea
-            value={bearerToken}
-            onChange={e => {
-              let val = e.target.value.trim();
-              // Strip "Bearer " prefix if user accidentally pastes it
-              if (val.toLowerCase().startsWith('bearer ')) val = val.slice(7).trim();
-              onTokenChange(val);
-            }}
-            placeholder="Paste bearer token here..."
-            rows={3}
-            className="w-full px-2 py-1.5 bg-gh-canvas border border-gh-border rounded-md text-[11px] text-gh-text-secondary outline-none focus:border-gh-accent-blue placeholder:text-gh-text-muted font-mono resize-none"
-          />
+          <div className="px-1 pt-2">
+            <textarea
+              value={bearerToken}
+              onChange={e => {
+                let val = e.target.value.trim();
+                if (val.toLowerCase().startsWith('bearer ')) val = val.slice(7).trim();
+                onTokenChange(val);
+              }}
+              placeholder="Paste bearer token..."
+              rows={3}
+              className="w-full px-2.5 py-2 bg-[#0d1117] border border-[#30363d] rounded-md text-[12px] text-[#e6edf3] outline-none focus:border-[#1f6feb] focus:shadow-[0_0_0_3px_rgba(31,111,235,0.15)] placeholder:text-[#484f58] font-mono resize-none"
+            />
+          </div>
         )}
-      </div>
-
-      <div className="px-4 py-3 border-t border-gh-border text-[11px] text-gh-text-muted">
-        Template Manager v0.3
       </div>
     </aside>
   );
