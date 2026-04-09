@@ -76,6 +76,20 @@ class TemplateSummaryRequest(BaseModel):
 class BearerTokenRequest(BaseModel):
     bearer_token: str
 
+class GetCategoryConfigRequest(BaseModel):
+    config_id: str
+    bearer_token: str
+
+class UpdateCategoryConfigRequest(BaseModel):
+    config_id: str
+    template_name: str
+    config: dict = {}
+    default_env_config: dict
+    summary_source_job_id: str = ""
+    internal: bool = True
+    public: bool = False
+    bearer_token: str
+
 
 # ---------------------------------------------------------------------------
 # Helpers — Pod Exec (reuses envcore pattern from mono/mcp/tools/pods.py)
@@ -652,3 +666,62 @@ async def generate_template_summary(req: TemplateSummaryRequest):
         "status": "success",
         "response": data,
     }
+
+
+@app.post("/api/get-category-config")
+async def get_category_config(req: GetCategoryConfigRequest):
+    """Fetch a single category config by ID."""
+    try:
+        resp = httpx.get(
+            f"{CATEGORY_CONFIG_URL}/{req.config_id}",
+            headers={
+                "Content-Type": "application/json",
+                "Authorization": f"Bearer {req.bearer_token}",
+            },
+            timeout=30,
+            follow_redirects=True,
+        )
+    except Exception as e:
+        raise HTTPException(502, f"Failed to reach category config API: {e}")
+
+    if resp.status_code >= 400:
+        raise HTTPException(resp.status_code, f"Config not found: {resp.text[:500]}")
+
+    return resp.json()
+
+
+@app.post("/api/update-category-config")
+async def update_category_config(req: UpdateCategoryConfigRequest):
+    """Update an existing category config."""
+    payload = {
+        "template_name": req.template_name,
+        "config": req.config,
+        "default_env_config": req.default_env_config,
+        "summary_source_job_id": req.summary_source_job_id,
+        "internal": req.internal,
+        "public": req.public,
+    }
+
+    try:
+        resp = httpx.put(
+            f"{CATEGORY_CONFIG_URL}/{req.config_id}",
+            json=payload,
+            headers={
+                "Content-Type": "application/json",
+                "Authorization": f"Bearer {req.bearer_token}",
+            },
+            timeout=30,
+            follow_redirects=True,
+        )
+    except Exception as e:
+        raise HTTPException(502, f"Failed to reach category config API: {e}")
+
+    if resp.status_code >= 400:
+        raise HTTPException(resp.status_code, f"Update failed: {resp.text[:500]}")
+
+    try:
+        data = resp.json()
+    except Exception:
+        data = {"message": resp.text}
+
+    return {"status": "success", "response": data}

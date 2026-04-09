@@ -26,7 +26,7 @@ export default function App() {
   }
 
   function navigate(page, param) {
-    if (page === 'config-detail') {
+    if (page === 'config-detail' || page === 'config-edit') {
       setConfigDetailId(param);
     }
     setActivePage(page);
@@ -78,7 +78,9 @@ export default function App() {
       case 'config-summary':
         return <ConfigSummary bearerToken={bearerToken} onTokenExpired={() => updateToken('')} />;
       case 'config-detail':
-        return <ConfigDetailPage configId={configDetailId} onNavigate={navigate} />;
+        return <ConfigDetailPage configId={configDetailId} onNavigate={navigate} bearerToken={bearerToken} onTokenExpired={() => updateToken('')} />;
+      case 'config-edit':
+        return <ConfigCreate bearerToken={bearerToken} onTokenExpired={() => updateToken('')} onNavigate={navigate} editConfigId={configDetailId} />;
       default:
         return <CreateTemplate />;
     }

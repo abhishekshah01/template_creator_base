@@ -43,4 +43,7 @@ export const api = {
     request('/template-summary', { template_name: templateName, bearer_token: bearerToken }),
   listCategoryConfigs: (bearerToken) =>
     request('/list-category-configs', { bearer_token: bearerToken }),
+  getCategoryConfig: (configId, bearerToken) =>
+    request('/get-category-config', { config_id: String(configId), bearer_token: bearerToken }),
+  updateCategoryConfig: (payload) => request('/update-category-config', payload),
 };

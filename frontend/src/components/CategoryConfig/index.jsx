@@ -6,8 +6,8 @@ export function ConfigAll({ onNavigate, bearerToken, onTokenExpired }) {
   return <AllConfigs onNavigate={onNavigate} bearerToken={bearerToken} onTokenExpired={onTokenExpired} />;
 }
 
-export function ConfigCreate({ bearerToken, onTokenExpired, onNavigate }) {
-  return <CreateConfig bearerToken={bearerToken} onTokenExpired={onTokenExpired} onNavigate={onNavigate} />;
+export function ConfigCreate({ bearerToken, onTokenExpired, onNavigate, editConfigId }) {
+  return <CreateConfig bearerToken={bearerToken} onTokenExpired={onTokenExpired} onNavigate={onNavigate} editConfigId={editConfigId} />;
 }
 
 export function ConfigSummary({ bearerToken, onTokenExpired }) {
@@ -19,6 +19,6 @@ export function ConfigSummary({ bearerToken, onTokenExpired }) {
   );
 }
 
-export function ConfigDetailPage({ configId, onNavigate }) {
-  return <ConfigDetail configId={configId} onNavigate={onNavigate} />;
+export function ConfigDetailPage({ configId, onNavigate, bearerToken, onTokenExpired }) {
+  return <ConfigDetail configId={configId} onNavigate={onNavigate} bearerToken={bearerToken} onTokenExpired={onTokenExpired} />;
 }
