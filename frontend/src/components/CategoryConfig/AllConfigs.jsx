@@ -180,6 +180,7 @@ export default function AllConfigs({ onNavigate, bearerToken, onTokenExpired, ca
           </div>
         </div>
         <button onClick={handleRefresh} disabled={loading}
+          data-testid="refresh-configs-btn"
           className="flex items-center gap-1.5 px-3 py-[7px] bg-gh-btn border border-gh-border rounded-md text-sm text-gh-text hover:bg-gh-btn-hover transition-colors disabled:opacity-50">
           <RefreshIcon className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
         </button>
@@ -203,6 +204,7 @@ export default function AllConfigs({ onNavigate, bearerToken, onTokenExpired, ca
           )}
         </div>
         <button onClick={() => onNavigate('config-create')}
+          data-testid="new-config-btn"
           className="flex items-center gap-1.5 px-4 py-[7px] bg-gh-btn-primary text-white text-sm font-medium rounded-md hover:bg-gh-btn-primary-hover transition-colors">
           New config
         </button>
@@ -318,6 +320,7 @@ export default function AllConfigs({ onNavigate, bearerToken, onTokenExpired, ca
 
           return (
             <div key={config.id}
+              data-testid={`config-row-${config.id}`}
               onClick={() => onNavigate('config-detail', config.id)}
               className="flex items-start gap-3 px-4 py-3 border-b border-gh-border-muted hover:bg-gh-surface-hover cursor-pointer transition-colors group">
               <div className="flex-1 min-w-0">

@@ -253,7 +253,7 @@ export default function CreateTemplate() {
                 placeholder="lead-gen-v2"
                 className={inputCls} />
             </div>
-            <button onClick={fetchJob} disabled={loading === 'fetch'} className={`${btnDefault} shrink-0`}>
+            <button onClick={fetchJob} disabled={loading === 'fetch'} className={`${btnDefault} shrink-0`} data-testid="fetch-job-btn">
               Fetch Job Info
             </button>
           </div>
@@ -336,12 +336,12 @@ export default function CreateTemplate() {
           </div>
           <div className="flex gap-2 mt-3">
             {collections.length > 0 && (
-              <button onClick={deleteSelected} disabled={loading === 'delete' || selected.size === 0} className={btnDanger}>
+            <button onClick={deleteSelected} disabled={loading === 'delete' || selected.size === 0} className={btnDanger} data-testid="delete-selected-btn">
                 {loading === 'delete' && <div className={spinner} />}
                 {loading === 'delete' ? 'Working...' : `Delete Selected (${selected.size})`}
               </button>
             )}
-            <button onClick={skipDelete} className={btnGhost}>Skip (DB already clean)</button>
+          <button onClick={skipDelete} className={btnGhost} data-testid="skip-delete-btn">Skip (DB already clean)</button>
           </div>
           <StatusBar {...(statuses[2] || {})} />
         </StepCard>
@@ -357,7 +357,7 @@ export default function CreateTemplate() {
             Do NOT refresh the app preview before pausing — it re-seeds the database.
           </div>
           <p className={`${helperCls} mb-3`}>Creates a restic snapshot of the cleaned state.</p>
-          <button onClick={pauseJob} disabled={loading === 'pause'} className={btnDefault}>
+          <button onClick={pauseJob} disabled={loading === 'pause'} className={btnDefault} data-testid="pause-job-btn">
             {loading === 'pause' && <div className={spinner} />}
             {loading === 'pause' ? 'Working...' : 'Pause Job'}
           </button>
@@ -369,7 +369,7 @@ export default function CreateTemplate() {
       <div ref={el => stepsRef.current[4] = el}>
         <StepCard number={4} title="Create Template" time={times[4]} status={stepStatus(4)} hasError={statuses[4]?.type === 'error'}>
           <p className={`${helperCls} mb-3`}>Runs the creation script on the dev VM. Sanitizes .env and stores in GCS.</p>
-          <button onClick={createTemplate} disabled={loading === 'create'} className={btnPrimary}>
+          <button onClick={createTemplate} disabled={loading === 'create'} className={btnPrimary} data-testid="create-template-btn">
             {loading === 'create' && <div className={spinner} />}
             {loading === 'create' ? 'Working...' : 'Create Template'}
           </button>

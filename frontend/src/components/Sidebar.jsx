@@ -114,6 +114,7 @@ export default function Sidebar({ activePage, onNavigate, bearerToken, onTokenCh
         {/* Environment switcher */}
         <div className="relative">
           <button onClick={() => setShowEnvMenu(!showEnvMenu)}
+            data-testid="env-switcher-btn"
             className="flex items-center gap-1.5 text-[12px] px-2.5 py-[4px] rounded-md bg-[#238636]/15 text-[#3fb950] font-medium border border-[#238636]/30 hover:bg-[#238636]/25 transition-colors w-full">
             <span className="w-[6px] h-[6px] rounded-full bg-[#3fb950] shrink-0" />
             <span className="flex-1 text-left truncate">{activeEnv || 'eph-leadgen1'}</span>
@@ -192,6 +193,7 @@ export default function Sidebar({ activePage, onNavigate, bearerToken, onTokenCh
                   <button
                     key={item.id}
                     onClick={() => onNavigate(item.id)}
+                    data-testid={`nav-${item.id}`}
                     className={`w-full flex items-center gap-2.5 py-[7px] rounded-md text-[14px] transition-all cursor-pointer mb-[2px] ${
                       group.collapsible ? 'pl-7 pr-3' : 'px-2'
                     } ${isActive
@@ -212,14 +214,16 @@ export default function Sidebar({ activePage, onNavigate, bearerToken, onTokenCh
       {/* API Token */}
       <div className="px-3 py-3 border-t border-[#30363d]">
         <button onClick={() => setShowToken(!showToken)}
+          data-testid="api-token-btn"
           className="w-full flex items-center gap-2.5 px-2 py-[7px] rounded-md text-[14px] text-[#8b949e] hover:bg-[#161b22] hover:text-[#e6edf3] transition-colors cursor-pointer border border-transparent">
           <KeyIcon className="w-[16px] h-[16px] shrink-0 text-[#6e7681]" />
           <span className="flex-1 text-left">API Token</span>
-          <span className={`w-[8px] h-[8px] rounded-full shrink-0 ${bearerToken ? 'bg-[#3fb950]' : 'bg-[#f85149]'}`} />
+          <span data-testid="token-status-indicator" className={`w-[8px] h-[8px] rounded-full shrink-0 ${bearerToken ? 'bg-[#3fb950]' : 'bg-[#f85149]'}`} />
         </button>
         {showToken && (
           <div className="px-1 pt-2">
             <textarea
+              data-testid="api-token-input"
               value={bearerToken}
               onChange={e => {
                 let val = e.target.value.trim();

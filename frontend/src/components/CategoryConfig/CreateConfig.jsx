@@ -490,6 +490,7 @@ export default function CreateConfig({ bearerToken, onTokenExpired, onNavigate, 
       {/* Submit */}
       <div className="flex items-center gap-3">
         <button onClick={submitConfig} disabled={loading === 'submit'}
+          data-testid="submit-config-btn"
           className="px-4 py-[5px] bg-[#238636] text-white text-[14px] font-medium rounded-md hover:bg-[#2ea043] disabled:opacity-50 transition-colors flex items-center gap-2">
           {loading === 'submit' && <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />}
           {loading === 'submit' ? (mode === 'edit' ? 'Updating...' : 'Creating...') : (mode === 'edit' ? 'Update config' : 'Create config')}

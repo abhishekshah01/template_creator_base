@@ -50,7 +50,8 @@ export default function TemplateSummary({ bearerToken, onTokenExpired }) {
         )}
 
         <button onClick={generateSummary} disabled={loading}
-          className="px-4 py-2 bg-gh-accent-blue text-white text-sm rounded-md hover:bg-gh-accent-blue disabled:opacity-50 flex items-center gap-2">
+          data-testid="generate-summary-btn"
+          className="px-4 py-2 bg-gh-accent-blue text-white text-sm rounded-md hover:opacity-85 disabled:opacity-50 flex items-center gap-2 transition-opacity">
           {loading && <div className="w-3.5 h-3.5 border-2 border-gh-accent-blue/30 border-t-white rounded-full animate-spin" />}
           {loading ? 'Generating...' : 'Generate Summary'}
         </button>

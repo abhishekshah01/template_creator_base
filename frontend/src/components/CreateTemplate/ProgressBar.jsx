@@ -25,7 +25,7 @@ export default function ProgressBar({ currentStep, totalSteps = 4, onStepClick }
           const isLast = step === totalSteps;
           const isClickable = isComplete;
           // Line before this step is filled if this step is active or complete
-          const lineFilled = step <= currentStep;
+          const lineFilled = step < currentStep;
 
           return (
             <div key={step} className={`flex items-center ${isLast ? '' : 'flex-1'}`}>
