@@ -1,61 +1,74 @@
 """Configuration for Template Creator app.
 
-Set environment variables or edit defaults below.
+Supports three environment types:
+- "dev" / "prod": Standard environments with fixed URLs
+- "eph-{name}": Ephemeral environments with dynamic URL generation
 """
 
 import os
 
-# --- Environment: "dev", "local", or "eph-{name}" ---
+# --- Active environment (can be changed at runtime) ---
 ENV = os.environ.get("TEMPLATE_ENV", "eph-leadgen1")
 
-# --- Environment-specific configs ---
-_ENV_CONFIGS = {
-    "local": {
-        "api_url": "https://api.emergent.test",
-        "envcore_url": None,
-        "db_dsn": "host=localhost port=7432 dbname=postgres user=postgres",
-    },
+# --- Standard environment presets ---
+STANDARD_ENVS = {
     "dev": {
-        "api_url": "https://api.dev.emergentagent.com",
+        "label": "dev",
+        "type": "standard",
+        "api_url": "http://agent-service.cloudrun.internal.dev.emergentagent.com",
         "envcore_url": "http://envcore.int-worker.dev.emergentagent.com",
+        "pause_url": "http://emergent-agents.cloudrun.internal.dev.emergentagent.com",
+        "db_dsn": "host=10.0.2.3 port=6544 dbname=postgres user=postgres password=pYOjidM5JFUMJZp",
+    },
+    "prod": {
+        "label": "prod",
+        "type": "standard",
+        "api_url": "http://agent-service.cloudrun.internal.prod.emergentagent.com",
+        "envcore_url": "http://envcore.int-worker.dev.emergentagent.com",
+        "pause_url": "http://emergent-agents.cloudrun.internal.prod.emergentagent.com",
         "db_dsn": "host=10.0.2.3 port=6544 dbname=postgres user=postgres password=pYOjidM5JFUMJZp",
     },
 }
 
-def _get_eph_config(name):
+# --- Ephemeral environment URL templates ---
+EPH_TEMPLATES = {
+    "api_url": "https://agent-service-{name}-1035522277200.us-central1.run.app",
+    "envcore_url": "http://envcore.int-worker.dev.emergentagent.com",
+    "pause_url": "http://emergent-agents-{name}.cloudrun.internal.dev.emergentagent.com",
+    "db_dsn": "host=10.0.2.3 port=6544 dbname=postgres-{name} user=postgres password=pYOjidM5JFUMJZp",
+}
+
+
+def get_env_config(env_name):
+    """Get configuration for an environment by name."""
+    if env_name in STANDARD_ENVS:
+        return STANDARD_ENVS[env_name]
+
+    # Ephemeral: strip "eph-" prefix if present
+    name = env_name.removeprefix("eph-") if env_name.startswith("eph-") else env_name
     return {
-        "api_url": "https://agent-service.emergentagent.com",
-        "envcore_url": "http://envcore.int-worker.dev.emergentagent.com",
-        "db_dsn": f"host=10.0.2.3 port=6544 dbname=postgres-{name} user=postgres password=pYOjidM5JFUMJZp",
+        "label": f"eph-{name}",
+        "type": "ephemeral",
+        "api_url": EPH_TEMPLATES["api_url"].format(name=name),
+        "envcore_url": EPH_TEMPLATES["envcore_url"],
+        "pause_url": EPH_TEMPLATES["pause_url"].format(name=name),
+        "db_dsn": EPH_TEMPLATES["db_dsn"].format(name=name),
     }
 
-if ENV.startswith("eph-"):
-    _cfg = _get_eph_config(ENV.removeprefix("eph-"))
-elif ENV in _ENV_CONFIGS:
-    _cfg = _ENV_CONFIGS[ENV]
-else:
-    _cfg = _ENV_CONFIGS["local"]
 
-# --- Emergent API (for pause-environment) ---
+# --- Resolve active environment ---
+_cfg = get_env_config(ENV)
+
 API_URL = os.environ.get("EMERGENT_API_URL", _cfg["api_url"])
-
-# --- Envcore (for pod_exec — running commands inside job pods) ---
 ENVCORE_URL = os.environ.get("ENVCORE_URL", _cfg["envcore_url"])
-
-# --- Database (to look up environment ID from job ID) ---
 DB_DSN = os.environ.get("DB_DSN", _cfg["db_dsn"])
+PAUSE_URL = os.environ.get("PAUSE_URL", _cfg["pause_url"])
 
-# --- Pause URL (internal Cloud Run URL, no auth needed) ---
-PAUSE_URL = os.environ.get(
-    "PAUSE_URL",
-    "http://emergent-agents-leadgen1.cloudrun.internal.dev.emergentagent.com",
-)
-
-# --- Dev VM SSH (for template creation script) ---
+# --- Dev VM SSH (legacy template creation) ---
 VM_HOST = os.environ.get("VM_HOST", "emergent-dev-vm-anshul")
 VM_ZONE = os.environ.get("VM_ZONE", "us-central1-a")
-VM_USER = os.environ.get("VM_USER", "")  # your gcloud username on the VM
-VM_SSH_KEY = os.environ.get("VM_SSH_KEY", "")  # path to private key (optional, for paramiko)
+VM_USER = os.environ.get("VM_USER", "")
+VM_SSH_KEY = os.environ.get("VM_SSH_KEY", "")
 
 # --- Template defaults ---
 RESTIC_PASSWORD = os.environ.get("RESTIC_PASSWORD", "test123")
@@ -68,5 +81,5 @@ TEMPLATE_SCRIPT_PATH = os.environ.get(
     "/home/sritam_emergent_sh/create_template_gcs.sh",
 )
 
-# --- GCP Service Account key file (for gcloud auth without manual login) ---
+# --- GCP Service Account key file ---
 GCP_SA_KEY_FILE = os.environ.get("GCP_SA_KEY_FILE", os.path.join(os.path.dirname(__file__), "..", "sa-key.json"))

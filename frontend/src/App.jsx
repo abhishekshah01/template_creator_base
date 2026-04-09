@@ -15,6 +15,35 @@ export default function App() {
   const [bearerToken, setBearerToken] = useState(() => localStorage.getItem('bearer_token') || '');
   const [configDetailId, setConfigDetailId] = useState(null);
 
+  // Environment state
+  const [activeEnv, setActiveEnv] = useState(() => localStorage.getItem('active_env') || 'eph-leadgen1');
+  const [envConfig, setEnvConfig] = useState(null);
+  const [standardEnvs, setStandardEnvs] = useState([]);
+
+  // Load environments on mount
+  useEffect(() => {
+    api.getEnvironments().then(data => {
+      setActiveEnv(data.active);
+      setEnvConfig(data.active_config);
+      setStandardEnvs(data.environments || []);
+    }).catch(() => {});
+  }, []);
+
+  async function switchEnv(envName) {
+    try {
+      const data = await api.switchEnvironment(envName);
+      setActiveEnv(data.env);
+      setEnvConfig(prev => ({ ...prev, ...data.config, env: data.env, label: data.label }));
+      localStorage.setItem('active_env', data.env);
+      // Clear cached data from old env
+      setCachedConfigs([]);
+      setConfigsStale(false);
+      setConfigsLoaded(false);
+    } catch (e) {
+      console.error('Failed to switch environment:', e);
+    }
+  }
+
   // Cached configs state
   const [cachedConfigs, setCachedConfigs] = useState([]);
   const [configsStale, setConfigsStale] = useState(false);
@@ -122,6 +151,9 @@ export default function App() {
         bearerToken={bearerToken}
         onTokenChange={updateToken}
         width={sidebarWidth}
+        activeEnv={activeEnv}
+        standardEnvs={standardEnvs}
+        onSwitchEnv={switchEnv}
       />
       {/* Drag handle */}
       <div

@@ -84,9 +84,11 @@ const navStructure = [
   },
 ];
 
-export default function Sidebar({ activePage, onNavigate, bearerToken, onTokenChange, width = 260 }) {
+export default function Sidebar({ activePage, onNavigate, bearerToken, onTokenChange, width = 260, activeEnv, standardEnvs = [], onSwitchEnv }) {
   const [showToken, setShowToken] = useState(false);
   const [collapsed, setCollapsed] = useState({});
+  const [showEnvMenu, setShowEnvMenu] = useState(false);
+  const [ephInput, setEphInput] = useState('');
 
   function toggleSection(section) {
     setCollapsed(prev => ({ ...prev, [section]: !prev[section] }));
@@ -100,10 +102,54 @@ export default function Sidebar({ activePage, onNavigate, bearerToken, onTokenCh
     <aside className="bg-[#010409] border-r border-[#30363d] h-screen fixed top-0 left-0 flex flex-col" style={{ width }}>
       {/* Header */}
       <div className="px-4 pt-5 pb-4 border-b border-[#30363d]">
-        <h1 className="text-[15px] font-semibold text-[#e6edf3]">Template Manager</h1>
-        <span className="inline-block mt-2 text-[11px] px-2.5 py-[3px] rounded-md bg-[#238636]/15 text-[#3fb950] font-medium border border-[#238636]/30">
-          eph-leadgen1
-        </span>
+        <h1 className="text-[15px] font-semibold text-[#e6edf3] mb-2">Template Manager</h1>
+        {/* Environment switcher */}
+        <div className="relative">
+          <button onClick={() => setShowEnvMenu(!showEnvMenu)}
+            className="flex items-center gap-1.5 text-[12px] px-2.5 py-[4px] rounded-md bg-[#238636]/15 text-[#3fb950] font-medium border border-[#238636]/30 hover:bg-[#238636]/25 transition-colors w-full">
+            <span className="w-[6px] h-[6px] rounded-full bg-[#3fb950] shrink-0" />
+            <span className="flex-1 text-left truncate">{activeEnv || 'eph-leadgen1'}</span>
+            <svg className={`w-3 h-3 shrink-0 transition-transform ${showEnvMenu ? 'rotate-180' : ''}`} viewBox="0 0 16 16" fill="currentColor">
+              <path d="M12.78 5.22a.749.749 0 0 1 0 1.06l-4.25 4.25a.749.749 0 0 1-1.06 0L3.22 6.28a.749.749 0 1 1 1.06-1.06L8 8.939l3.72-3.719a.749.749 0 0 1 1.06 0Z" />
+            </svg>
+          </button>
+          {showEnvMenu && (
+            <>
+              <div className="fixed inset-0 z-10" onClick={() => setShowEnvMenu(false)} />
+              <div className="absolute left-0 right-0 top-9 z-20 bg-[#161b22] border border-[#30363d] rounded-md shadow-xl overflow-hidden">
+                <div className="px-3 py-2 text-[11px] font-semibold text-[#8b949e] border-b border-[#21262d] uppercase tracking-wider">
+                  Switch environment
+                </div>
+                {/* Standard envs */}
+                {standardEnvs.map(env => (
+                  <button key={env.name}
+                    onClick={() => { onSwitchEnv(env.name); setShowEnvMenu(false); }}
+                    className={`w-full flex items-center gap-2 px-3 py-[6px] text-[13px] transition-colors text-left ${
+                      activeEnv === env.name ? 'text-[#e6edf3] bg-[#1f6feb]/10' : 'text-[#8b949e] hover:bg-[#1f6feb]/10 hover:text-[#e6edf3]'
+                    }`}>
+                    <span className="w-3 text-center text-[10px]">{activeEnv === env.name ? '✓' : ''}</span>
+                    {env.label}
+                    <span className="ml-auto text-[10px] text-[#484f58]">standard</span>
+                  </button>
+                ))}
+                {/* Ephemeral input */}
+                <div className="border-t border-[#21262d] px-3 py-2">
+                  <div className="text-[11px] text-[#8b949e] mb-1.5">Ephemeral environment</div>
+                  <div className="flex gap-1.5">
+                    <input type="text" value={ephInput} onChange={e => setEphInput(e.target.value)}
+                      onKeyDown={e => { if (e.key === 'Enter' && ephInput.trim()) { onSwitchEnv(`eph-${ephInput.trim()}`); setShowEnvMenu(false); setEphInput(''); } }}
+                      placeholder="e.g. leadgen1"
+                      className="flex-1 px-2 py-[3px] bg-[#0d1117] border border-[#30363d] rounded text-[12px] text-[#e6edf3] outline-none focus:border-[#1f6feb] placeholder:text-[#484f58] font-mono" />
+                    <button onClick={() => { if (ephInput.trim()) { onSwitchEnv(`eph-${ephInput.trim()}`); setShowEnvMenu(false); setEphInput(''); } }}
+                      className="px-2 py-[3px] bg-[#21262d] border border-[#30363d] rounded text-[11px] text-[#c9d1d9] hover:bg-[#30363d] transition-colors">
+                      Go
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </>
+          )}
+        </div>
       </div>
 
       {/* Navigation */}

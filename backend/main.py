@@ -90,6 +90,9 @@ class UpdateCategoryConfigRequest(BaseModel):
     public: bool = False
     bearer_token: str
 
+class SwitchEnvironmentRequest(BaseModel):
+    env_name: str
+
 
 # ---------------------------------------------------------------------------
 # Helpers — Pod Exec (reuses envcore pattern from mono/mcp/tools/pods.py)
@@ -167,6 +170,66 @@ def _pod_exec(env_id: str, command: str, timeout: int = 30) -> dict:
 @app.get("/")
 def health():
     return {"status": "ok", "service": "template-creator-api"}
+
+
+@app.get("/api/environments")
+def list_environments():
+    """List available environments and the active one."""
+    envs = []
+    # Standard environments
+    for name, cfg in config.STANDARD_ENVS.items():
+        envs.append({"name": name, "label": cfg["label"], "type": "standard"})
+    return {
+        "active": config.ENV,
+        "environments": envs,
+        "active_config": {
+            "env": config.ENV,
+            "label": config.get_env_config(config.ENV).get("label", config.ENV),
+            "type": config.get_env_config(config.ENV).get("type", "ephemeral"),
+            "api_url": config.API_URL,
+            "envcore_url": config.ENVCORE_URL,
+            "pause_url": config.PAUSE_URL,
+            "db_dsn": config.DB_DSN.split("password=")[0] + "password=***",  # hide password
+            "source_bucket": config.SOURCE_BUCKET,
+            "dest_bucket": config.DEST_BUCKET,
+        },
+    }
+
+
+@app.post("/api/switch-environment")
+def switch_environment(req: SwitchEnvironmentRequest):
+    """Switch the active environment. Reconfigures all URLs."""
+    env_name = req.env_name.strip()
+    if not env_name:
+        raise HTTPException(400, "Environment name is required")
+
+    cfg = config.get_env_config(env_name)
+
+    # Update the module-level config
+    config.ENV = env_name
+    config.API_URL = cfg["api_url"]
+    config.ENVCORE_URL = cfg["envcore_url"]
+    config.PAUSE_URL = cfg["pause_url"]
+    config.DB_DSN = cfg["db_dsn"]
+
+    # Update the CATEGORY_CONFIG_URL which depends on API_URL
+    global CATEGORY_CONFIG_URL
+    CATEGORY_CONFIG_URL = f"{config.API_URL}/internal/category-config"
+
+    # Update TEMPLATE_SUMMARY_URL
+    global TEMPLATE_SUMMARY_URL
+    TEMPLATE_SUMMARY_URL = f"{config.API_URL}/internal/category-config/template-app-summary"
+
+    return {
+        "status": "success",
+        "env": env_name,
+        "label": cfg.get("label", env_name),
+        "config": {
+            "api_url": config.API_URL,
+            "envcore_url": config.ENVCORE_URL,
+            "pause_url": config.PAUSE_URL,
+        },
+    }
 
 
 @app.post("/api/job-info")
@@ -550,7 +613,7 @@ async def get_env_variables(req: EnvVarsRequest):
     }
 
 
-CATEGORY_CONFIG_URL = "https://agent-service-leadgen1-1035522277200.us-central1.run.app/internal/category-config"
+CATEGORY_CONFIG_URL = f"{config.API_URL}/internal/category-config"
 
 
 @app.post("/api/list-category-configs")
@@ -635,7 +698,7 @@ async def create_category_config(req: CategoryConfigRequest):
     }
 
 
-TEMPLATE_SUMMARY_URL = "https://agent-service-leadgen1-1035522277200.us-central1.run.app/internal/category-config/template-app-summary"
+TEMPLATE_SUMMARY_URL = f"{config.API_URL}/internal/category-config/template-app-summary"
 
 
 @app.post("/api/template-summary")
