@@ -4,6 +4,7 @@ import CreateTemplate from './components/CreateTemplate';
 import TemplateSummary from './components/TemplateSummary';
 import UpdateCategory from './components/UpdateCategory';
 import { ConfigAll, ConfigCreate, ConfigSummary, ConfigDetailPage } from './components/CategoryConfig';
+import Settings from './components/Settings';
 import { api } from './api';
 
 const MIN_SIDEBAR = 200;
@@ -138,6 +139,8 @@ export default function App() {
       case 'config-edit':
         return <ConfigCreate bearerToken={bearerToken} onTokenExpired={() => updateToken('')} onNavigate={navigate} editConfigId={configDetailId}
           cachedConfigs={cachedConfigs} refreshConfigs={refreshConfigs} markConfigsStale={markConfigsStale} />;
+      case 'settings':
+        return <Settings activeEnv={activeEnv} standardEnvs={standardEnvs} onSwitchEnv={switchEnv} envConfig={envConfig} />;
       default:
         return <CreateTemplate />;
     }
