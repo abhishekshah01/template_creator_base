@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { api, AuthError } from '../../api';
 
 // --- Helpers ---
 function timeAgo(dateStr) {
@@ -73,14 +72,15 @@ function RefreshIcon({ className }) {
   );
 }
 
-export default function AllConfigs({ onNavigate, bearerToken, onTokenExpired }) {
-  const [configs, setConfigs] = useState([]);
+export default function AllConfigs({ onNavigate, bearerToken, onTokenExpired, cachedConfigs = [], configsStale, configsLoaded, refreshConfigs }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [search, setSearch] = useState('');
   const [tab, setTab] = useState('all');
 
-  async function fetchConfigs() {
+  const configs = cachedConfigs;
+
+  async function handleRefresh() {
     if (!bearerToken) {
       setError('Set your API token in the sidebar first.');
       return;
@@ -88,9 +88,7 @@ export default function AllConfigs({ onNavigate, bearerToken, onTokenExpired }) 
     setLoading(true);
     setError(null);
     try {
-      const data = await api.listCategoryConfigs(bearerToken);
-      const list = Array.isArray(data) ? data : (data?.configs || data?.data || data?.results || []);
-      setConfigs(Array.isArray(list) ? list : []);
+      await refreshConfigs();
     } catch (e) {
       setError(e.message);
     } finally {
@@ -98,9 +96,9 @@ export default function AllConfigs({ onNavigate, bearerToken, onTokenExpired }) 
     }
   }
 
-  // Fetch on initial mount if token exists
+  // Fetch on initial mount only if not already loaded
   useEffect(() => {
-    if (bearerToken) fetchConfigs();
+    if (bearerToken && !configsLoaded) handleRefresh();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const filtered = configs.filter(c => {
@@ -141,7 +139,7 @@ export default function AllConfigs({ onNavigate, bearerToken, onTokenExpired }) 
               className="flex-1 bg-transparent text-sm text-gh-text outline-none placeholder:text-gh-text-muted" />
           </div>
         </div>
-        <button onClick={fetchConfigs} disabled={loading}
+        <button onClick={handleRefresh} disabled={loading}
           className="flex items-center gap-1.5 px-3 py-[7px] bg-gh-btn border border-gh-border rounded-md text-sm text-gh-text hover:bg-gh-btn-hover transition-colors disabled:opacity-50">
           <RefreshIcon className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
         </button>
@@ -159,6 +157,16 @@ export default function AllConfigs({ onNavigate, bearerToken, onTokenExpired }) 
       {error && (
         <div className="mb-4 px-4 py-3 rounded-md text-sm border bg-gh-accent-red/10 text-gh-accent-red-text border-gh-accent-red/30">
           {error}
+        </div>
+      )}
+
+      {configsStale && (
+        <div className="mb-4 px-4 py-[7px] rounded-md text-[13px] border bg-[#9e6a03]/8 text-[#d29922] border-[#9e6a03]/20 flex items-center gap-2">
+          <svg className="w-4 h-4 shrink-0" viewBox="0 0 16 16" fill="currentColor">
+            <path d="M6.457 1.047c.659-1.234 2.427-1.234 3.086 0l6.082 11.378A1.75 1.75 0 0 1 14.082 15H1.918a1.75 1.75 0 0 1-1.543-2.575Zm1.763.707a.25.25 0 0 0-.44 0L1.698 13.132a.25.25 0 0 0 .22.368h12.164a.25.25 0 0 0 .22-.368Zm.53 3.996v2.5a.75.75 0 0 1-1.5 0v-2.5a.75.75 0 0 1 1.5 0ZM9 11a1 1 0 1 1-2 0 1 1 0 0 1 2 0Z" />
+          </svg>
+          <span>Data may be out of sync.</span>
+          <button onClick={handleRefresh} className="text-[#58a6ff] hover:underline font-medium ml-1">Refresh</button>
         </div>
       )}
 

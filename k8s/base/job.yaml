@@ -1,0 +1,56 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: template-create-PLACEHOLDER
+  namespace: envcore
+  labels:
+    app: template-creator
+    component: template-job
+spec:
+  ttlSecondsAfterFinished: 300
+  backoffLimit: 0
+  template:
+    metadata:
+      labels:
+        app: template-creator
+        component: template-job
+    spec:
+      restartPolicy: Never
+      serviceAccountName: template-creator-sa
+      containers:
+        - name: template-job
+          image: TEMPLATE_JOB_IMAGE
+          args:
+            - "--source-repo"
+            - "gs:SOURCE_BUCKET:/users/USER_ID"
+            - "--template-name"
+            - "TEMPLATE_NAME"
+            - "--restic-password"
+            - "$(RESTIC_PASSWORD)"
+            - "--job-id"
+            - "JOB_ID"
+            - "--dest-bucket"
+            - "DEST_BUCKET"
+          env:
+            - name: RESTIC_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: template-creator-secrets
+                  key: restic-password
+            - name: GOOGLE_APPLICATION_CREDENTIALS
+              value: /var/secrets/google/key.json
+          volumeMounts:
+            - name: gcs-key
+              mountPath: /var/secrets/google
+              readOnly: true
+          resources:
+            requests:
+              memory: "512Mi"
+              cpu: "250m"
+            limits:
+              memory: "2Gi"
+              cpu: "1000m"
+      volumes:
+        - name: gcs-key
+          secret:
+            secretName: template-creator-gcs-key

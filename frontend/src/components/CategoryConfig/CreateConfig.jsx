@@ -8,7 +8,7 @@ const SOURCE_BADGE = {
   existing: { label: 'EXISTING', cls: 'bg-[#30363d] text-[#8b949e] border-[#484f58]' },
 };
 
-export default function CreateConfig({ bearerToken, onTokenExpired, onNavigate, editConfigId }) {
+export default function CreateConfig({ bearerToken, onTokenExpired, onNavigate, editConfigId, cachedConfigs = [], refreshConfigs, markConfigsStale }) {
   const [mode, setMode] = useState('create'); // 'create' | 'edit'
   const [configId, setConfigId] = useState(editConfigId || '');
   const [templateName, setTemplateName] = useState('');
@@ -39,21 +39,55 @@ export default function CreateConfig({ bearerToken, onTokenExpired, onNavigate, 
   // --- Load existing config ---
   async function loadConfig(id) {
     if (!bearerToken) { setLoadStatus({ message: 'Set your API token first.', type: 'error' }); return; }
-    const loadId = id || loadExistingInput.trim();
-    if (!loadId) { setLoadStatus({ message: 'Enter a config ID or template name.', type: 'error' }); return; }
+    const input = id || loadExistingInput.trim();
+    if (!input) { setLoadStatus({ message: 'Enter a template name or config ID.', type: 'error' }); return; }
 
+    // Try to find in cached configs first (by template_name or id)
+    let foundConfig = cachedConfigs.find(c =>
+      c.template_name === input || String(c.id) === input
+    );
+
+    if (foundConfig) {
+      // Found in cache — fetch full config by id
+      return fetchFullConfig(String(foundConfig.id));
+    }
+
+    // Not in cache — prompt sync
+    setLoadStatus({ message: 'sync_needed', type: 'sync' });
+  }
+
+  async function syncAndRetry() {
+    const input = loadExistingInput.trim();
+    setLoading('load');
+    setLoadStatus({ message: 'Syncing configs...', type: 'loading' });
+    try {
+      const freshConfigs = await refreshConfigs();
+      const found = freshConfigs.find(c =>
+        c.template_name === input || String(c.id) === input
+      );
+      if (found) {
+        return fetchFullConfig(String(found.id));
+      } else {
+        setLoadStatus({ message: `No config found with name "${input}". You can create a new one.`, type: 'error' });
+      }
+    } catch (e) {
+      setLoadStatus({ message: e.message, type: 'error' });
+    } finally {
+      setLoading('');
+    }
+  }
+
+  async function fetchFullConfig(configId) {
     setLoading('load');
     setLoadStatus({ message: 'Loading config...', type: 'loading' });
     try {
-      const data = await api.getCategoryConfig(loadId, bearerToken);
-      // Populate form
-      setConfigId(String(data.id || loadId));
+      const data = await api.getCategoryConfig(configId, bearerToken);
+      setConfigId(String(data.id || configId));
       setTemplateName(data.template_name || '');
       setJobId(data.summary_source_job_id || '');
       setInternal(data.internal ?? true);
       setIsPublic(data.public ?? false);
 
-      // Populate env vars
       const envConfig = data.default_env_config || {};
       const vars = Object.entries(envConfig).map(([key, value]) => ({
         key, value: String(value), originalValue: String(value), source: 'existing',
@@ -185,6 +219,7 @@ export default function CreateConfig({ bearerToken, onTokenExpired, onNavigate, 
       }
       setResult(data.response);
       setSubmitStatus({ message: mode === 'edit' ? 'Config updated successfully!' : 'Config created successfully!', type: 'success' });
+      markConfigsStale?.();
     } catch (e) {
       if (e instanceof AuthError) onTokenExpired?.();
       setSubmitStatus({ message: e.message, type: 'error' });
@@ -244,7 +279,20 @@ export default function CreateConfig({ bearerToken, onTokenExpired, onNavigate, 
                 {loading === 'load' ? 'Loading...' : 'Load'}
               </button>
             </div>
-            {loadStatus && (
+            {loadStatus && loadStatus.type === 'sync' && (
+              <div className="mt-2 px-3 py-[7px] rounded-md text-[13px] flex items-center gap-2 border bg-[#9e6a03]/8 text-[#d29922] border-[#9e6a03]/20">
+                <svg className="w-4 h-4 shrink-0" viewBox="0 0 16 16" fill="currentColor">
+                  <path d="M6.457 1.047c.659-1.234 2.427-1.234 3.086 0l6.082 11.378A1.75 1.75 0 0 1 14.082 15H1.918a1.75 1.75 0 0 1-1.543-2.575Zm1.763.707a.25.25 0 0 0-.44 0L1.698 13.132a.25.25 0 0 0 .22.368h12.164a.25.25 0 0 0 .22-.368Zm.53 3.996v2.5a.75.75 0 0 1-1.5 0v-2.5a.75.75 0 0 1 1.5 0ZM9 11a1 1 0 1 1-2 0 1 1 0 0 1 2 0Z" />
+                </svg>
+                <span>Configs may be out of date. Sync to get the latest data and retry.</span>
+                <button onClick={syncAndRetry} disabled={loading === 'load'}
+                  className="text-[#58a6ff] hover:underline font-medium ml-1 flex items-center gap-1">
+                  {loading === 'load' && <div className="w-3 h-3 border-2 border-[#30363d] border-t-[#58a6ff] rounded-full animate-spin" />}
+                  Sync & Retry
+                </button>
+              </div>
+            )}
+            {loadStatus && loadStatus.type !== 'sync' && (
               <div className={`mt-2 px-3 py-[5px] rounded-md text-[13px] flex items-center gap-2 border ${
                 { success: 'bg-[#238636]/8 text-[#3fb950] border-[#238636]/20',
                   error: 'bg-[#da3633]/8 text-[#f85149] border-[#da3633]/20',

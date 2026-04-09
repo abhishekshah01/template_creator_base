@@ -4,6 +4,7 @@ import CreateTemplate from './components/CreateTemplate';
 import TemplateSummary from './components/TemplateSummary';
 import UpdateCategory from './components/UpdateCategory';
 import { ConfigAll, ConfigCreate, ConfigSummary, ConfigDetailPage } from './components/CategoryConfig';
+import { api } from './api';
 
 const MIN_SIDEBAR = 200;
 const MAX_SIDEBAR = 400;
@@ -13,6 +14,30 @@ export default function App() {
   const [activePage, setActivePage] = useState('create-template');
   const [bearerToken, setBearerToken] = useState(() => localStorage.getItem('bearer_token') || '');
   const [configDetailId, setConfigDetailId] = useState(null);
+
+  // Cached configs state
+  const [cachedConfigs, setCachedConfigs] = useState([]);
+  const [configsStale, setConfigsStale] = useState(false);
+  const [configsLoaded, setConfigsLoaded] = useState(false);
+
+  async function refreshConfigs() {
+    if (!bearerToken) return [];
+    try {
+      const data = await api.listCategoryConfigs(bearerToken);
+      const list = Array.isArray(data) ? data : (data?.configs || data?.data || data?.results || []);
+      const configs = Array.isArray(list) ? list : [];
+      setCachedConfigs(configs);
+      setConfigsStale(false);
+      setConfigsLoaded(true);
+      return configs;
+    } catch {
+      return cachedConfigs;
+    }
+  }
+
+  function markConfigsStale() {
+    setConfigsStale(true);
+  }
   const [sidebarWidth, setSidebarWidth] = useState(() => {
     const saved = localStorage.getItem('sidebar_width');
     return saved ? Math.min(MAX_SIDEBAR, Math.max(MIN_SIDEBAR, Number(saved))) : DEFAULT_SIDEBAR;
@@ -72,15 +97,18 @@ export default function App() {
       case 'update-category':
         return <UpdateCategory bearerToken={bearerToken} onTokenExpired={() => updateToken('')} />;
       case 'config-all':
-        return <ConfigAll onNavigate={navigate} bearerToken={bearerToken} onTokenExpired={() => updateToken('')} />;
+        return <ConfigAll onNavigate={navigate} bearerToken={bearerToken} onTokenExpired={() => updateToken('')}
+          cachedConfigs={cachedConfigs} configsStale={configsStale} configsLoaded={configsLoaded} refreshConfigs={refreshConfigs} />;
       case 'config-create':
-        return <ConfigCreate bearerToken={bearerToken} onTokenExpired={() => updateToken('')} onNavigate={navigate} />;
+        return <ConfigCreate bearerToken={bearerToken} onTokenExpired={() => updateToken('')} onNavigate={navigate}
+          cachedConfigs={cachedConfigs} refreshConfigs={refreshConfigs} markConfigsStale={markConfigsStale} />;
       case 'config-summary':
         return <ConfigSummary bearerToken={bearerToken} onTokenExpired={() => updateToken('')} />;
       case 'config-detail':
         return <ConfigDetailPage configId={configDetailId} onNavigate={navigate} bearerToken={bearerToken} onTokenExpired={() => updateToken('')} />;
       case 'config-edit':
-        return <ConfigCreate bearerToken={bearerToken} onTokenExpired={() => updateToken('')} onNavigate={navigate} editConfigId={configDetailId} />;
+        return <ConfigCreate bearerToken={bearerToken} onTokenExpired={() => updateToken('')} onNavigate={navigate} editConfigId={configDetailId}
+          cachedConfigs={cachedConfigs} refreshConfigs={refreshConfigs} markConfigsStale={markConfigsStale} />;
       default:
         return <CreateTemplate />;
     }
