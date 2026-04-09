@@ -9,8 +9,6 @@ import json
 import os
 import re
 import subprocess
-import time
-import uuid
 
 import httpx
 import psycopg2
@@ -438,168 +436,15 @@ def pause_job(req: JobRequest):
 
 @app.post("/api/create-template")
 async def create_template(req: CreateTemplateRequest):
-    """Run the template creation script.
+    """Run the template creation script on the dev VM.
 
-    Supports two execution modes (set TEMPLATE_EXEC_MODE):
-    - "k8s": Creates a Kubernetes Job in envcore namespace (recommended)
-    - "ssh": SSH into VM via gcloud (legacy, requires VM permissions)
+    Uses gcloud compute ssh (inherits local gcloud auth) via subprocess.
+    For deployed backends, switch to paramiko with SSH key.
     """
     # Sanitize inputs
     if not re.match(r"^[a-zA-Z0-9_-]+$", req.template_name):
         raise HTTPException(400, "Template name must be alphanumeric with hyphens/underscores only")
 
-    # ── K8s Job execution ──────────────────────────────────────────────────
-    if config.TEMPLATE_EXEC_MODE == "k8s":
-        return _create_template_k8s(req)
-
-    # ── Legacy SSH execution ───────────────────────────────────────────────
-    return _create_template_ssh(req)
-
-
-def _create_template_k8s(req: CreateTemplateRequest):
-    """Create a Kubernetes Job to run the template creation script."""
-    job_suffix = f"{req.template_name}-{uuid.uuid4().hex[:6]}"
-    job_name = f"template-create-{job_suffix}"[:63]  # K8s name limit
-
-    job_manifest = {
-        "apiVersion": "batch/v1",
-        "kind": "Job",
-        "metadata": {
-            "name": job_name,
-            "namespace": config.K8S_NAMESPACE,
-            "labels": {
-                "app": "template-creator",
-                "component": "template-job",
-                "template-name": req.template_name,
-            },
-        },
-        "spec": {
-            "ttlSecondsAfterFinished": 300,
-            "backoffLimit": 0,
-            "template": {
-                "metadata": {
-                    "labels": {
-                        "app": "template-creator",
-                        "component": "template-job",
-                    },
-                },
-                "spec": {
-                    "restartPolicy": "Never",
-                    "containers": [{
-                        "name": "template-job",
-                        "image": config.K8S_JOB_IMAGE,
-                        "args": [
-                            "--source-repo", f"gs:{config.SOURCE_BUCKET}:/users/{req.user_id}",
-                            "--template-name", req.template_name,
-                            "--restic-password", "$(RESTIC_PASSWORD)",
-                            "--job-id", req.job_id,
-                            "--dest-bucket", config.DEST_BUCKET,
-                        ],
-                        "env": [
-                            {
-                                "name": "RESTIC_PASSWORD",
-                                "valueFrom": {
-                                    "secretKeyRef": {
-                                        "name": config.K8S_RESTIC_SECRET,
-                                        "key": "restic-password",
-                                    },
-                                },
-                            },
-                            {
-                                "name": "GOOGLE_APPLICATION_CREDENTIALS",
-                                "value": "/var/secrets/google/key.json",
-                            },
-                        ],
-                        "volumeMounts": [{
-                            "name": "gcs-key",
-                            "mountPath": "/var/secrets/google",
-                            "readOnly": True,
-                        }],
-                        "resources": {
-                            "requests": {"memory": "512Mi", "cpu": "250m"},
-                            "limits": {"memory": "2Gi", "cpu": "1000m"},
-                        },
-                    }],
-                    "volumes": [{
-                        "name": "gcs-key",
-                        "secret": {"secretName": config.K8S_GCS_SECRET},
-                    }],
-                },
-            },
-        },
-    }
-
-    # Apply the Job using kubectl
-    manifest_json = json.dumps(job_manifest)
-    try:
-        result = subprocess.run(
-            ["kubectl", "apply", "-f", "-"],
-            input=manifest_json, capture_output=True, text=True, timeout=30,
-        )
-        if result.returncode != 0:
-            raise HTTPException(500, f"Failed to create K8s Job: {result.stderr}")
-    except FileNotFoundError:
-        raise HTTPException(500, "kubectl not found. Install kubectl or switch to SSH mode.")
-    except subprocess.TimeoutExpired:
-        raise HTTPException(504, "kubectl timed out creating the Job")
-
-    print(f"[create-template] K8s Job created: {job_name}")
-
-    # Poll for job completion (max 5 minutes)
-    deadline = time.time() + 300
-    while time.time() < deadline:
-        try:
-            status_result = subprocess.run(
-                ["kubectl", "get", "job", job_name, "-n", config.K8S_NAMESPACE,
-                 "-o", "jsonpath={.status.conditions[0].type}"],
-                capture_output=True, text=True, timeout=10,
-            )
-            condition = status_result.stdout.strip()
-            if condition == "Complete":
-                break
-            elif condition == "Failed":
-                # Get logs
-                log_result = subprocess.run(
-                    ["kubectl", "logs", f"job/{job_name}", "-n", config.K8S_NAMESPACE],
-                    capture_output=True, text=True, timeout=30,
-                )
-                return {
-                    "status": "failed",
-                    "gcs_path": f"gs://{config.DEST_BUCKET}/templates/{req.template_name}",
-                    "output": log_result.stdout[-2000:],
-                    "error": log_result.stderr[-1000:] or "Job failed",
-                }
-        except Exception:
-            pass
-        time.sleep(5)
-    else:
-        return {
-            "status": "failed",
-            "gcs_path": "",
-            "output": "",
-            "error": "Template creation timed out (5 min limit)",
-        }
-
-    # Get logs from completed job
-    try:
-        log_result = subprocess.run(
-            ["kubectl", "logs", f"job/{job_name}", "-n", config.K8S_NAMESPACE],
-            capture_output=True, text=True, timeout=30,
-        )
-        output = log_result.stdout[-2000:]
-    except Exception:
-        output = "Job completed but logs unavailable"
-
-    return {
-        "status": "success",
-        "gcs_path": f"gs://{config.DEST_BUCKET}/templates/{req.template_name}",
-        "output": output,
-        "error": "",
-    }
-
-
-def _create_template_ssh(req: CreateTemplateRequest):
-    """Legacy: Run template creation via SSH to VM."""
     script_command = (
         f"sudo docker run --rm --network=host "
         f"-v {config.TEMPLATE_SCRIPT_PATH}:/run_template.sh:ro "
@@ -624,19 +469,24 @@ def _create_template_ssh(req: CreateTemplateRequest):
         except Exception as e:
             print(f"[create-template] Warning: SA activation failed: {e}")
 
+    # Use gcloud compute ssh
     gcloud_cmd = [
         "gcloud", "compute", "ssh", config.VM_HOST,
         f"--zone={config.VM_ZONE}",
         "--command", script_command,
     ]
 
-    # Paramiko path for deployed backends
+    # If SSH key is configured, use paramiko instead (for deployed backends)
     if config.VM_SSH_KEY and config.VM_USER:
         import paramiko
         ssh = paramiko.SSHClient()
         ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
         try:
-            ssh.connect(hostname=config.VM_HOST, username=config.VM_USER, key_filename=config.VM_SSH_KEY)
+            ssh.connect(
+                hostname=config.VM_HOST,
+                username=config.VM_USER,
+                key_filename=config.VM_SSH_KEY,
+            )
             stdin, stdout, stderr = ssh.exec_command(script_command, timeout=300)
             out = stdout.read().decode()
             err = stderr.read().decode()
@@ -652,9 +502,12 @@ def _create_template_ssh(req: CreateTemplateRequest):
             "error": err[-1000:] if exit_code != 0 else "",
         }
 
-    # Default: gcloud compute ssh
+    # Default: gcloud compute ssh (local backend)
     try:
-        result = subprocess.run(gcloud_cmd, capture_output=True, text=True, timeout=300)
+        result = subprocess.run(
+            gcloud_cmd,
+            capture_output=True, text=True, timeout=300,
+        )
         return {
             "status": "success" if result.returncode == 0 else "failed",
             "gcs_path": f"gs://{config.DEST_BUCKET}/{req.template_name}",

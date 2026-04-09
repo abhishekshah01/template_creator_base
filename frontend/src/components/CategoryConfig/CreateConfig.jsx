@@ -29,10 +29,10 @@ export default function CreateConfig({ bearerToken, onTokenExpired, onNavigate, 
 
   const listRef = useRef(null);
 
-  // Auto-load if editConfigId is provided
+  // Auto-load if editConfigId is provided — fetch directly, skip cache
   useEffect(() => {
     if (editConfigId && bearerToken) {
-      loadConfig(editConfigId);
+      fetchFullConfig(String(editConfigId));
     }
   }, [editConfigId]);
 

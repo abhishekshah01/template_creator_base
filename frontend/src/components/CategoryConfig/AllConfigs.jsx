@@ -77,6 +77,10 @@ export default function AllConfigs({ onNavigate, bearerToken, onTokenExpired, ca
   const [error, setError] = useState(null);
   const [search, setSearch] = useState('');
   const [tab, setTab] = useState('all');
+  const [sortBy, setSortBy] = useState('newest');
+  const [showSortMenu, setShowSortMenu] = useState(false);
+  const [hasSummaryFilter, setHasSummaryFilter] = useState(false);
+  const [showLabelMenu, setShowLabelMenu] = useState(false);
 
   const configs = cachedConfigs;
 
@@ -101,19 +105,55 @@ export default function AllConfigs({ onNavigate, bearerToken, onTokenExpired, ca
     if (bearerToken && !configsLoaded) handleRefresh();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const filtered = configs.filter(c => {
+  // Close menus on outside click
+  useEffect(() => {
+    function handleClick() { setShowSortMenu(false); setShowLabelMenu(false); }
+    if (showSortMenu || showLabelMenu) {
+      document.addEventListener('click', handleClick);
+      return () => document.removeEventListener('click', handleClick);
+    }
+  }, [showSortMenu, showLabelMenu]);
+
+  // Filter
+  let filtered = configs.filter(c => {
     if (tab === 'internal' && !c.internal) return false;
     if (tab === 'public' && !c.public) return false;
+    if (hasSummaryFilter && !c.config?.app_summary) return false;
     if (search) {
       const q = search.toLowerCase();
-      return c.template_name?.toLowerCase().includes(q) || (c.config?.app_summary || '').toLowerCase().includes(q);
+      const matchName = c.template_name?.toLowerCase().includes(q);
+      const matchJobId = c.summary_source_job_id?.toLowerCase().includes(q);
+      const matchSummary = (c.config?.app_summary || '').toLowerCase().includes(q);
+      return matchName || matchJobId || matchSummary;
     }
     return true;
+  });
+
+  // Sort
+  filtered = [...filtered].sort((a, b) => {
+    switch (sortBy) {
+      case 'newest': return new Date(b.created_at || 0) - new Date(a.created_at || 0);
+      case 'oldest': return new Date(a.created_at || 0) - new Date(b.created_at || 0);
+      case 'recently-updated': return new Date(b.updated_at || 0) - new Date(a.updated_at || 0);
+      case 'name-asc': return (a.template_name || '').localeCompare(b.template_name || '');
+      case 'name-desc': return (b.template_name || '').localeCompare(a.template_name || '');
+      case 'env-vars': return Object.keys(b.default_env_config || {}).length - Object.keys(a.default_env_config || {}).length;
+      default: return 0;
+    }
   });
 
   const allCount = configs.length;
   const internalCount = configs.filter(c => c.internal).length;
   const publicCount = configs.filter(c => c.public).length;
+
+  const SORT_OPTIONS = [
+    { key: 'newest', label: 'Newest' },
+    { key: 'oldest', label: 'Oldest' },
+    { key: 'recently-updated', label: 'Recently updated' },
+    { key: 'name-asc', label: 'Name (A-Z)' },
+    { key: 'name-desc', label: 'Name (Z-A)' },
+    { key: 'env-vars', label: 'Most env vars' },
+  ];
 
   return (
     <div>
@@ -135,7 +175,7 @@ export default function AllConfigs({ onNavigate, bearerToken, onTokenExpired, ca
           <div className="px-3 py-[7px] flex items-center gap-2 flex-1">
             <SearchIcon className="w-4 h-4 text-gh-text-muted shrink-0" />
             <input type="text" value={search} onChange={e => setSearch(e.target.value)}
-              placeholder="Search all configs..."
+              placeholder="Search by name, job ID, or summary..."
               className="flex-1 bg-transparent text-sm text-gh-text outline-none placeholder:text-gh-text-muted" />
           </div>
         </div>
@@ -143,15 +183,58 @@ export default function AllConfigs({ onNavigate, bearerToken, onTokenExpired, ca
           className="flex items-center gap-1.5 px-3 py-[7px] bg-gh-btn border border-gh-border rounded-md text-sm text-gh-text hover:bg-gh-btn-hover transition-colors disabled:opacity-50">
           <RefreshIcon className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
         </button>
-        <button className="flex items-center gap-1.5 px-3 py-[7px] bg-gh-btn border border-gh-border rounded-md text-sm text-gh-text hover:bg-gh-btn-hover transition-colors">
-          <TagIcon className="w-4 h-4" />
-          <span>Labels</span>
-        </button>
+        <div className="relative">
+          <button onClick={e => { e.stopPropagation(); setShowLabelMenu(!showLabelMenu); setShowSortMenu(false); }}
+            className={`flex items-center gap-1.5 px-3 py-[7px] bg-gh-btn border border-gh-border rounded-md text-sm text-gh-text hover:bg-gh-btn-hover transition-colors ${hasSummaryFilter ? '!border-[#58a6ff] !text-[#58a6ff]' : ''}`}>
+            <TagIcon className="w-4 h-4" />
+            <span>Labels</span>
+          </button>
+          {showLabelMenu && (
+            <div className="absolute right-0 top-10 z-20 w-[200px] bg-[#161b22] border border-[#30363d] rounded-md shadow-xl overflow-hidden" onClick={e => e.stopPropagation()}>
+              <div className="px-3 py-2 text-[12px] font-semibold text-[#e6edf3] border-b border-[#21262d]">Filter by label</div>
+              <button onClick={() => { setHasSummaryFilter(!hasSummaryFilter); setShowLabelMenu(false); }}
+                className="w-full flex items-center gap-2 px-3 py-2 text-[13px] text-[#c9d1d9] hover:bg-[#1f6feb]/15 transition-colors text-left">
+                <div className={`w-[14px] h-[14px] rounded-[3px] flex items-center justify-center ${hasSummaryFilter ? 'bg-[#1f6feb]' : 'border border-[#484f58]'}`}>
+                  {hasSummaryFilter && <svg className="w-2.5 h-2.5 text-white" viewBox="0 0 16 16" fill="currentColor"><path d="M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0Z" /></svg>}
+                </div>
+                <span className="text-[11px] font-medium px-[5px] py-[1px] rounded-full" style={{ backgroundColor: 'rgba(137,87,229,0.2)', color: '#bc8cff', border: '1px solid rgba(137,87,229,0.4)' }}>has summary</span>
+              </button>
+            </div>
+          )}
+        </div>
         <button onClick={() => onNavigate('config-create')}
           className="flex items-center gap-1.5 px-4 py-[7px] bg-gh-btn-primary text-white text-sm font-medium rounded-md hover:bg-gh-btn-primary-hover transition-colors">
           New config
         </button>
       </div>
+
+      {/* Active filters bar */}
+      {(search || hasSummaryFilter || sortBy !== 'newest') && (
+        <div className="flex items-center gap-2 mb-3 flex-wrap">
+          {search && (
+            <span className="inline-flex items-center gap-1 text-[12px] px-2 py-[2px] rounded-full bg-[#1f6feb]/10 text-[#58a6ff] border border-[#1f6feb]/25">
+              Search: "{search}"
+              <button onClick={() => setSearch('')} className="hover:text-white ml-0.5">×</button>
+            </span>
+          )}
+          {hasSummaryFilter && (
+            <span className="inline-flex items-center gap-1 text-[12px] px-2 py-[2px] rounded-full bg-[#8957e5]/10 text-[#bc8cff] border border-[#8957e5]/25">
+              has summary
+              <button onClick={() => setHasSummaryFilter(false)} className="hover:text-white ml-0.5">×</button>
+            </span>
+          )}
+          {sortBy !== 'newest' && (
+            <span className="inline-flex items-center gap-1 text-[12px] px-2 py-[2px] rounded-full bg-[#21262d] text-[#8b949e] border border-[#30363d]">
+              Sort: {SORT_OPTIONS.find(o => o.key === sortBy)?.label}
+              <button onClick={() => setSortBy('newest')} className="hover:text-white ml-0.5">×</button>
+            </span>
+          )}
+          <button onClick={() => { setSearch(''); setHasSummaryFilter(false); setSortBy('newest'); setTab('all'); }}
+            className="text-[12px] text-[#58a6ff] hover:underline">
+            Clear all filters
+          </button>
+        </div>
+      )}
 
       {/* Error */}
       {error && (
@@ -192,15 +275,30 @@ export default function AllConfigs({ onNavigate, bearerToken, onTokenExpired, ca
               </button>
             ))}
           </div>
-          <div className="ml-auto flex items-center gap-1">
-            {['Visibility', 'Sort'].map(label => (
-              <button key={label}
+          <div className="ml-auto flex items-center gap-1 relative">
+            {/* Sort dropdown */}
+            <div className="relative">
+              <button onClick={e => { e.stopPropagation(); setShowSortMenu(!showSortMenu); setShowLabelMenu(false); }}
                 className="flex items-center gap-0.5 px-2 py-1 text-xs text-gh-text-secondary hover:text-gh-text transition-colors">
-                {label === 'Sort' && <SortIcon className="w-3.5 h-3.5 mr-0.5" />}
-                <span>{label}</span>
+                <SortIcon className="w-3.5 h-3.5 mr-0.5" />
+                <span>Sort</span>
                 <ChevronDown className="w-4 h-4" />
               </button>
-            ))}
+              {showSortMenu && (
+                <div className="absolute right-0 top-8 z-20 w-[180px] bg-[#161b22] border border-[#30363d] rounded-md shadow-xl overflow-hidden" onClick={e => e.stopPropagation()}>
+                  <div className="px-3 py-2 text-[12px] font-semibold text-[#e6edf3] border-b border-[#21262d]">Sort by</div>
+                  {SORT_OPTIONS.map(opt => (
+                    <button key={opt.key} onClick={() => { setSortBy(opt.key); setShowSortMenu(false); }}
+                      className={`w-full flex items-center gap-2 px-3 py-[6px] text-[13px] transition-colors text-left ${
+                        sortBy === opt.key ? 'text-[#e6edf3] bg-[#1f6feb]/10' : 'text-[#8b949e] hover:bg-[#1f6feb]/10 hover:text-[#e6edf3]'
+                      }`}>
+                      <span className="w-3 text-center">{sortBy === opt.key ? '✓' : ''}</span>
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
         </div>
 

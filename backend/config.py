@@ -70,12 +70,3 @@ TEMPLATE_SCRIPT_PATH = os.environ.get(
 
 # --- GCP Service Account key file (for gcloud auth without manual login) ---
 GCP_SA_KEY_FILE = os.environ.get("GCP_SA_KEY_FILE", os.path.join(os.path.dirname(__file__), "..", "sa-key.json"))
-
-# --- Kubernetes Job execution (replaces VM SSH) ---
-# Set TEMPLATE_EXEC_MODE to "k8s" to use K8s Jobs instead of SSH
-TEMPLATE_EXEC_MODE = os.environ.get("TEMPLATE_EXEC_MODE", "ssh")  # "ssh" or "k8s"
-K8S_NAMESPACE = os.environ.get("K8S_NAMESPACE", "envcore")
-K8S_JOB_IMAGE = os.environ.get("K8S_JOB_IMAGE", "gcr.io/emergent-client-1/template-job:latest")
-K8S_GCS_SECRET = os.environ.get("K8S_GCS_SECRET", "template-creator-gcs-key")
-K8S_RESTIC_SECRET = os.environ.get("K8S_RESTIC_SECRET", "template-creator-secrets")
-
