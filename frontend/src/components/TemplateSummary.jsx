@@ -74,7 +74,7 @@ export default function TemplateSummary({ bearerToken, onTokenExpired }) {
             <div className="text-sm text-gh-accent-green-text font-medium flex items-center gap-2 mb-2">
               <CheckCircle className="w-4 h-4" /> Summary generated!
             </div>
-            <pre className="text-xs text-gh-accent-green-text bg-gh-canvas px-3.5 py-2.5 rounded-md overflow-x-auto font-mono whitespace-pre-wrap">
+            <pre className="text-xs text-gh-accent-green-text bg-gh-canvas px-3.5 py-2.5 rounded-md overflow-auto max-h-[400px] font-mono whitespace-pre-wrap">
               {JSON.stringify(result, null, 2)}
             </pre>
           </div>

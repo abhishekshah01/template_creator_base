@@ -85,12 +85,6 @@ const navStructure = [
     ],
   },
   {
-    section: 'Tools',
-    items: [
-      { id: 'template-summary', label: 'Template Summary', icon: FileIcon },
-    ],
-  },
-  {
     section: 'System',
     items: [
       { id: 'settings', label: 'Settings', icon: SettingsIcon },
