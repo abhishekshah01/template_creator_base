@@ -110,7 +110,7 @@ export default function Sidebar({ activePage, onNavigate, bearerToken, onTokenCh
     <aside className="bg-[#010409] border-r border-[#30363d] h-screen fixed top-0 left-0 flex flex-col" style={{ width }}>
       {/* Header */}
       <div className="px-4 pt-5 pb-4 border-b border-[#30363d]">
-        <h1 className="text-[15px] font-semibold text-[#e6edf3] mb-2">Template Manager</h1>
+        <h1 className="text-[15px] font-semibold text-[#e6edf3] mb-2">template-automation-v0</h1>
         {/* Environment switcher */}
         <div className="relative">
           <button onClick={() => setShowEnvMenu(!showEnvMenu)}

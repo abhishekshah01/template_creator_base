@@ -18,7 +18,7 @@ from pydantic import BaseModel
 
 import config
 
-app = FastAPI(title="Template Creator API")
+app = FastAPI(title="template-automation-v0")
 
 app.add_middleware(
     CORSMiddleware,
@@ -169,7 +169,7 @@ def _pod_exec(env_id: str, command: str, timeout: int = 30) -> dict:
 
 @app.get("/")
 def health():
-    return {"status": "ok", "service": "template-creator-api"}
+    return {"status": "ok", "service": "template-automation-v0"}
 
 
 @app.get("/api/environments")
