@@ -11,7 +11,6 @@ import re
 import subprocess
 
 import httpx
-import psycopg2
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
@@ -100,44 +99,24 @@ class SwitchEnvironmentRequest(BaseModel):
 
 def _get_env_id(job_id: str) -> str | None:
     """Look up environment UUID for a job.
-    Returns None if database is not available or not configured.
+    
+    Note: Direct database access is not available in this deployment.
+    PostgreSQL dependency was removed per deployment requirements.
+    This function will return None - job lookups must be configured via alternative means.
     """
     if not config.DB_DSN:
-        raise HTTPException(503, "DB_DSN not configured. Set the DB_DSN environment variable to enable job lookups.")
+        raise HTTPException(503, "Database lookups are not configured. PostgreSQL access is not available in this deployment environment.")
     
-    try:
-        conn = psycopg2.connect(config.DB_DSN)
-        cursor = conn.cursor()
-        cursor.execute("SELECT env_id FROM jobs WHERE job_id = %s LIMIT 1", (job_id,))
-        result = cursor.fetchone()
-        cursor.close()
-        conn.close()
-        
-        if result:
-            return result[0]
-        return None
-    except Exception as e:
-        raise HTTPException(503, f"Database query failed: {str(e)}")
+    # PostgreSQL access removed - would need external API or MongoDB alternative
+    raise HTTPException(503, "Direct database access is not available in this deployment. Job/environment lookups require production infrastructure access.")
 
 
 def _get_user_id_for_job(job_id: str) -> str | None:
-    """Look up the owner user_id for a job."""
-    if not config.DB_DSN:
-        return None
+    """Look up the owner user_id for a job.
     
-    try:
-        conn = psycopg2.connect(config.DB_DSN)
-        cursor = conn.cursor()
-        cursor.execute("SELECT user_id FROM jobs WHERE job_id = %s LIMIT 1", (job_id,))
-        result = cursor.fetchone()
-        cursor.close()
-        conn.close()
-        
-        if result:
-            return result[0]
-        return None
-    except Exception:
-        return None
+    Note: Database access not available - returns None.
+    """
+    return None
 
 
 def _pod_exec(env_id: str, command: str, timeout: int = 30) -> dict:
