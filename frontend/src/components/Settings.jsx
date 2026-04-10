@@ -212,48 +212,53 @@ export default function Settings({ activeEnv, standardEnvs, onSwitchEnv, envConf
                 </button>
               )}
             </div>
+          </div>
+        </div>
 
-            {/* Expandable connect form */}
-            {showEphInput && (
-              <div className="mt-3 pt-3 border-t border-[#30363d]">
-                <div className="flex items-stretch border border-[#30363d] rounded-md overflow-hidden focus-within:border-[#388bfd] transition-colors bg-[#0d1117]">
-                  <span className="px-2.5 text-[13px] font-mono text-[#8b949e] bg-[#161b22] border-r border-[#30363d] shrink-0 flex items-center">eph-</span>
-                  <input type="text" value={ephInput} onChange={e => setEphInput(e.target.value)}
-                    onKeyDown={e => { if (e.key === 'Enter') connectEph(); if (e.key === 'Escape') setShowEphInput(false); }}
-                    placeholder="environment-name"
-                    autoFocus
-                    data-testid="eph-env-input"
-                    className="flex-1 px-2.5 py-2 bg-transparent text-[13px] text-[#e6edf3] font-mono outline-none placeholder:text-[#484f58]"
-                  />
-                  <button onClick={connectEph} disabled={!ephInput.trim()}
-                    data-testid="eph-connect-btn"
-                    className="px-3 text-[13px] font-medium text-[#e6edf3] bg-[#238636] hover:bg-[#2ea043] border-l border-[#30363d] disabled:opacity-40 disabled:cursor-not-allowed transition-colors whitespace-nowrap">
-                    Connect
+        {/* Full-width connect form — appears below cards on Switch/Connect */}
+        {showEphInput && (
+          <div className="mt-3">
+            <div className="flex items-stretch rounded-md overflow-hidden border border-[#30363d] focus-within:border-[#388bfd] transition-colors">
+              <span className="px-3 text-[14px] font-mono text-[#8b949e] bg-[#161b22] border-r border-[#30363d] shrink-0 flex items-center select-none">eph-</span>
+              <input
+                type="text"
+                value={ephInput}
+                onChange={e => setEphInput(e.target.value)}
+                onKeyDown={e => { if (e.key === 'Enter') connectEph(); if (e.key === 'Escape') setShowEphInput(false); }}
+                placeholder="environment-name"
+                autoFocus
+                data-testid="eph-env-input"
+                className="flex-1 px-3 py-2.5 bg-[#0d1117] text-[14px] text-[#e6edf3] font-mono outline-none placeholder:text-[#484f58]"
+              />
+              <button
+                onClick={connectEph}
+                disabled={!ephInput.trim()}
+                data-testid="eph-connect-btn"
+                className="px-5 py-2.5 text-[14px] font-semibold text-white bg-[#238636] hover:bg-[#2ea043] border-l border-[#30363d] disabled:opacity-40 disabled:cursor-not-allowed transition-colors whitespace-nowrap">
+                Switch
+              </button>
+            </div>
+            {/* Recent history chips below the input */}
+            {ephHistory.length > 0 && (
+              <div className="mt-2 flex flex-wrap gap-1.5">
+                {ephHistory.map(env => (
+                  <button key={env} onClick={() => { connectFromHistory(env); setShowEphInput(false); }}
+                    data-testid={`eph-history-${env}`}
+                    className={`flex items-center gap-1 text-[12px] font-mono px-2.5 py-1 rounded-md border transition-colors ${
+                      activeEnv === env
+                        ? 'border-[#388bfd]/40 bg-[#388bfd]/10 text-[#58a6ff]'
+                        : 'border-[#30363d] text-[#8b949e] hover:border-[#484f58] hover:text-[#c9d1d9]'
+                    }`}>
+                    {env.replace('eph-', '')}
+                    <span onClick={e => removeFromHistory(env, e)} className="ml-0.5 text-[#484f58] hover:text-[#f85149]">
+                      <XIcon className="w-2.5 h-2.5" />
+                    </span>
                   </button>
-                </div>
-                {/* Recent history */}
-                {ephHistory.length > 0 && (
-                  <div className="mt-2 flex flex-wrap gap-1.5">
-                    {ephHistory.map(env => (
-                      <button key={env} onClick={() => { connectFromHistory(env); setShowEphInput(false); }}
-                        data-testid={`eph-history-${env}`}
-                        className={`flex items-center gap-1 text-[12px] font-mono px-2 py-1 rounded border transition-colors ${
-                          activeEnv === env
-                            ? 'border-[#388bfd]/40 bg-[#388bfd]/10 text-[#58a6ff]'
-                            : 'border-[#30363d] text-[#8b949e] hover:border-[#484f58] hover:text-[#c9d1d9]'
-                        }`}>
-                        {env.replace('eph-', '')}
-                        <span onClick={e => removeFromHistory(env, e)} className="text-[#484f58] hover:text-[#f85149]">
-                          <XIcon className="w-2.5 h-2.5" />
-                        </span>
-                      </button>
-                    ))}
-                  </div>
-                )}
+                ))}
               </div>
             )}
           </div>
-        </div>
+        )}
       </section>
 
       {/* ── Secrets & Variables ─────────────────────────── */}
