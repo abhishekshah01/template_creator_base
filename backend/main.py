@@ -11,7 +11,10 @@ import re
 import subprocess
 
 import httpx
-import psycopg2
+try:
+    import psycopg2
+except ImportError:
+    psycopg2 = None
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
@@ -102,6 +105,8 @@ def _get_env_id(job_id: str) -> str | None:
     """Look up environment UUID for a job from the DB."""
     if not config.DB_DSN:
         raise HTTPException(500, "DB_DSN not configured")
+    if psycopg2 is None:
+        raise HTTPException(503, "Database driver not available in this deployment. Set DB_DSN and ensure psycopg2 is installed.")
     conn = psycopg2.connect(config.DB_DSN)
     try:
         with conn.cursor() as cur:
@@ -118,6 +123,8 @@ def _get_env_id(job_id: str) -> str | None:
 def _get_user_id_for_job(job_id: str) -> str | None:
     """Look up the owner user_id for a job from the DB."""
     if not config.DB_DSN:
+        return None
+    if psycopg2 is None:
         return None
     conn = psycopg2.connect(config.DB_DSN)
     try:
@@ -243,7 +250,7 @@ async def get_job_info(req: JobRequest):
 
     # Check pod lifecycle status from DB
     pod_status = None
-    if config.DB_DSN:
+    if config.DB_DSN and psycopg2 is not None:
         conn = psycopg2.connect(config.DB_DSN)
         try:
             with conn.cursor() as cur:
