@@ -148,101 +148,78 @@ export default function Settings({ activeEnv, standardEnvs, onSwitchEnv, envConf
           <p className="text-[13px] text-[#8b949e] mt-0.5">All API calls use the selected environment's endpoints.</p>
         </div>
 
-        {/* Unified env list — flat rows, no colored cards */}
-        <div className="border border-[#30363d] rounded-md overflow-hidden divide-y divide-[#21262d] mb-4">
+        {/* Single unified container */}
+        <div className="border border-[#30363d] rounded-md overflow-hidden divide-y divide-[#21262d]">
+
+          {/* Standard env rows */}
           {standardEnvs.map(env => {
             const isActive = activeEnv === env.name;
             return (
               <button key={env.name} onClick={() => onSwitchEnv(env.name)}
                 data-testid={`env-card-${env.name}`}
-                className={`w-full flex items-center gap-3 px-4 py-3 text-left transition-colors ${isActive ? 'bg-[#161b22]' : 'hover:bg-[#161b22]'}`}>
-                <span className="w-3.5 flex items-center justify-center shrink-0">
+                className={`w-full flex items-center gap-3 px-4 py-2.5 text-left transition-colors ${isActive ? 'bg-[#161b22]' : 'hover:bg-[#161b22]'}`}>
+                <span className="w-3.5 shrink-0 flex items-center justify-center">
                   {isActive && <CheckIcon className="w-3.5 h-3.5 text-[#3fb950]" />}
                 </span>
-                <span className={`flex-1 text-[14px] ${isActive ? 'text-[#e6edf3] font-medium' : 'text-[#c9d1d9]'}`}>{env.label}</span>
-                <span className="text-[12px] text-[#6e7681]">standard</span>
+                <span className={`flex-1 text-[13px] ${isActive ? 'text-[#e6edf3] font-medium' : 'text-[#8b949e]'}`}>{env.label}</span>
+                <span className="text-[11px] text-[#484f58]">standard</span>
               </button>
             );
           })}
 
           {/* Active ephemeral row */}
           {isEph && (
-            <div className="flex items-center gap-3 px-4 py-3 bg-[#161b22]">
-              <span className="w-3.5 flex items-center justify-center shrink-0">
+            <div className="flex items-center gap-3 px-4 py-2.5 bg-[#161b22]">
+              <span className="w-3.5 shrink-0 flex items-center justify-center">
                 <CheckIcon className="w-3.5 h-3.5 text-[#3fb950]" />
               </span>
-              <span className="flex-1 text-[14px] text-[#e6edf3] font-medium font-mono">{activeEnv}</span>
-              <span className="text-[12px] text-[#6e7681] mr-3">ephemeral</span>
+              <span className="flex-1 text-[13px] text-[#e6edf3] font-medium font-mono">{activeEnv}</span>
+              <span className="text-[11px] text-[#484f58] mr-2">ephemeral</span>
               <button onClick={() => onSwitchEnv(standardEnvs[0]?.name || 'dev')}
-                className="text-[12px] text-[#6e7681] hover:text-[#f85149] transition-colors">
+                className="text-[11px] text-[#6e7681] hover:text-[#f85149] transition-colors">
                 disconnect
               </button>
             </div>
           )}
-        </div>
 
-        {/* Ephemeral connect area */}
-        <div className="border border-[#30363d] rounded-md overflow-hidden">
-          <div className="px-4 py-3 bg-[#161b22] border-b border-[#21262d]">
-            <span className="text-[13px] font-medium text-[#e6edf3]">
-              {isEph ? 'Switch ephemeral environment' : 'Connect to ephemeral'}
-            </span>
-            <p className="text-[12px] text-[#6e7681] mt-0.5">Temporary environments for active job sessions.</p>
-          </div>
+          {/* Ephemeral connect row */}
           <div className="px-4 py-3">
-            {/* Recent history — neutral monospace pills */}
-            {ephHistory.length > 0 && (
-              <div className="mb-3">
-                <p className="text-[12px] text-[#6e7681] mb-2">Recent</p>
-                <div className="flex flex-wrap gap-1.5">
-                  {ephHistory.map(env => {
-                    const isActiveEnv = activeEnv === env;
-                    return (
-                      <button key={env} onClick={() => connectFromHistory(env)}
-                        data-testid={`eph-history-${env}`}
-                        className={`group flex items-center gap-1 px-2.5 py-[4px] rounded-md text-[12px] font-mono border transition-colors ${
-                          isActiveEnv
-                            ? 'bg-[#21262d] text-[#e6edf3] border-[#484f58]'
-                            : 'text-[#8b949e] border-[#30363d] hover:bg-[#21262d] hover:text-[#c9d1d9] hover:border-[#484f58]'
-                        }`}>
-                        {isActiveEnv && <CheckIcon className="w-3 h-3 text-[#3fb950] shrink-0" />}
-                        <span>{env}</span>
-                        <span onClick={e => removeFromHistory(env, e)}
-                          className="opacity-0 group-hover:opacity-100 transition-opacity ml-0.5 text-[#6e7681] hover:text-[#f85149]">
-                          <XIcon className="w-3 h-3" />
-                        </span>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-
-            {/* Connect input */}
             <div className="flex items-stretch border border-[#30363d] rounded-md overflow-hidden focus-within:border-[#58a6ff] transition-colors">
-              <span className="px-3 py-2 text-[13px] font-mono text-[#6e7681] bg-[#161b22] border-r border-[#30363d] shrink-0 flex items-center">eph-</span>
+              <span className="px-3 text-[12px] font-mono text-[#6e7681] bg-[#161b22] border-r border-[#30363d] shrink-0 flex items-center">eph-</span>
               <input type="text" value={ephInput} onChange={e => setEphInput(e.target.value)}
                 onKeyDown={e => { if (e.key === 'Enter') connectEph(); }}
                 placeholder="environment-name"
                 data-testid="eph-env-input"
-                className="flex-1 px-3 py-2 bg-[#0d1117] text-[13px] text-[#e6edf3] font-mono outline-none placeholder:text-[#484f58]"
+                className="flex-1 px-3 py-2 bg-transparent text-[13px] text-[#e6edf3] font-mono outline-none placeholder:text-[#484f58]"
               />
               <button onClick={connectEph} disabled={!ephInput.trim()}
                 data-testid="eph-connect-btn"
-                className="px-4 py-2 bg-[#21262d] text-[#e6edf3] text-[13px] font-medium border-l border-[#30363d] hover:bg-[#30363d] disabled:opacity-40 disabled:cursor-not-allowed transition-colors whitespace-nowrap">
+                className="px-3 py-2 text-[12px] font-medium text-[#e6edf3] bg-[#21262d] border-l border-[#30363d] hover:bg-[#30363d] disabled:opacity-40 disabled:cursor-not-allowed transition-colors whitespace-nowrap">
                 Connect
               </button>
             </div>
-          </div>
-        </div>
 
-        {/* Status — minimal one-liner */}
-        <div className="mt-3 flex items-center gap-2 px-1">
-          <span className="w-2 h-2 rounded-full bg-[#3fb950] shrink-0" />
-          <span className="text-[12px] text-[#6e7681]">
-            Connected to <span className="text-[#c9d1d9] font-medium">{activeEnv}</span>
-            <span className="ml-1.5 text-[#484f58]">· {config?.type || (isEph ? 'ephemeral' : 'standard')}</span>
-          </span>
+            {/* Recent — inline plain text links */}
+            {ephHistory.length > 0 && (
+              <div className="mt-2 flex items-center gap-1 flex-wrap">
+                <span className="text-[11px] text-[#484f58]">Recent:</span>
+                {ephHistory.map((env, i) => (
+                  <span key={env} className="flex items-center gap-1">
+                    {i > 0 && <span className="text-[11px] text-[#30363d]">·</span>}
+                    <button onClick={() => connectFromHistory(env)}
+                      data-testid={`eph-history-${env}`}
+                      className={`text-[11px] font-mono transition-colors ${activeEnv === env ? 'text-[#e6edf3]' : 'text-[#6e7681] hover:text-[#c9d1d9]'}`}>
+                      {env.replace('eph-', '')}
+                    </button>
+                    <button onClick={e => removeFromHistory(env, e)}
+                      className="text-[#30363d] hover:text-[#6e7681] transition-colors">
+                      <XIcon className="w-2.5 h-2.5" />
+                    </button>
+                  </span>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       </section>
 
