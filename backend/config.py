@@ -37,13 +37,12 @@ STANDARD_ENVS = {
 EPH_API_URL_TEMPLATE = os.environ.get("EPH_API_URL_TEMPLATE", "")
 EPH_ENVCORE_URL = os.environ.get("EPH_ENVCORE_URL", "")
 EPH_PAUSE_URL_TEMPLATE = os.environ.get("EPH_PAUSE_URL_TEMPLATE", "")
-EPH_DB_DSN_TEMPLATE = os.environ.get("EPH_DB_DSN_TEMPLATE", "")
 
 EPH_TEMPLATES = {
     "api_url": EPH_API_URL_TEMPLATE,
     "envcore_url": EPH_ENVCORE_URL,
     "pause_url": EPH_PAUSE_URL_TEMPLATE,
-    "db_dsn": EPH_DB_DSN_TEMPLATE,
+    "db_dsn": "",
 }
 
 
@@ -60,7 +59,7 @@ def get_env_config(env_name):
         "api_url": EPH_TEMPLATES["api_url"].format(name=name) if EPH_TEMPLATES["api_url"] else "",
         "envcore_url": EPH_TEMPLATES["envcore_url"],
         "pause_url": EPH_TEMPLATES["pause_url"].format(name=name) if EPH_TEMPLATES["pause_url"] else "",
-        "db_dsn": EPH_TEMPLATES["db_dsn"].format(name=name) if EPH_TEMPLATES["db_dsn"] else "",
+        "db_dsn": "",
     }
 
 
