@@ -141,47 +141,6 @@ export default function Settings({ activeEnv, standardEnvs, onSwitchEnv, envConf
         <p className="text-[14px] text-[#8b949e] mt-1">Configure environments, credentials, and system preferences.</p>
       </div>
 
-      {/* ── Connection Hero ──────────────────────────────── */}
-      <div className={`relative overflow-hidden rounded-xl border px-6 py-5 ${
-        isEph
-          ? 'border-[#8957e5]/40 bg-gradient-to-r from-[#8957e5]/10 via-[#8957e5]/5 to-transparent'
-          : 'border-[#238636]/40 bg-gradient-to-r from-[#238636]/10 via-[#238636]/5 to-transparent'
-      }`}>
-        {/* Glow */}
-        <div className={`absolute top-0 left-0 w-1 h-full ${isEph ? 'bg-[#8957e5]' : 'bg-[#3fb950]'}`} />
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <div className={`w-10 h-10 rounded-full flex items-center justify-center ${isEph ? 'bg-[#8957e5]/15' : 'bg-[#238636]/15'}`}>
-              <span className={`w-3 h-3 rounded-full ${isEph ? 'bg-[#bc8cff] shadow-[0_0_8px_rgba(188,140,255,0.9)]' : 'bg-[#3fb950] shadow-[0_0_8px_rgba(63,185,80,0.9)]'} animate-pulse`} />
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="text-[16px] font-bold text-[#e6edf3]">{activeEnv}</span>
-                <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full border ${
-                  isEph
-                    ? 'bg-[#8957e5]/15 text-[#bc8cff] border-[#8957e5]/35'
-                    : 'bg-[#238636]/12 text-[#3fb950] border-[#238636]/30'
-                }`}>
-                  {config?.type || (isEph ? 'ephemeral' : 'standard')}
-                </span>
-              </div>
-              <p className="text-[12px] text-[#8b949e] mt-0.5">
-                {config?.api_url
-                  ? <span className="font-mono">{config.api_url}</span>
-                  : 'Loading endpoint…'}
-              </p>
-            </div>
-          </div>
-          <div className="text-right">
-            <div className="text-[11px] text-[#484f58] uppercase tracking-wider mb-0.5">Status</div>
-            <div className="flex items-center gap-1.5 justify-end">
-              <span className={`w-2 h-2 rounded-full ${isEph ? 'bg-[#bc8cff]' : 'bg-[#3fb950]'}`} />
-              <span className={`text-[13px] font-medium ${isEph ? 'text-[#bc8cff]' : 'text-[#3fb950]'}`}>Connected</span>
-            </div>
-          </div>
-        </div>
-      </div>
-
       {/* ── Active Environment ──────────────────────────── */}
       <section>
         <div className="pb-3 border-b border-[#21262d] mb-5">
@@ -262,14 +221,14 @@ export default function Settings({ activeEnv, standardEnvs, onSwitchEnv, envConf
                           data-testid={`eph-history-${env}`}
                           className={`group flex items-center gap-1.5 pl-2.5 pr-1.5 py-1 rounded-full text-[11px] font-mono border transition-all duration-150 ${
                             isActiveEnv
-                              ? 'bg-[#8957e5]/20 text-[#bc8cff] border-[#8957e5]/40'
-                              : 'bg-[#161b22] text-[#8b949e] border-[#30363d] hover:border-[#8957e5]/40 hover:text-[#e6edf3] hover:bg-[#8957e5]/8'
+                              ? 'bg-[#e3b341]/15 text-[#e3b341] border-[#e3b341]/40'
+                              : 'bg-[#161b22] text-[#8b949e] border-[#30363d] hover:border-[#e3b341]/35 hover:text-[#e3b341] hover:bg-[#e3b341]/8'
                           }`}>
-                          {isActiveEnv && <span className="w-1.5 h-1.5 rounded-full bg-[#bc8cff] shrink-0" />}
+                          {isActiveEnv && <span className="w-1.5 h-1.5 rounded-full bg-[#e3b341] shrink-0" />}
                           <span>{env}</span>
                           <span
                             onClick={(e) => removeFromHistory(env, e)}
-                            className={`ml-0.5 p-0.5 rounded-full transition-all ${isActiveEnv ? 'text-[#8957e5] hover:text-[#f85149]' : 'opacity-0 group-hover:opacity-100 text-[#484f58] hover:text-[#f85149]'}`}>
+                            className={`ml-0.5 p-0.5 rounded-full transition-all ${isActiveEnv ? 'text-[#e3b341]/60 hover:text-[#f85149]' : 'opacity-0 group-hover:opacity-100 text-[#484f58] hover:text-[#f85149]'}`}>
                             <XIcon className="w-3 h-3" />
                           </span>
                         </button>
