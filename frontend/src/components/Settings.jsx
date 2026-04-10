@@ -59,6 +59,7 @@ export default function Settings({ activeEnv, standardEnvs, onSwitchEnv, envConf
   const [config, setConfig] = useState(null);
   const [loading, setLoading] = useState(true);
   const [ephInput, setEphInput] = useState('');
+  const [showEphInput, setShowEphInput] = useState(false);
   const [showToken, setShowToken] = useState(false);
   const [copied, setCopied] = useState(false);
   const [copiedField, setCopiedField] = useState(null);
@@ -89,6 +90,7 @@ export default function Settings({ activeEnv, standardEnvs, onSwitchEnv, envConf
     setEphHistory(updated);
     saveEphHistory(updated);
     setEphInput('');
+    setShowEphInput(false);
   }
 
   function connectFromHistory(name) {
@@ -122,7 +124,7 @@ export default function Settings({ activeEnv, standardEnvs, onSwitchEnv, envConf
   }
 
   const isEph = activeEnv?.startsWith('eph-');
-  const readOnlyCls = "w-full px-3 py-[6px] bg-[#0d1117] border border-[#21262d] rounded-md text-[14px] text-[#c9d1d9] font-mono cursor-default select-all";
+  const readOnlyCls = "w-full px-3 py-2 bg-[#0d1117] border border-[#30363d] rounded-md text-[14px] text-[#c9d1d9] font-mono cursor-default select-all";
 
   if (loading) {
     return (
@@ -137,86 +139,117 @@ export default function Settings({ activeEnv, standardEnvs, onSwitchEnv, envConf
     <div className="max-w-[760px] space-y-10">
       {/* Page Header */}
       <div>
-        <h1 className="text-[24px] font-bold text-[#e6edf3]">Settings</h1>
-        <p className="text-[14px] text-[#8b949e] mt-1">Configure environments, credentials, and system preferences.</p>
+        <h1 className="text-[28px] font-bold text-[#e6edf3]">Settings</h1>
+        <p className="text-[14px] text-[#c9d1d9] mt-1">Configure environments, credentials, and system preferences.</p>
       </div>
 
       {/* ── Active Environment ──────────────────────────── */}
       <section>
-        <div className="pb-3 border-b border-[#21262d] mb-5">
-          <h2 className="text-[17px] font-semibold text-[#e6edf3]">Active Environment</h2>
-          <p className="text-[13px] text-[#8b949e] mt-0.5">All API calls use the selected environment's endpoints.</p>
+        <div className="pb-3 border-b border-[#30363d] mb-5">
+          <h2 className="text-[20px] font-semibold text-[#e6edf3]">Active Environment</h2>
+          <p className="text-[14px] text-[#c9d1d9] mt-1">All API calls use the selected environment's endpoints.</p>
         </div>
 
-        {/* Single unified container */}
-        <div className="border border-[#30363d] rounded-md overflow-hidden divide-y divide-[#21262d]">
-
-          {/* Standard env rows */}
+        {/* 3-card grid */}
+        <div className="grid grid-cols-3 gap-3">
+          {/* Standard env cards */}
           {standardEnvs.map(env => {
             const isActive = activeEnv === env.name;
             return (
               <button key={env.name} onClick={() => onSwitchEnv(env.name)}
                 data-testid={`env-card-${env.name}`}
-                className={`w-full flex items-center gap-3 px-4 py-2.5 text-left transition-colors ${isActive ? 'bg-[#161b22]' : 'hover:bg-[#161b22]'}`}>
-                <span className="w-3.5 shrink-0 flex items-center justify-center">
-                  {isActive && <CheckIcon className="w-3.5 h-3.5 text-[#3fb950]" />}
-                </span>
-                <span className={`flex-1 text-[13px] ${isActive ? 'text-[#e6edf3] font-medium' : 'text-[#8b949e]'}`}>{env.label}</span>
-                <span className="text-[11px] text-[#484f58]">standard</span>
+                className={`relative p-4 rounded-lg border text-left transition-all ${
+                  isActive
+                    ? 'border-[#388bfd] bg-[#1f6feb]/10'
+                    : 'border-[#30363d] bg-[#0d1117] hover:border-[#8b949e] hover:bg-[#161b22]'
+                }`}>
+                <div className="flex items-start justify-between gap-2 mb-2">
+                  <span className={`text-[16px] font-semibold ${isActive ? 'text-[#e6edf3]' : 'text-[#c9d1d9]'}`}>
+                    {env.label}
+                  </span>
+                  {isActive && (
+                    <span className="shrink-0 mt-0.5 text-[11px] font-medium text-[#388bfd] bg-[#388bfd]/15 border border-[#388bfd]/40 rounded-full px-2 py-0.5">
+                      active
+                    </span>
+                  )}
+                </div>
+                <span className="text-[13px] text-[#8b949e]">Standard</span>
               </button>
             );
           })}
 
-          {/* Active ephemeral row */}
-          {isEph && (
-            <div className="flex items-center gap-3 px-4 py-2.5 bg-[#161b22]">
-              <span className="w-3.5 shrink-0 flex items-center justify-center">
-                <CheckIcon className="w-3.5 h-3.5 text-[#3fb950]" />
-              </span>
-              <span className="flex-1 text-[13px] text-[#e6edf3] font-medium font-mono">{activeEnv}</span>
-              <span className="text-[11px] text-[#484f58] mr-2">ephemeral</span>
-              <button onClick={() => onSwitchEnv(standardEnvs[0]?.name || 'dev')}
-                className="text-[11px] text-[#6e7681] hover:text-[#f85149] transition-colors">
-                disconnect
-              </button>
-            </div>
-          )}
-
-          {/* Ephemeral connect row */}
-          <div className="px-4 py-3">
-            <div className="flex items-stretch border border-[#30363d] rounded-md overflow-hidden focus-within:border-[#58a6ff] transition-colors">
-              <span className="px-3 text-[12px] font-mono text-[#6e7681] bg-[#161b22] border-r border-[#30363d] shrink-0 flex items-center">eph-</span>
-              <input type="text" value={ephInput} onChange={e => setEphInput(e.target.value)}
-                onKeyDown={e => { if (e.key === 'Enter') connectEph(); }}
-                placeholder="environment-name"
-                data-testid="eph-env-input"
-                className="flex-1 px-3 py-2 bg-transparent text-[13px] text-[#e6edf3] font-mono outline-none placeholder:text-[#484f58]"
-              />
-              <button onClick={connectEph} disabled={!ephInput.trim()}
-                data-testid="eph-connect-btn"
-                className="px-3 py-2 text-[12px] font-medium text-[#e6edf3] bg-[#21262d] border-l border-[#30363d] hover:bg-[#30363d] disabled:opacity-40 disabled:cursor-not-allowed transition-colors whitespace-nowrap">
-                Connect
-              </button>
+          {/* Ephemeral card */}
+          <div className={`relative p-4 rounded-lg border transition-all ${
+            isEph
+              ? 'border-[#388bfd] bg-[#1f6feb]/10'
+              : 'border-[#30363d] bg-[#0d1117]'
+          }`}>
+            <div className="flex items-start justify-between gap-2 mb-2">
+              <div className="min-w-0">
+                <span className={`block text-[16px] font-semibold truncate ${isEph ? 'text-[#e6edf3]' : 'text-[#c9d1d9]'}`}>
+                  {isEph ? activeEnv : 'Ephemeral'}
+                </span>
+                <span className="text-[13px] text-[#8b949e]">{isEph ? 'Ephemeral' : 'Not connected'}</span>
+              </div>
+              {isEph && (
+                <span className="shrink-0 mt-0.5 text-[11px] font-medium text-[#388bfd] bg-[#388bfd]/15 border border-[#388bfd]/40 rounded-full px-2 py-0.5">
+                  active
+                </span>
+              )}
             </div>
 
-            {/* Recent — inline plain text links */}
-            {ephHistory.length > 0 && (
-              <div className="mt-2 flex items-center gap-1 flex-wrap">
-                <span className="text-[11px] text-[#484f58]">Recent:</span>
-                {ephHistory.map((env, i) => (
-                  <span key={env} className="flex items-center gap-1">
-                    {i > 0 && <span className="text-[11px] text-[#30363d]">·</span>}
-                    <button onClick={() => connectFromHistory(env)}
-                      data-testid={`eph-history-${env}`}
-                      className={`text-[11px] font-mono transition-colors ${activeEnv === env ? 'text-[#e6edf3]' : 'text-[#6e7681] hover:text-[#c9d1d9]'}`}>
-                      {env.replace('eph-', '')}
-                    </button>
-                    <button onClick={e => removeFromHistory(env, e)}
-                      className="text-[#30363d] hover:text-[#6e7681] transition-colors">
-                      <XIcon className="w-2.5 h-2.5" />
-                    </button>
-                  </span>
-                ))}
+            <div className="flex items-center gap-2 mt-3">
+              <button
+                onClick={() => { setShowEphInput(v => !v); setEphInput(''); }}
+                data-testid="eph-connect-toggle-btn"
+                className="text-[13px] font-medium text-[#c9d1d9] bg-[#21262d] hover:bg-[#30363d] border border-[#30363d] rounded-md px-3 py-1.5 transition-colors">
+                {isEph ? 'Switch' : 'Connect'}
+              </button>
+              {isEph && (
+                <button onClick={() => onSwitchEnv(standardEnvs[0]?.name || 'dev')}
+                  className="text-[13px] text-[#8b949e] hover:text-[#f85149] transition-colors">
+                  Disconnect
+                </button>
+              )}
+            </div>
+
+            {/* Expandable connect form */}
+            {showEphInput && (
+              <div className="mt-3 pt-3 border-t border-[#30363d]">
+                <div className="flex items-stretch border border-[#30363d] rounded-md overflow-hidden focus-within:border-[#388bfd] transition-colors bg-[#0d1117]">
+                  <span className="px-2.5 text-[13px] font-mono text-[#8b949e] bg-[#161b22] border-r border-[#30363d] shrink-0 flex items-center">eph-</span>
+                  <input type="text" value={ephInput} onChange={e => setEphInput(e.target.value)}
+                    onKeyDown={e => { if (e.key === 'Enter') connectEph(); if (e.key === 'Escape') setShowEphInput(false); }}
+                    placeholder="environment-name"
+                    autoFocus
+                    data-testid="eph-env-input"
+                    className="flex-1 px-2.5 py-2 bg-transparent text-[13px] text-[#e6edf3] font-mono outline-none placeholder:text-[#484f58]"
+                  />
+                  <button onClick={connectEph} disabled={!ephInput.trim()}
+                    data-testid="eph-connect-btn"
+                    className="px-3 text-[13px] font-medium text-[#e6edf3] bg-[#238636] hover:bg-[#2ea043] border-l border-[#30363d] disabled:opacity-40 disabled:cursor-not-allowed transition-colors whitespace-nowrap">
+                    Connect
+                  </button>
+                </div>
+                {/* Recent history */}
+                {ephHistory.length > 0 && (
+                  <div className="mt-2 flex flex-wrap gap-1.5">
+                    {ephHistory.map(env => (
+                      <button key={env} onClick={() => { connectFromHistory(env); setShowEphInput(false); }}
+                        data-testid={`eph-history-${env}`}
+                        className={`flex items-center gap-1 text-[12px] font-mono px-2 py-1 rounded border transition-colors ${
+                          activeEnv === env
+                            ? 'border-[#388bfd]/40 bg-[#388bfd]/10 text-[#58a6ff]'
+                            : 'border-[#30363d] text-[#8b949e] hover:border-[#484f58] hover:text-[#c9d1d9]'
+                        }`}>
+                        {env.replace('eph-', '')}
+                        <span onClick={e => removeFromHistory(env, e)} className="text-[#484f58] hover:text-[#f85149]">
+                          <XIcon className="w-2.5 h-2.5" />
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -225,17 +258,17 @@ export default function Settings({ activeEnv, standardEnvs, onSwitchEnv, envConf
 
       {/* ── Secrets & Variables ─────────────────────────── */}
       <section>
-        <div className="pb-3 border-b border-[#21262d] mb-5">
-          <h2 className="text-[17px] font-semibold text-[#e6edf3]">Secrets &amp; Variables</h2>
-          <p className="text-[13px] text-[#8b949e] mt-0.5">Credentials stored locally in your browser — never transmitted to our servers.</p>
+        <div className="pb-3 border-b border-[#30363d] mb-5">
+          <h2 className="text-[20px] font-semibold text-[#e6edf3]">Secrets &amp; Variables</h2>
+          <p className="text-[14px] text-[#c9d1d9] mt-1">Credentials stored locally in your browser — never transmitted to our servers.</p>
         </div>
 
         <div className="border border-[#30363d] rounded-lg overflow-hidden">
           {/* Header */}
-          <div className="px-4 py-3.5 bg-[#161b22] border-b border-[#21262d] flex items-center justify-between">
+          <div className="px-4 py-3.5 bg-[#161b22] border-b border-[#30363d] flex items-center justify-between">
             <div>
-              <div className="text-[14px] font-semibold text-[#e6edf3]">Bearer Token</div>
-              <div className="text-[12px] text-[#8b949e] mt-0.5">Authenticates requests to the Category Config API</div>
+              <div className="text-[15px] font-semibold text-[#e6edf3]">Bearer Token</div>
+              <div className="text-[13px] text-[#c9d1d9] mt-0.5">Authenticates requests to the Category Config API</div>
             </div>
             <span data-testid="token-status-badge"
               className={`flex items-center gap-1.5 text-[12px] px-2.5 py-1 rounded-full border font-medium ${
@@ -288,44 +321,44 @@ export default function Settings({ activeEnv, standardEnvs, onSwitchEnv, envConf
                 )}
               </div>
             </div>
-            <p className="text-[12px] text-[#484f58] mt-2">Token is stored in browser localStorage. The "Bearer " prefix is added automatically to all requests.</p>
+            <p className="text-[13px] text-[#8b949e] mt-2">Token is stored in browser localStorage. The "Bearer " prefix is added automatically to all requests.</p>
           </div>
         </div>
       </section>
 
       {/* ── API Endpoints ──────────────────────────────── */}
       <section>
-        <div className="pb-3 border-b border-[#21262d] mb-5">
-          <h2 className="text-[17px] font-semibold text-[#e6edf3] flex items-center gap-2">
-            <ServerIcon className="w-4 h-4 text-[#8b949e]" />
+        <div className="pb-3 border-b border-[#30363d] mb-5">
+          <h2 className="text-[20px] font-semibold text-[#e6edf3] flex items-center gap-2">
+            <ServerIcon className="w-5 h-5 text-[#8b949e]" />
             API Endpoints
           </h2>
-          <p className="text-[13px] text-[#8b949e] mt-0.5">Auto-configured when you switch environments.</p>
+          <p className="text-[14px] text-[#c9d1d9] mt-1">Auto-configured when you switch environments.</p>
         </div>
-        <div className="border border-[#30363d] rounded-lg overflow-hidden divide-y divide-[#21262d]">
+        <div className="border border-[#30363d] rounded-lg overflow-hidden divide-y divide-[#30363d]">
           {[
             { label: 'Base URL', key: 'api_url', desc: 'Category Config API' },
             { label: 'Pause URL', key: 'pause_url', desc: 'Pause / Resume Jobs' },
             { label: 'Envcore URL', key: 'envcore_url', desc: 'Pod Execution', note: 'Same across all environments.' },
             { label: 'Database', key: 'db_dsn', desc: 'PostgreSQL' },
           ].map(field => (
-            <div key={field.key} className="px-4 py-3.5 group">
-              <div className="flex items-center justify-between mb-1.5">
-                <label className="text-[13px] font-semibold text-[#e6edf3]">{field.label}</label>
+            <div key={field.key} className="px-4 py-4 group">
+              <div className="flex items-center justify-between mb-2">
+                <label className="text-[14px] font-semibold text-[#e6edf3]">{field.label}</label>
                 <div className="flex items-center gap-2">
                   <button
                     onClick={() => handleCopyField(field.key, getVal(field.key))}
                     title="Copy value"
-                    className="opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded text-[#484f58] hover:text-[#8b949e]">
+                    className="opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded text-[#8b949e] hover:text-[#c9d1d9]">
                     {copiedField === field.key
                       ? <CheckIcon className="w-3.5 h-3.5 text-[#3fb950]" />
                       : <CopyIcon className="w-3.5 h-3.5" />}
                   </button>
-                  <span className="text-[11px] text-[#484f58] bg-[#161b22] px-2 py-0.5 rounded border border-[#21262d]">{field.desc}</span>
+                  <span className="text-[12px] text-[#8b949e] bg-[#161b22] px-2 py-0.5 rounded border border-[#30363d]">{field.desc}</span>
                 </div>
               </div>
               <input type="text" value={getVal(field.key)} readOnly className={readOnlyCls} />
-              {field.note && <p className="text-[12px] text-[#484f58] mt-1">{field.note}</p>}
+              {field.note && <p className="text-[13px] text-[#8b949e] mt-1.5">{field.note}</p>}
             </div>
           ))}
         </div>
@@ -333,29 +366,29 @@ export default function Settings({ activeEnv, standardEnvs, onSwitchEnv, envConf
 
       {/* ── Template Creation ──────────────────────────── */}
       <section>
-        <div className="pb-3 border-b border-[#21262d] mb-5">
-          <h2 className="text-[17px] font-semibold text-[#e6edf3]">Template Creation</h2>
-          <p className="text-[13px] text-[#8b949e] mt-0.5">GCS buckets used when creating templates from job snapshots.</p>
+        <div className="pb-3 border-b border-[#30363d] mb-5">
+          <h2 className="text-[20px] font-semibold text-[#e6edf3]">Template Creation</h2>
+          <p className="text-[14px] text-[#c9d1d9] mt-1">GCS buckets used when creating templates from job snapshots.</p>
         </div>
-        <div className="border border-[#30363d] rounded-lg overflow-hidden divide-y divide-[#21262d]">
+        <div className="border border-[#30363d] rounded-lg overflow-hidden divide-y divide-[#30363d]">
           {[
             { label: 'Source Bucket', key: 'source_bucket', note: 'GCS bucket containing job snapshots.' },
             { label: 'Destination Bucket', key: 'dest_bucket', note: 'GCS bucket where templates are stored.' },
           ].map(field => (
-            <div key={field.key} className="px-4 py-3.5 group">
-              <div className="flex items-center justify-between mb-1.5">
-                <label className="text-[13px] font-semibold text-[#e6edf3]">{field.label}</label>
+            <div key={field.key} className="px-4 py-4 group">
+              <div className="flex items-center justify-between mb-2">
+                <label className="text-[14px] font-semibold text-[#e6edf3]">{field.label}</label>
                 <button
                   onClick={() => handleCopyField(field.key, getVal(field.key))}
                   title="Copy value"
-                  className="opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded text-[#484f58] hover:text-[#8b949e]">
+                  className="opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded text-[#8b949e] hover:text-[#c9d1d9]">
                   {copiedField === field.key
                     ? <CheckIcon className="w-3.5 h-3.5 text-[#3fb950]" />
                     : <CopyIcon className="w-3.5 h-3.5" />}
                 </button>
               </div>
               <input type="text" value={getVal(field.key)} readOnly className={readOnlyCls} />
-              <p className="text-[12px] text-[#484f58] mt-1">{field.note}</p>
+              <p className="text-[13px] text-[#8b949e] mt-1.5">{field.note}</p>
             </div>
           ))}
         </div>
