@@ -9,6 +9,5 @@ export default defineConfig({
     port: 3000,
     strictPort: true,
     hmr: false,
-    allowedHosts: ['template-auto.internal.preview.emergentagent.com'],
   },
 })
