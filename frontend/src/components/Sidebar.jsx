@@ -124,7 +124,7 @@ export default function Sidebar({ activePage, onNavigate, bearerToken, onTokenCh
   }
 
   return (
-    <aside className="bg-[#010409] border-r border-[#30363d] h-screen fixed top-0 left-0 flex flex-col" style={{ width }}>
+    <aside className="bg-[#0d1117] border-r border-[#30363d] h-screen fixed top-0 left-0 flex flex-col" style={{ width }}>
       {/* Header */}
       <div className="px-4 pt-5 pb-4 border-b border-[#30363d]">
         <h1 className="text-[15px] font-semibold text-[#e6edf3] mb-2">template-automation-v0</h1>
@@ -132,21 +132,24 @@ export default function Sidebar({ activePage, onNavigate, bearerToken, onTokenCh
         <div className="relative">
           <button onClick={() => setShowEnvMenu(!showEnvMenu)}
             data-testid="env-switcher-btn"
-            className="flex items-center gap-1.5 text-[12px] px-2 py-[4px] rounded-md text-[#3fb950] font-medium border border-[#238636]/25 bg-[#238636]/10 hover:bg-[#238636]/18 transition-colors w-full outline-none">
-            <span className="w-[6px] h-[6px] rounded-full bg-[#3fb950] shrink-0" />
-            <span className="flex-1 text-left truncate">{activeEnv || 'eph-leadgen1'}</span>
-            <svg className={`w-3 h-3 shrink-0 transition-transform text-[#3fb950]/70 ${showEnvMenu ? 'rotate-180' : ''}`} viewBox="0 0 16 16" fill="currentColor">
+            className="flex items-center gap-1.5 text-[13px] px-2.5 py-[5px] rounded-md text-[#e6edf3] border border-[#30363d] bg-[#21262d] hover:bg-[#30363d] transition-colors w-full outline-none">
+            {/* server icon */}
+            <svg className="w-[14px] h-[14px] shrink-0 text-[#8b949e]" viewBox="0 0 16 16" fill="currentColor">
+              <path d="M1.75 1h12.5c.966 0 1.75.784 1.75 1.75V5a1.75 1.75 0 0 1-1.75 1.75H1.75A1.75 1.75 0 0 1 0 5V2.75C0 1.784.784 1 1.75 1ZM1.5 2.75v2.5c0 .138.112.25.25.25h12.5a.25.25 0 0 0 .25-.25v-2.5a.25.25 0 0 0-.25-.25H1.75a.25.25 0 0 0-.25.25ZM1.75 7h12.5c.966 0 1.75.784 1.75 1.75v2.5A1.75 1.75 0 0 1 14.25 13H1.75A1.75 1.75 0 0 1 0 11.25v-2.5C0 7.784.784 7 1.75 7Zm-.25 1.75v2.5c0 .138.112.25.25.25h12.5a.25.25 0 0 0 .25-.25v-2.5a.25.25 0 0 0-.25-.25H1.75a.25.25 0 0 0-.25.25Z" />
+            </svg>
+            <span className="flex-1 text-left truncate font-medium text-[12px]">{activeEnv || 'select env'}</span>
+            <svg className={`w-3 h-3 shrink-0 text-[#8b949e] transition-transform ${showEnvMenu ? 'rotate-180' : ''}`} viewBox="0 0 16 16" fill="currentColor">
               <path d="M12.78 5.22a.749.749 0 0 1 0 1.06l-4.25 4.25a.749.749 0 0 1-1.06 0L3.22 6.28a.749.749 0 1 1 1.06-1.06L8 8.939l3.72-3.719a.749.749 0 0 1 1.06 0Z" />
             </svg>
           </button>
           {showEnvMenu && (
             <>
               <div className="fixed inset-0 z-10" onClick={() => setShowEnvMenu(false)} />
-              <div className="absolute left-0 right-0 top-[30px] z-20 bg-[#161b22] border border-[#30363d] rounded-lg shadow-2xl overflow-hidden">
+              <div className="absolute left-0 right-0 top-[33px] z-20 bg-[#161b22] border border-[#30363d] rounded-lg shadow-[0_8px_24px_rgba(1,4,9,0.6)] overflow-hidden">
 
                 {/* Header */}
-                <div className="px-3 py-2 border-b border-[#21262d]">
-                  <span className="text-[12px] font-semibold text-[#8b949e]">Switch environment</span>
+                <div className="px-4 py-2 border-b border-[#21262d]">
+                  <span className="text-[12px] text-[#8b949e]">Switch environment</span>
                 </div>
 
                 {/* Standard envs */}
@@ -155,25 +158,25 @@ export default function Sidebar({ activePage, onNavigate, bearerToken, onTokenCh
                   return (
                     <button key={env.name}
                       onClick={() => { onSwitchEnv(env.name); setShowEnvMenu(false); }}
-                      className="w-full flex items-center gap-2 px-3 py-[5px] text-left hover:bg-[#21262d] transition-colors">
-                      <span className="w-3 flex items-center justify-center shrink-0">
+                      className={`w-full flex items-center gap-2 px-4 py-[6px] text-left transition-colors ${isActive ? 'bg-[#b1bac40f]' : 'hover:bg-[#b1bac40f]'}`}>
+                      <span className="w-3.5 flex items-center justify-center shrink-0">
                         {isActive && (
-                          <svg className="w-3 h-3 text-[#e6edf3]" viewBox="0 0 16 16" fill="currentColor">
+                          <svg className="w-[13px] h-[13px] text-[#e6edf3]" viewBox="0 0 16 16" fill="currentColor">
                             <path d="M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0Z" />
                           </svg>
                         )}
                       </span>
-                      <span className={`flex-1 text-[13px] ${isActive ? 'text-[#e6edf3] font-medium' : 'text-[#c9d1d9]'}`}>{env.label}</span>
-                      <span className="text-[11px] text-[#484f58]">standard</span>
+                      <span className={`flex-1 text-[14px] ${isActive ? 'text-[#e6edf3] font-medium' : 'text-[#c9d1d9]'}`}>{env.label}</span>
+                      <span className="text-[12px] text-[#8b949e]">standard</span>
                     </button>
                   );
                 })}
 
                 {/* Recent ephemeral */}
                 {ephHistory.length > 0 && (
-                  <div className="border-t border-[#21262d] pt-1">
-                    <div className="px-3 py-1">
-                      <span className="text-[11px] text-[#484f58]">Recent</span>
+                  <div className="border-t border-[#21262d]">
+                    <div className="px-4 pt-2 pb-1">
+                      <span className="text-[12px] text-[#8b949e]">Recent</span>
                     </div>
                     {ephHistory.slice(0, 3).map(env => {
                       const isActive = activeEnv === env;
@@ -181,16 +184,16 @@ export default function Sidebar({ activePage, onNavigate, bearerToken, onTokenCh
                         <button key={env}
                           onClick={() => handleEphConnect(env)}
                           data-testid={`sidebar-eph-recent-${env}`}
-                          className="w-full flex items-center gap-2 px-3 py-[5px] text-left hover:bg-[#21262d] transition-colors">
-                          <span className="w-3 flex items-center justify-center shrink-0">
+                          className={`w-full flex items-center gap-2 px-4 py-[6px] text-left transition-colors ${isActive ? 'bg-[#b1bac40f]' : 'hover:bg-[#b1bac40f]'}`}>
+                          <span className="w-3.5 flex items-center justify-center shrink-0">
                             {isActive && (
-                              <svg className="w-3 h-3 text-[#e6edf3]" viewBox="0 0 16 16" fill="currentColor">
+                              <svg className="w-[13px] h-[13px] text-[#e6edf3]" viewBox="0 0 16 16" fill="currentColor">
                                 <path d="M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0Z" />
                               </svg>
                             )}
                           </span>
-                          <span className={`flex-1 text-[12px] font-mono truncate ${isActive ? 'text-[#e6edf3] font-semibold' : 'text-[#c9d1d9]'}`}>{env}</span>
-                          {isActive && <span className="text-[10px] text-[#8b949e] shrink-0">active</span>}
+                          <span className={`flex-1 text-[13px] font-mono truncate ${isActive ? 'text-[#e6edf3] font-semibold' : 'text-[#c9d1d9]'}`}>{env}</span>
+                          {isActive && <span className="text-[12px] text-[#8b949e] shrink-0">active</span>}
                         </button>
                       );
                     })}
@@ -198,20 +201,20 @@ export default function Sidebar({ activePage, onNavigate, bearerToken, onTokenCh
                 )}
 
                 {/* New ephemeral input */}
-                <div className="border-t border-[#21262d] px-3 py-2 mt-0.5">
-                  <div className="text-[11px] text-[#484f58] mb-1.5">
+                <div className="border-t border-[#21262d] px-3 py-2.5">
+                  <div className="text-[12px] text-[#8b949e] mb-1.5">
                     {ephHistory.length > 0 ? 'Connect to new' : 'Ephemeral'}
                   </div>
-                  <div className="flex items-center border border-[#30363d] rounded-md overflow-hidden bg-[#0d1117] focus-within:border-[#58a6ff] transition-colors">
-                    <span className="px-2 py-1.5 text-[11px] font-mono text-[#484f58] bg-[#161b22] border-r border-[#30363d] shrink-0">eph-</span>
+                  <div className="flex items-stretch border border-[#30363d] rounded-md overflow-hidden bg-[#0d1117] focus-within:border-[#58a6ff] transition-colors">
+                    <span className="px-2.5 text-[12px] font-mono text-[#6e7681] bg-[#161b22] border-r border-[#30363d] shrink-0 flex items-center">eph-</span>
                     <input type="text" value={ephInput} onChange={e => setEphInput(e.target.value)}
                       onKeyDown={e => { if (e.key === 'Enter' && ephInput.trim()) handleEphConnect(`eph-${ephInput.trim()}`); }}
                       placeholder="env-name"
-                      className="flex-1 px-2 py-1.5 bg-transparent text-[12px] text-[#e6edf3] outline-none placeholder:text-[#484f58] font-mono min-w-0" />
+                      className="flex-1 px-2.5 py-[6px] bg-transparent text-[13px] text-[#e6edf3] outline-none placeholder:text-[#484f58] font-mono min-w-0" />
                     <button
                       onClick={() => { if (ephInput.trim()) handleEphConnect(`eph-${ephInput.trim()}`); }}
                       disabled={!ephInput.trim()}
-                      className="px-2.5 py-1.5 text-[11px] font-medium text-[#c9d1d9] bg-[#21262d] hover:bg-[#30363d] border-l border-[#30363d] disabled:opacity-40 transition-colors shrink-0">
+                      className="px-3 text-[12px] font-medium text-[#e6edf3] bg-[#21262d] hover:bg-[#30363d] border-l border-[#30363d] disabled:opacity-40 disabled:cursor-not-allowed transition-colors shrink-0">
                       Go
                     </button>
                   </div>
