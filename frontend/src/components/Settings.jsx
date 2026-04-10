@@ -347,7 +347,6 @@ export default function Settings({ activeEnv, standardEnvs, onSwitchEnv, envConf
             { label: 'Base URL', key: 'api_url', desc: 'Category Config API' },
             { label: 'Pause URL', key: 'pause_url', desc: 'Pause / Resume Jobs' },
             { label: 'Envcore URL', key: 'envcore_url', desc: 'Pod Execution', note: 'Same across all environments.' },
-            { label: 'Database', key: 'db_dsn', desc: 'PostgreSQL' },
           ].map(field => (
             <div key={field.key} className="px-4 py-4 group">
               <div className="flex items-center justify-between mb-2">
