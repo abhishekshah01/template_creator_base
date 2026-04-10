@@ -14,6 +14,9 @@ export default defineConfig(({ mode }) => {
       port: 3000,
       strictPort: true,
       hmr: false,
+      watch: {
+        ignored: ['**/*']
+      },
       ...(allowedHosts && { allowedHosts }),
     },
   }
