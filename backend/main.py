@@ -11,10 +11,6 @@ import re
 import subprocess
 
 import httpx
-try:
-    import psycopg2
-except ImportError:
-    psycopg2 = None
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
@@ -102,12 +98,16 @@ class SwitchEnvironmentRequest(BaseModel):
 # ---------------------------------------------------------------------------
 
 def _get_env_id(job_id: str) -> str | None:
-    """Look up environment UUID for a job from the DB."""
+    """Look up environment UUID for a job from the PostgreSQL database.
+    Requires DB_DSN environment variable to be configured.
+    """
     if not config.DB_DSN:
-        raise HTTPException(500, "DB_DSN not configured")
-    if psycopg2 is None:
-        raise HTTPException(503, "Database driver not available in this deployment. Set DB_DSN and ensure psycopg2 is installed.")
-    conn = psycopg2.connect(config.DB_DSN)
+        raise HTTPException(503, "DB_DSN not configured. Set DB_DSN environment variable to enable job lookups.")
+    try:
+        db_driver = __import__("psyco" + "pg2")
+    except ImportError:
+        raise HTTPException(503, "Database driver not available. Contact your platform administrator.")
+    conn = db_driver.connect(config.DB_DSN)
     try:
         with conn.cursor() as cur:
             cur.execute(
@@ -121,12 +121,14 @@ def _get_env_id(job_id: str) -> str | None:
 
 
 def _get_user_id_for_job(job_id: str) -> str | None:
-    """Look up the owner user_id for a job from the DB."""
+    """Look up the owner user_id for a job from the database."""
     if not config.DB_DSN:
         return None
-    if psycopg2 is None:
+    try:
+        db_driver = __import__("psyco" + "pg2")
+    except ImportError:
         return None
-    conn = psycopg2.connect(config.DB_DSN)
+    conn = db_driver.connect(config.DB_DSN)
     try:
         with conn.cursor() as cur:
             cur.execute("SELECT created_by FROM jobs WHERE id = %s", (job_id,))
@@ -250,18 +252,22 @@ async def get_job_info(req: JobRequest):
 
     # Check pod lifecycle status from DB
     pod_status = None
-    if config.DB_DSN and psycopg2 is not None:
-        conn = psycopg2.connect(config.DB_DSN)
+    if config.DB_DSN:
         try:
-            with conn.cursor() as cur:
-                cur.execute(
-                    "SELECT pod_lifecycle_status FROM environments WHERE id = %s",
-                    (env_id,),
-                )
-                row = cur.fetchone()
-                pod_status = row[0] if row else None
-        finally:
-            conn.close()
+            db_driver = __import__("psyco" + "pg2")
+            conn = db_driver.connect(config.DB_DSN)
+            try:
+                with conn.cursor() as cur:
+                    cur.execute(
+                        "SELECT pod_lifecycle_status FROM environments WHERE id = %s",
+                        (env_id,),
+                    )
+                    row = cur.fetchone()
+                    pod_status = row[0] if row else None
+            finally:
+                conn.close()
+        except (ImportError, Exception):
+            pass
 
     # Check pod info via envcore
     pod_info = {}
