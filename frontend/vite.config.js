@@ -8,16 +8,24 @@ export default defineConfig(({ mode }) => {
   const allowedHosts = env.VITE_ALLOWED_HOST ? [env.VITE_ALLOWED_HOST] : undefined;
 
   return {
-    plugins: [react(), tailwindcss()],
+    plugins: [
+      react({
+        // Disable Fast Refresh completely
+        fastRefresh: false,
+      }),
+      tailwindcss()
+    ],
     server: {
       host: '0.0.0.0',
       port: 3000,
       strictPort: true,
       hmr: false,
-      watch: {
-        ignored: ['**/*']
-      },
+      ws: false,
+      watch: null,
       ...(allowedHosts && { allowedHosts }),
+    },
+    build: {
+      watch: null,
     },
   }
 })
