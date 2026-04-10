@@ -11,6 +11,7 @@ import re
 import subprocess
 
 import httpx
+import psycopg2
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
@@ -103,12 +104,40 @@ def _get_env_id(job_id: str) -> str | None:
     """
     if not config.DB_DSN:
         raise HTTPException(503, "DB_DSN not configured. Set the DB_DSN environment variable to enable job lookups.")
-    raise HTTPException(503, "Direct database access is not available in this deployment. Configure DB_DSN and ensure database connectivity.")
+    
+    try:
+        conn = psycopg2.connect(config.DB_DSN)
+        cursor = conn.cursor()
+        cursor.execute("SELECT env_id FROM jobs WHERE job_id = %s LIMIT 1", (job_id,))
+        result = cursor.fetchone()
+        cursor.close()
+        conn.close()
+        
+        if result:
+            return result[0]
+        return None
+    except Exception as e:
+        raise HTTPException(503, f"Database query failed: {str(e)}")
 
 
 def _get_user_id_for_job(job_id: str) -> str | None:
     """Look up the owner user_id for a job."""
-    return None
+    if not config.DB_DSN:
+        return None
+    
+    try:
+        conn = psycopg2.connect(config.DB_DSN)
+        cursor = conn.cursor()
+        cursor.execute("SELECT user_id FROM jobs WHERE job_id = %s LIMIT 1", (job_id,))
+        result = cursor.fetchone()
+        cursor.close()
+        conn.close()
+        
+        if result:
+            return result[0]
+        return None
+    except Exception:
+        return None
 
 
 def _pod_exec(env_id: str, command: str, timeout: int = 30) -> dict:
