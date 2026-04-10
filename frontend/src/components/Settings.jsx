@@ -218,23 +218,25 @@ export default function Settings({ activeEnv, standardEnvs, onSwitchEnv, envConf
         {/* Full-width connect form — appears below cards on Switch/Connect */}
         {showEphInput && (
           <div className="mt-3">
-            <div className="flex items-stretch rounded-md overflow-hidden border border-[#30363d] focus-within:border-[#388bfd] transition-colors">
-              <span className="px-3 text-[14px] font-mono text-[#8b949e] bg-[#161b22] border-r border-[#30363d] shrink-0 flex items-center select-none">eph-</span>
-              <input
-                type="text"
-                value={ephInput}
-                onChange={e => setEphInput(e.target.value)}
-                onKeyDown={e => { if (e.key === 'Enter') connectEph(); if (e.key === 'Escape') setShowEphInput(false); }}
-                placeholder="environment-name"
-                autoFocus
-                data-testid="eph-env-input"
-                className="flex-1 px-3 py-2.5 bg-[#0d1117] text-[14px] text-[#e6edf3] font-mono outline-none placeholder:text-[#484f58]"
-              />
+            <div className="flex items-center gap-2">
+              <div className="flex-1 flex items-stretch rounded-md overflow-hidden border border-[#30363d] focus-within:border-[#388bfd] transition-colors">
+                <span className="px-3 text-[14px] font-mono text-[#8b949e] bg-[#161b22] border-r border-[#30363d] shrink-0 flex items-center select-none">eph-</span>
+                <input
+                  type="text"
+                  value={ephInput}
+                  onChange={e => setEphInput(e.target.value)}
+                  onKeyDown={e => { if (e.key === 'Enter') connectEph(); if (e.key === 'Escape') setShowEphInput(false); }}
+                  placeholder="environment-name"
+                  autoFocus
+                  data-testid="eph-env-input"
+                  className="flex-1 px-3 py-2.5 bg-[#0d1117] text-[14px] text-[#e6edf3] font-mono outline-none placeholder:text-[#484f58]"
+                />
+              </div>
               <button
                 onClick={connectEph}
                 disabled={!ephInput.trim()}
                 data-testid="eph-connect-btn"
-                className="px-5 py-2.5 text-[14px] font-semibold text-white bg-[#238636] hover:bg-[#2ea043] border-l border-[#30363d] disabled:opacity-40 disabled:cursor-not-allowed transition-colors whitespace-nowrap">
+                className="px-5 py-2.5 text-[14px] font-semibold text-white bg-[#238636] hover:bg-[#2ea043] rounded-md border border-[#2ea043] disabled:opacity-40 disabled:cursor-not-allowed transition-colors whitespace-nowrap">
                 Switch
               </button>
             </div>
