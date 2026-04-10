@@ -9,8 +9,5 @@ export default defineConfig({
     port: 3000,
     strictPort: true,
     hmr: false,
-    proxy: {
-      '/api': 'http://localhost:8001',
-    },
   },
 })

@@ -8,3 +8,7 @@ sa-key.json
 node_modules/
 dist/
 
+-e 
+# Environment files
+*.env
+*.env.*
