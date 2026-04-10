@@ -189,7 +189,7 @@ def list_environments():
             "api_url": config.API_URL,
             "envcore_url": config.ENVCORE_URL,
             "pause_url": config.PAUSE_URL,
-            "db_dsn": config.DB_DSN.split("password=")[0] + "password=***",  # hide password
+            "db_dsn": (config.DB_DSN.split("password=")[0] + "password=***") if config.DB_DSN else "",
             "source_bucket": config.SOURCE_BUCKET,
             "dest_bucket": config.DEST_BUCKET,
         },

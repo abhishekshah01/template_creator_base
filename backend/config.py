@@ -18,7 +18,7 @@ STANDARD_ENVS = {
         "api_url": "http://agent-service.cloudrun.internal.dev.emergentagent.com",
         "envcore_url": "http://envcore.int-worker.dev.emergentagent.com",
         "pause_url": "http://emergent-agents.cloudrun.internal.dev.emergentagent.com",
-        "db_dsn": "host=10.0.2.3 port=6544 dbname=postgres user=postgres password=pYOjidM5JFUMJZp",
+        "db_dsn": os.environ.get("DEV_DB_DSN", ""),
     },
     "prod": {
         "label": "prod",
@@ -26,7 +26,7 @@ STANDARD_ENVS = {
         "api_url": "http://agent-service.cloudrun.internal.prod.emergentagent.com",
         "envcore_url": "http://envcore.int-worker.dev.emergentagent.com",
         "pause_url": "http://emergent-agents.cloudrun.internal.prod.emergentagent.com",
-        "db_dsn": "host=10.0.2.3 port=6544 dbname=postgres user=postgres password=pYOjidM5JFUMJZp",
+        "db_dsn": os.environ.get("PROD_DB_DSN", ""),
     },
 }
 
@@ -35,7 +35,7 @@ EPH_TEMPLATES = {
     "api_url": "https://agent-service-{name}-1035522277200.us-central1.run.app",
     "envcore_url": "http://envcore.int-worker.dev.emergentagent.com",
     "pause_url": "http://emergent-agents-{name}.cloudrun.internal.dev.emergentagent.com",
-    "db_dsn": "host=10.0.2.3 port=6544 dbname=postgres-{name} user=postgres password=pYOjidM5JFUMJZp",
+    "db_dsn": "",
 }
 
 

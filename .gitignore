@@ -1,7 +1,6 @@
 venv/
 __pycache__/
 *.pyc
-.env
 template-bot-key
 template-bot-key.pub
 *.pem
