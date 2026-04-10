@@ -93,7 +93,6 @@ const navStructure = [
 ];
 
 export default function Sidebar({ activePage, onNavigate, bearerToken, onTokenChange, width = 260, activeEnv, standardEnvs = [], onSwitchEnv }) {
-  const [showToken, setShowToken] = useState(false);
   const [collapsed, setCollapsed] = useState({});
   const [showEnvMenu, setShowEnvMenu] = useState(false);
   const [ephInput, setEphInput] = useState('');
@@ -211,31 +210,24 @@ export default function Sidebar({ activePage, onNavigate, bearerToken, onTokenCh
         })}
       </nav>
 
-      {/* API Token */}
+      {/* API Token status — click to go to Settings */}
       <div className="px-3 py-3 border-t border-[#30363d]">
-        <button onClick={() => setShowToken(!showToken)}
+        <button
+          onClick={() => onNavigate('settings')}
           data-testid="api-token-btn"
+          title="Configure API token in Settings"
           className="w-full flex items-center gap-2.5 px-2 py-[7px] rounded-md text-[14px] text-[#8b949e] hover:bg-[#161b22] hover:text-[#e6edf3] transition-colors cursor-pointer border border-transparent">
           <KeyIcon className="w-[16px] h-[16px] shrink-0 text-[#6e7681]" />
-          <span className="flex-1 text-left">API Token</span>
-          <span data-testid="token-status-indicator" className={`w-[8px] h-[8px] rounded-full shrink-0 ${bearerToken ? 'bg-[#3fb950]' : 'bg-[#f85149]'}`} />
+          <span className="flex-1 text-left text-[13px]">API Token</span>
+          <span data-testid="token-status-indicator"
+            className={`text-[11px] px-2 py-0.5 rounded-full border font-medium ${
+              bearerToken
+                ? 'bg-[#238636]/10 text-[#3fb950] border-[#238636]/30'
+                : 'bg-[#f85149]/10 text-[#f85149] border-[#f85149]/30'
+            }`}>
+            {bearerToken ? 'Set' : 'Not set'}
+          </span>
         </button>
-        {showToken && (
-          <div className="px-1 pt-2">
-            <textarea
-              data-testid="api-token-input"
-              value={bearerToken}
-              onChange={e => {
-                let val = e.target.value.trim();
-                if (val.toLowerCase().startsWith('bearer ')) val = val.slice(7).trim();
-                onTokenChange(val);
-              }}
-              placeholder="Paste bearer token..."
-              rows={3}
-              className="w-full px-2.5 py-2 bg-[#0d1117] border border-[#30363d] rounded-md text-[12px] text-[#e6edf3] outline-none focus:border-[#1f6feb] focus:shadow-[0_0_0_3px_rgba(31,111,235,0.15)] placeholder:text-[#484f58] font-mono resize-none"
-            />
-          </div>
-        )}
       </div>
     </aside>
   );

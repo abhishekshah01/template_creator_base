@@ -50,3 +50,8 @@ Internal tool for Emergent platform engineers to automate template creation from
 ## Next Tasks
 - User should test with real bearer token and actual job IDs
 - Verify the create-template workflow end-to-end with a real job
+
+## Session 2 Changes (2026-04-10)
+- App renamed to `template-automation-v0`
+- API Token moved from sidebar textarea to Settings > Secrets & Variables (masked input, show/hide, copy, clear)
+- Settings page UX completely redesigned: Standard envs as radio cards, Ephemeral as dedicated section, clean status bar

@@ -140,7 +140,8 @@ export default function App() {
         return <ConfigCreate bearerToken={bearerToken} onTokenExpired={() => updateToken('')} onNavigate={navigate} editConfigId={configDetailId}
           cachedConfigs={cachedConfigs} refreshConfigs={refreshConfigs} markConfigsStale={markConfigsStale} />;
       case 'settings':
-        return <Settings activeEnv={activeEnv} standardEnvs={standardEnvs} onSwitchEnv={switchEnv} envConfig={envConfig} />;
+        return <Settings activeEnv={activeEnv} standardEnvs={standardEnvs} onSwitchEnv={switchEnv} envConfig={envConfig}
+          bearerToken={bearerToken} onTokenChange={updateToken} />;
       default:
         return <CreateTemplate />;
     }
