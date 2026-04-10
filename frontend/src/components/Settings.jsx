@@ -47,12 +47,22 @@ function ServerIcon({ className }) {
 }
 
 // ── Component ─────────────────────────────────────────────────────────────────
+// localStorage helpers
+function loadEphHistory() {
+  try { return JSON.parse(localStorage.getItem('eph_history') || '[]'); } catch { return []; }
+}
+function saveEphHistory(arr) {
+  localStorage.setItem('eph_history', JSON.stringify(arr.slice(0, 5)));
+}
+
 export default function Settings({ activeEnv, standardEnvs, onSwitchEnv, envConfig, bearerToken = '', onTokenChange }) {
   const [config, setConfig] = useState(null);
   const [loading, setLoading] = useState(true);
   const [ephInput, setEphInput] = useState('');
   const [showToken, setShowToken] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [copiedField, setCopiedField] = useState(null);
+  const [ephHistory, setEphHistory] = useState(loadEphHistory);
 
   useEffect(() => {
     loadConfig();
@@ -72,7 +82,27 @@ export default function Settings({ activeEnv, standardEnvs, onSwitchEnv, envConf
   function getVal(key) { return config?.[key] || ''; }
 
   function connectEph() {
-    if (ephInput.trim()) onSwitchEnv(`eph-${ephInput.trim()}`);
+    if (!ephInput.trim()) return;
+    const name = `eph-${ephInput.trim()}`;
+    onSwitchEnv(name);
+    const updated = [name, ...ephHistory.filter(e => e !== name)].slice(0, 5);
+    setEphHistory(updated);
+    saveEphHistory(updated);
+    setEphInput('');
+  }
+
+  function connectFromHistory(name) {
+    onSwitchEnv(name);
+    const updated = [name, ...ephHistory.filter(e => e !== name)].slice(0, 5);
+    setEphHistory(updated);
+    saveEphHistory(updated);
+  }
+
+  function removeFromHistory(name, e) {
+    e.stopPropagation();
+    const updated = ephHistory.filter(h => h !== name);
+    setEphHistory(updated);
+    saveEphHistory(updated);
   }
 
   function handleCopyToken() {
@@ -80,6 +110,14 @@ export default function Settings({ activeEnv, standardEnvs, onSwitchEnv, envConf
     navigator.clipboard.writeText(bearerToken).then(() => {
       setCopied(true);
       setTimeout(() => setCopied(false), 1500);
+    });
+  }
+
+  function handleCopyField(key, value) {
+    if (!value) return;
+    navigator.clipboard.writeText(value).then(() => {
+      setCopiedField(key);
+      setTimeout(() => setCopiedField(null), 1800);
     });
   }
 
@@ -97,9 +135,51 @@ export default function Settings({ activeEnv, standardEnvs, onSwitchEnv, envConf
 
   return (
     <div className="max-w-[760px] space-y-10">
+      {/* Page Header */}
       <div>
         <h1 className="text-[24px] font-bold text-[#e6edf3]">Settings</h1>
         <p className="text-[14px] text-[#8b949e] mt-1">Configure environments, credentials, and system preferences.</p>
+      </div>
+
+      {/* ── Connection Hero ──────────────────────────────── */}
+      <div className={`relative overflow-hidden rounded-xl border px-6 py-5 ${
+        isEph
+          ? 'border-[#8957e5]/40 bg-gradient-to-r from-[#8957e5]/10 via-[#8957e5]/5 to-transparent'
+          : 'border-[#238636]/40 bg-gradient-to-r from-[#238636]/10 via-[#238636]/5 to-transparent'
+      }`}>
+        {/* Glow */}
+        <div className={`absolute top-0 left-0 w-1 h-full ${isEph ? 'bg-[#8957e5]' : 'bg-[#3fb950]'}`} />
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <div className={`w-10 h-10 rounded-full flex items-center justify-center ${isEph ? 'bg-[#8957e5]/15' : 'bg-[#238636]/15'}`}>
+              <span className={`w-3 h-3 rounded-full ${isEph ? 'bg-[#bc8cff] shadow-[0_0_8px_rgba(188,140,255,0.9)]' : 'bg-[#3fb950] shadow-[0_0_8px_rgba(63,185,80,0.9)]'} animate-pulse`} />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="text-[16px] font-bold text-[#e6edf3]">{activeEnv}</span>
+                <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full border ${
+                  isEph
+                    ? 'bg-[#8957e5]/15 text-[#bc8cff] border-[#8957e5]/35'
+                    : 'bg-[#238636]/12 text-[#3fb950] border-[#238636]/30'
+                }`}>
+                  {config?.type || (isEph ? 'ephemeral' : 'standard')}
+                </span>
+              </div>
+              <p className="text-[12px] text-[#8b949e] mt-0.5">
+                {config?.api_url
+                  ? <span className="font-mono">{config.api_url}</span>
+                  : 'Loading endpoint…'}
+              </p>
+            </div>
+          </div>
+          <div className="text-right">
+            <div className="text-[11px] text-[#484f58] uppercase tracking-wider mb-0.5">Status</div>
+            <div className="flex items-center gap-1.5 justify-end">
+              <span className={`w-2 h-2 rounded-full ${isEph ? 'bg-[#bc8cff]' : 'bg-[#3fb950]'}`} />
+              <span className={`text-[13px] font-medium ${isEph ? 'text-[#bc8cff]' : 'text-[#3fb950]'}`}>Connected</span>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* ── Active Environment ──────────────────────────── */}
@@ -168,6 +248,36 @@ export default function Settings({ activeEnv, standardEnvs, onSwitchEnv, envConf
               <p className="text-[13px] text-[#8b949e] mb-3">
                 {isEph ? 'Switch to a different ephemeral environment:' : 'Connect to a temporary job environment:'}
               </p>
+
+              {/* Recent history chips */}
+              {ephHistory.length > 0 && (
+                <div className="mb-3">
+                  <p className="text-[11px] text-[#484f58] uppercase tracking-wider mb-2">Recent</p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {ephHistory.map(env => {
+                      const isActiveEnv = activeEnv === env;
+                      return (
+                        <button key={env}
+                          onClick={() => connectFromHistory(env)}
+                          data-testid={`eph-history-${env}`}
+                          className={`group flex items-center gap-1.5 pl-2.5 pr-1.5 py-1 rounded-full text-[11px] font-mono border transition-all duration-150 ${
+                            isActiveEnv
+                              ? 'bg-[#8957e5]/20 text-[#bc8cff] border-[#8957e5]/40'
+                              : 'bg-[#161b22] text-[#8b949e] border-[#30363d] hover:border-[#8957e5]/40 hover:text-[#e6edf3] hover:bg-[#8957e5]/8'
+                          }`}>
+                          {isActiveEnv && <span className="w-1.5 h-1.5 rounded-full bg-[#bc8cff] shrink-0" />}
+                          <span>{env}</span>
+                          <span
+                            onClick={(e) => removeFromHistory(env, e)}
+                            className={`ml-0.5 p-0.5 rounded-full transition-all ${isActiveEnv ? 'text-[#8957e5] hover:text-[#f85149]' : 'opacity-0 group-hover:opacity-100 text-[#484f58] hover:text-[#f85149]'}`}>
+                            <XIcon className="w-3 h-3" />
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
               <div className="flex gap-2">
                 <div className="flex-1 flex items-center border border-[#30363d] rounded-md overflow-hidden focus-within:border-[#8957e5] focus-within:shadow-[0_0_0_3px_rgba(137,87,229,0.15)] bg-[#0d1117] transition-all">
                   <span className="px-3 py-2.5 bg-[#161b22] text-[#6e7681] text-[13px] font-mono border-r border-[#30363d] shrink-0 select-none">eph-</span>
@@ -293,10 +403,20 @@ export default function Settings({ activeEnv, standardEnvs, onSwitchEnv, envConf
             { label: 'Envcore URL', key: 'envcore_url', desc: 'Pod Execution', note: 'Same across all environments.' },
             { label: 'Database', key: 'db_dsn', desc: 'PostgreSQL' },
           ].map(field => (
-            <div key={field.key} className="px-4 py-3.5">
+            <div key={field.key} className="px-4 py-3.5 group">
               <div className="flex items-center justify-between mb-1.5">
                 <label className="text-[13px] font-semibold text-[#e6edf3]">{field.label}</label>
-                <span className="text-[11px] text-[#484f58] bg-[#161b22] px-2 py-0.5 rounded border border-[#21262d]">{field.desc}</span>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => handleCopyField(field.key, getVal(field.key))}
+                    title="Copy value"
+                    className="opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded text-[#484f58] hover:text-[#8b949e]">
+                    {copiedField === field.key
+                      ? <CheckIcon className="w-3.5 h-3.5 text-[#3fb950]" />
+                      : <CopyIcon className="w-3.5 h-3.5" />}
+                  </button>
+                  <span className="text-[11px] text-[#484f58] bg-[#161b22] px-2 py-0.5 rounded border border-[#21262d]">{field.desc}</span>
+                </div>
               </div>
               <input type="text" value={getVal(field.key)} readOnly className={readOnlyCls} />
               {field.note && <p className="text-[12px] text-[#484f58] mt-1">{field.note}</p>}
@@ -316,8 +436,18 @@ export default function Settings({ activeEnv, standardEnvs, onSwitchEnv, envConf
             { label: 'Source Bucket', key: 'source_bucket', note: 'GCS bucket containing job snapshots.' },
             { label: 'Destination Bucket', key: 'dest_bucket', note: 'GCS bucket where templates are stored.' },
           ].map(field => (
-            <div key={field.key} className="px-4 py-3.5">
-              <label className="block text-[13px] font-semibold text-[#e6edf3] mb-1.5">{field.label}</label>
+            <div key={field.key} className="px-4 py-3.5 group">
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="text-[13px] font-semibold text-[#e6edf3]">{field.label}</label>
+                <button
+                  onClick={() => handleCopyField(field.key, getVal(field.key))}
+                  title="Copy value"
+                  className="opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded text-[#484f58] hover:text-[#8b949e]">
+                  {copiedField === field.key
+                    ? <CheckIcon className="w-3.5 h-3.5 text-[#3fb950]" />
+                    : <CopyIcon className="w-3.5 h-3.5" />}
+                </button>
+              </div>
               <input type="text" value={getVal(field.key)} readOnly className={readOnlyCls} />
               <p className="text-[12px] text-[#484f58] mt-1">{field.note}</p>
             </div>

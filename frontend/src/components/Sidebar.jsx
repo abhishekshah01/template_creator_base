@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 // --- GitHub Octicons (16px filled) ---
 function WorkflowIcon({ className }) {
@@ -96,6 +96,24 @@ export default function Sidebar({ activePage, onNavigate, bearerToken, onTokenCh
   const [collapsed, setCollapsed] = useState({});
   const [showEnvMenu, setShowEnvMenu] = useState(false);
   const [ephInput, setEphInput] = useState('');
+  const [ephHistory, setEphHistory] = useState([]);
+
+  // Reload history whenever dropdown opens
+  useEffect(() => {
+    if (showEnvMenu) {
+      try { setEphHistory(JSON.parse(localStorage.getItem('eph_history') || '[]')); } catch {}
+    }
+  }, [showEnvMenu]);
+
+  function handleEphConnect(envName) {
+    onSwitchEnv(envName);
+    const history = JSON.parse(localStorage.getItem('eph_history') || '[]');
+    const updated = [envName, ...history.filter(e => e !== envName)].slice(0, 5);
+    localStorage.setItem('eph_history', JSON.stringify(updated));
+    setEphHistory(updated);
+    setShowEnvMenu(false);
+    setEphInput('');
+  }
 
   function toggleSection(section) {
     setCollapsed(prev => ({ ...prev, [section]: !prev[section] }));
@@ -140,16 +158,42 @@ export default function Sidebar({ activePage, onNavigate, bearerToken, onTokenCh
                     <span className="ml-auto text-[10px] text-[#484f58]">standard</span>
                   </button>
                 ))}
-                {/* Ephemeral input */}
+
+                {/* Recent ephemeral envs */}
+                {ephHistory.length > 0 && (
+                  <div className="border-t border-[#21262d]">
+                    <div className="px-3 pt-2 pb-1 text-[10px] text-[#484f58] uppercase tracking-wider">Recent ephemeral</div>
+                    {ephHistory.slice(0, 3).map(env => (
+                      <button key={env}
+                        onClick={() => handleEphConnect(env)}
+                        data-testid={`sidebar-eph-recent-${env}`}
+                        className={`w-full flex items-center gap-2 px-3 py-[5px] text-[12px] font-mono transition-colors text-left ${
+                          activeEnv === env
+                            ? 'text-[#bc8cff] bg-[#8957e5]/12'
+                            : 'text-[#8b949e] hover:bg-[#8957e5]/10 hover:text-[#bc8cff]'
+                        }`}>
+                        <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${activeEnv === env ? 'bg-[#bc8cff]' : 'bg-[#30363d]'}`} />
+                        <span className="flex-1 truncate">{env}</span>
+                        {activeEnv === env && <span className="text-[10px] text-[#bc8cff] shrink-0">active</span>}
+                      </button>
+                    ))}
+                  </div>
+                )}
+
+                {/* New ephemeral input */}
                 <div className="border-t border-[#21262d] px-3 py-2">
-                  <div className="text-[11px] text-[#8b949e] mb-1.5">Ephemeral environment</div>
+                  <div className="text-[11px] text-[#484f58] mb-1.5">{ephHistory.length > 0 ? 'Connect to different ephemeral' : 'Ephemeral environment'}</div>
                   <div className="flex gap-1.5">
-                    <input type="text" value={ephInput} onChange={e => setEphInput(e.target.value)}
-                      onKeyDown={e => { if (e.key === 'Enter' && ephInput.trim()) { onSwitchEnv(`eph-${ephInput.trim()}`); setShowEnvMenu(false); setEphInput(''); } }}
-                      placeholder="e.g. leadgen1"
-                      className="flex-1 px-2 py-[3px] bg-[#0d1117] border border-[#30363d] rounded text-[12px] text-[#e6edf3] outline-none focus:border-[#1f6feb] placeholder:text-[#484f58] font-mono" />
-                    <button onClick={() => { if (ephInput.trim()) { onSwitchEnv(`eph-${ephInput.trim()}`); setShowEnvMenu(false); setEphInput(''); } }}
-                      className="px-2 py-[3px] bg-[#21262d] border border-[#30363d] rounded text-[11px] text-[#c9d1d9] hover:bg-[#30363d] transition-colors">
+                    <div className="flex-1 flex items-center border border-[#30363d] rounded overflow-hidden bg-[#0d1117] focus-within:border-[#8957e5]">
+                      <span className="px-2 py-[3px] text-[11px] font-mono text-[#484f58] border-r border-[#30363d] shrink-0 bg-[#161b22]">eph-</span>
+                      <input type="text" value={ephInput} onChange={e => setEphInput(e.target.value)}
+                        onKeyDown={e => { if (e.key === 'Enter' && ephInput.trim()) handleEphConnect(`eph-${ephInput.trim()}`); }}
+                        placeholder="env-name"
+                        className="flex-1 px-2 py-[3px] bg-transparent text-[12px] text-[#e6edf3] outline-none placeholder:text-[#484f58] font-mono" />
+                    </div>
+                    <button onClick={() => { if (ephInput.trim()) handleEphConnect(`eph-${ephInput.trim()}`); }}
+                      disabled={!ephInput.trim()}
+                      className="px-2.5 py-[3px] bg-[#8957e5] border border-[#8957e5] rounded text-[11px] text-white font-medium hover:bg-[#9970e8] disabled:opacity-40 transition-colors">
                       Go
                     </button>
                   </div>

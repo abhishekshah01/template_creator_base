@@ -51,7 +51,9 @@ Internal tool for Emergent platform engineers to automate template creation from
 - User should test with real bearer token and actual job IDs
 - Verify the create-template workflow end-to-end with a real job
 
-## Session 2 Changes (2026-04-10)
-- App renamed to `template-automation-v0`
-- API Token moved from sidebar textarea to Settings > Secrets & Variables (masked input, show/hide, copy, clear)
-- Settings page UX completely redesigned: Standard envs as radio cards, Ephemeral as dedicated section, clean status bar
+## Session 3 Changes (2026-04-10)
+- Recent ephemeral history: connects saved to localStorage (max 5), shown as one-click chips in Settings & sidebar dropdown
+- Connection hero card at top of Settings page showing active env, endpoint, and live status
+- Copy-to-clipboard buttons on all API endpoint & template creation fields (hover to reveal)
+- Sidebar dropdown: "RECENT EPHEMERAL" section shows previous envs with purple accent, one-click reconnect
+- Fixed: Sidebar missing `useEffect` import causing blank page
