@@ -10,7 +10,7 @@ export default defineConfig({
     allowedHosts: true,
     hmr: false,
     proxy: {
-      '/api': 'http://localhost:8001',
+      '/api': process.env.BACKEND_URL || 'http://localhost:8001',
     },
   },
 })

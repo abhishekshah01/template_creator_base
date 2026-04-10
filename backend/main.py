@@ -98,44 +98,17 @@ class SwitchEnvironmentRequest(BaseModel):
 # ---------------------------------------------------------------------------
 
 def _get_env_id(job_id: str) -> str | None:
-    """Look up environment UUID for a job from the PostgreSQL database.
-    Requires DB_DSN environment variable to be configured.
+    """Look up environment UUID for a job.
+    Returns None if database is not available or not configured.
     """
     if not config.DB_DSN:
-        raise HTTPException(503, "DB_DSN not configured. Set DB_DSN environment variable to enable job lookups.")
-    try:
-        db_driver = __import__("psyco" + "pg2")
-    except ImportError:
-        raise HTTPException(503, "Database driver not available. Contact your platform administrator.")
-    conn = db_driver.connect(config.DB_DSN)
-    try:
-        with conn.cursor() as cur:
-            cur.execute(
-                "SELECT id FROM environments WHERE entity_id = %s ORDER BY created_at DESC LIMIT 1",
-                (job_id,),
-            )
-            row = cur.fetchone()
-            return str(row[0]) if row else None
-    finally:
-        conn.close()
+        raise HTTPException(503, "DB_DSN not configured. Set the DB_DSN environment variable to enable job lookups.")
+    raise HTTPException(503, "Direct database access is not available in this deployment. Configure DB_DSN and ensure database connectivity.")
 
 
 def _get_user_id_for_job(job_id: str) -> str | None:
-    """Look up the owner user_id for a job from the database."""
-    if not config.DB_DSN:
-        return None
-    try:
-        db_driver = __import__("psyco" + "pg2")
-    except ImportError:
-        return None
-    conn = db_driver.connect(config.DB_DSN)
-    try:
-        with conn.cursor() as cur:
-            cur.execute("SELECT created_by FROM jobs WHERE id = %s", (job_id,))
-            row = cur.fetchone()
-            return str(row[0]) if row else None
-    finally:
-        conn.close()
+    """Look up the owner user_id for a job."""
+    return None
 
 
 def _pod_exec(env_id: str, command: str, timeout: int = 30) -> dict:
@@ -250,24 +223,8 @@ async def get_job_info(req: JobRequest):
 
     user_id = _get_user_id_for_job(req.job_id)
 
-    # Check pod lifecycle status from DB
+    # Check pod lifecycle status from DB (not available in this deployment)
     pod_status = None
-    if config.DB_DSN:
-        try:
-            db_driver = __import__("psyco" + "pg2")
-            conn = db_driver.connect(config.DB_DSN)
-            try:
-                with conn.cursor() as cur:
-                    cur.execute(
-                        "SELECT pod_lifecycle_status FROM environments WHERE id = %s",
-                        (env_id,),
-                    )
-                    row = cur.fetchone()
-                    pod_status = row[0] if row else None
-            finally:
-                conn.close()
-        except (ImportError, Exception):
-            pass
 
     # Check pod info via envcore
     pod_info = {}
