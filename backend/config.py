@@ -37,12 +37,13 @@ STANDARD_ENVS = {
 EPH_API_URL_TEMPLATE = os.environ.get("EPH_API_URL_TEMPLATE", "")
 EPH_ENVCORE_URL = os.environ.get("EPH_ENVCORE_URL", "")
 EPH_PAUSE_URL_TEMPLATE = os.environ.get("EPH_PAUSE_URL_TEMPLATE", "")
+EPH_DB_DSN_TEMPLATE = os.environ.get("EPH_DB_DSN_TEMPLATE", "")
 
 EPH_TEMPLATES = {
     "api_url": EPH_API_URL_TEMPLATE,
     "envcore_url": EPH_ENVCORE_URL,
     "pause_url": EPH_PAUSE_URL_TEMPLATE,
-    "db_dsn": "",
+    "db_dsn": EPH_DB_DSN_TEMPLATE,
 }
 
 
@@ -59,7 +60,7 @@ def get_env_config(env_name):
         "api_url": EPH_TEMPLATES["api_url"].format(name=name) if EPH_TEMPLATES["api_url"] else "",
         "envcore_url": EPH_TEMPLATES["envcore_url"],
         "pause_url": EPH_TEMPLATES["pause_url"].format(name=name) if EPH_TEMPLATES["pause_url"] else "",
-        "db_dsn": "",
+        "db_dsn": EPH_TEMPLATES["db_dsn"].format(name=name) if EPH_TEMPLATES["db_dsn"] else "",
     }
 
 
@@ -72,18 +73,21 @@ DB_DSN = os.environ.get("DB_DSN", _cfg["db_dsn"])
 PAUSE_URL = os.environ.get("PAUSE_URL", _cfg["pause_url"])
 
 # --- Dev VM SSH (legacy template creation) ---
-VM_HOST = os.environ.get("VM_HOST", "")
-VM_ZONE = os.environ.get("VM_ZONE", "")
+VM_HOST = os.environ.get("VM_HOST", "emergent-dev-vm-anshul")
+VM_ZONE = os.environ.get("VM_ZONE", "us-central1-a")
 VM_USER = os.environ.get("VM_USER", "")
 VM_SSH_KEY = os.environ.get("VM_SSH_KEY", "")
 
 # --- Template defaults ---
-RESTIC_PASSWORD = os.environ.get("RESTIC_PASSWORD", "")
-DEST_BUCKET = os.environ.get("DEST_BUCKET", "")
-SOURCE_BUCKET = os.environ.get("SOURCE_BUCKET", "")
+RESTIC_PASSWORD = os.environ.get("RESTIC_PASSWORD", "test123")
+DEST_BUCKET = os.environ.get("DEST_BUCKET", "emergent-dev-template-restic")
+SOURCE_BUCKET = os.environ.get("SOURCE_BUCKET", "dev-snapshots-restic")
 
 # --- Script path on the VM ---
-TEMPLATE_SCRIPT_PATH = os.environ.get("TEMPLATE_SCRIPT_PATH", "")
+TEMPLATE_SCRIPT_PATH = os.environ.get(
+    "TEMPLATE_SCRIPT_PATH", 
+    "/home/sritam_emergent_sh/create_template_gcs.sh"
+)
 
 # --- GCP Service Account key file ---
 GCP_SA_KEY_FILE = os.environ.get("GCP_SA_KEY_FILE", "")

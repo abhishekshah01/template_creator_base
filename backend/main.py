@@ -11,6 +11,7 @@ import re
 import subprocess
 
 import httpx
+import psycopg2
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
@@ -98,25 +99,39 @@ class SwitchEnvironmentRequest(BaseModel):
 # ---------------------------------------------------------------------------
 
 def _get_env_id(job_id: str) -> str | None:
-    """Look up environment UUID for a job.
-    
-    Note: Direct database access is not available in this deployment.
-    PostgreSQL dependency was removed per deployment requirements.
-    This function will return None - job lookups must be configured via alternative means.
-    """
-    if not config.DB_DSN:
-        raise HTTPException(503, "Database lookups are not configured. PostgreSQL access is not available in this deployment environment.")
-    
-    # PostgreSQL access removed - would need external API or MongoDB alternative
-    raise HTTPException(503, "Direct database access is not available in this deployment. Job/environment lookups require production infrastructure access.")
+    """Look up environment UUID for a job from PostgreSQL."""                                                            
+    if not config.DB_DSN:                                                                                                
+        raise HTTPException(503, "DB_DSN not configured for this environment. Set it in .env or environment variables.") 
+                                                                                                                           
+    try:                                                                                                                 
+        with psycopg2.connect(config.DB_DSN) as conn:                                                                    
+            with conn.cursor() as cur:                                                                                   
+                cur.execute(
+                    "SELECT id FROM environments WHERE entity_id = %s LIMIT 1",
+                    (job_id,),                                                                                           
+                )
+                row = cur.fetchone()                                                                                     
+                return row[0] if row else None
+    except psycopg2.OperationalError as e:
+        raise HTTPException(502, f"Cannot connect to database: {e}")  
 
 
 def _get_user_id_for_job(job_id: str) -> str | None:
-    """Look up the owner user_id for a job.
-    
-    Note: Database access not available - returns None.
-    """
-    return None
+    """Look up the owner user_id for a job from PostgreSQL."""                                                           
+    if not config.DB_DSN:
+        return None
+
+    try:
+        with psycopg2.connect(config.DB_DSN) as conn:
+            with conn.cursor() as cur:
+                cur.execute(                                                                                             
+                    "SELECT created_by FROM jobs WHERE id = %s LIMIT 1",
+                    (job_id,),                                                                                           
+                )
+                row = cur.fetchone()
+                return row[0] if row else None
+    except psycopg2.OperationalError:                                                                                    
+        return None
 
 
 def _pod_exec(env_id: str, command: str, timeout: int = 30) -> dict:
@@ -606,7 +621,7 @@ async def list_category_configs(req: BearerTokenRequest):
         resp = httpx.get(
             url,
             headers=headers,
-            timeout=30,
+            timeout=30, 
             follow_redirects=True,
         )
     except Exception as e:
@@ -617,7 +632,7 @@ async def list_category_configs(req: BearerTokenRequest):
     print(f"[list-configs] Response body (first 500 chars): {resp.text[:500]}")
     print(f"[list-configs] Response type: {type(resp.json()) if resp.status_code < 400 else 'error'}")
 
-    if resp.status_code >= 400:
+    if resp.status_code >= 400:  
         raise HTTPException(resp.status_code, f"Failed to fetch configs: {resp.text[:500]}")
 
     try:
