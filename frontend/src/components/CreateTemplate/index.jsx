@@ -9,7 +9,7 @@ function now() {
   return new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
 }
 
-export default function CreateTemplate() {
+export default function CreateTemplate({ bearerToken = "" }) {
   const [step, setStep] = useState(1);
   const [jobId, setJobId] = useState('');
   const [templateName, setTemplateName] = useState('');
@@ -73,7 +73,7 @@ export default function CreateTemplate() {
     setPodName('');
     setStatusFor(1, 'Fetching job details...', 'loading');
     try {
-      const info = await api.getJobInfo(jobId);
+      const info = await api.getJobInfo(jobId, bearerToken);
       setUserId(info.user_id || '');
       setEnvId(info.env_id || '');
       setPodName(info.pod_info?.pod_name || '');

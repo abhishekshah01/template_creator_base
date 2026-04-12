@@ -121,7 +121,7 @@ export default function App() {
   function renderPage() {
     switch (activePage) {
       case 'create-template':
-        return <CreateTemplate />;
+        return <CreateTemplate bearerToken={bearerToken} />;
       case 'template-summary':
         return <TemplateSummary bearerToken={bearerToken} onTokenExpired={() => updateToken('')} />;
       case 'update-category':
@@ -143,7 +143,7 @@ export default function App() {
         return <Settings activeEnv={activeEnv} standardEnvs={standardEnvs} onSwitchEnv={switchEnv} envConfig={envConfig}
           bearerToken={bearerToken} onTokenChange={updateToken} />;
       default:
-        return <CreateTemplate />;
+        return <CreateTemplate bearerToken={bearerToken} />;
     }
   }
 

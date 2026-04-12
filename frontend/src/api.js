@@ -26,7 +26,7 @@ async function request(path, body) {
 export { AuthError };
 
 export const api = {
-  getJobInfo: (jobId) => request('/job-info', { job_id: jobId }),
+  getJobInfo: (jobId, bearerToken) => request('/job-info', { job_id: jobId, bearer_token: bearerToken || '' }),
   getCollections: (jobId) => request('/collections', { job_id: jobId }),
   deleteCollections: (jobId, dbName, collections) =>
     request('/delete-collections', { job_id: jobId, db_name: dbName, collections }),
