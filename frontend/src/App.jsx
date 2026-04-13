@@ -5,6 +5,7 @@ import TemplateSummary from './components/TemplateSummary';
 import UpdateCategory from './components/UpdateCategory';
 import { ConfigAll, ConfigCreate, ConfigSummary, ConfigDetailPage } from './components/CategoryConfig';
 import Settings from './components/Settings';
+import Logs from './components/Logs';
 import Banner from './components/Banner';
 import { api } from './api';
 
@@ -140,6 +141,8 @@ export default function App() {
       case 'settings':
         return <Settings activeEnv={activeEnv} standardEnvs={standardEnvs} onSwitchEnv={switchEnv} envConfig={envConfig}
           bearerToken={bearerToken} onTokenChange={updateToken} />;
+      case 'logs':
+        return <Logs />;
       default:
         return <CreateTemplate bearerToken={bearerToken} />;
     }
@@ -167,9 +170,9 @@ export default function App() {
         <div className={`w-[2px] h-full mx-auto transition-colors ${isDragging ? 'bg-[#1f6feb]' : 'bg-transparent group-hover:bg-[#1f6feb]'}`} />
       </div>
       <main style={{ marginLeft: sidebarWidth }} className="flex-1 min-h-screen">
-        <div className={`px-6 py-8 ${activePage === 'create-template' ? '' : 'max-w-4xl mx-auto'}`}>
+        <div className={`px-6 py-8 ${activePage === 'create-template' || activePage === 'logs' ? '' : 'max-w-4xl mx-auto'}`}>
           {/* Persistent auth info banner — shown on auth-dependent pages */}
-          {bearerToken && !infoBannerDismissed && activePage !== 'create-template' && activePage !== 'settings' && (
+          {bearerToken && !infoBannerDismissed && activePage !== 'create-template' && activePage !== 'settings' && activePage !== 'logs' && (
             <Banner variant="upsell" onDismiss={() => setInfoBannerDismissed(true)} className="mb-4">
               API tokens are environment-specific. Ensure your token matches the active environment <strong className="text-white">({activeEnv})</strong>.
             </Banner>
