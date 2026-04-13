@@ -59,6 +59,14 @@ function ChevronIcon({ className, open }) {
   );
 }
 
+function PulseIcon({ className }) {
+  return (
+    <svg className={className} viewBox="0 0 16 16" fill="currentColor">
+      <path d="M6 2a.75.75 0 0 1 .696.471L10 10.731l1.304-3.26A.75.75 0 0 1 12 7h3.25a.75.75 0 0 1 0 1.5h-2.742l-1.812 4.528a.75.75 0 0 1-1.392 0L6 4.77 4.696 8.03A.75.75 0 0 1 4 8.5H.75a.75.75 0 0 1 0-1.5h2.742l1.812-4.529A.75.75 0 0 1 6 2Z" />
+    </svg>
+  );
+}
+
 function SettingsIcon({ className }) {
   return (
     <svg className={className} viewBox="0 0 16 16" fill="currentColor">
@@ -82,6 +90,12 @@ const navStructure = [
       { id: 'config-all', label: 'All Configs', icon: ListIcon },
       { id: 'config-create', label: 'Create Config', icon: PlusCircleIcon },
       { id: 'config-summary', label: 'Generate Summary', icon: SparkleIcon },
+    ],
+  },
+  {
+    section: 'Observability',
+    items: [
+      { id: 'logs', label: 'Logs', icon: PulseIcon },
     ],
   },
   {
