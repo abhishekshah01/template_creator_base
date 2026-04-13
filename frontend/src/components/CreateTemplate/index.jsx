@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { api } from '../../api';
+import { api, startFlow, clearFlow, currentFlowId } from '../../api';
 import StepCard from './StepCard';
 import StatusBar from './StatusBar';
 import ProgressBar from './ProgressBar';
@@ -34,6 +34,27 @@ export default function CreateTemplate({ bearerToken = "" }) {
   const [inspectorReason, setInspectorReason] = useState('');     // 'paused' | 'not-found' | 'other'
 
   const stepsRef = useRef({});
+
+  // Start a correlation flow when the user enters the page; clear on unmount.
+  // Every api.* call made during this page's lifetime will share a flow_id,
+  // letting the Logs UI reconstruct the multi-step narrative.
+  useEffect(() => {
+    const flowId = startFlow();
+    api.postClientLog({
+      event: 'template.flow.started',
+      data: { origin: 'CreateTemplate' },
+    }).catch(() => {});
+    return () => {
+      // Only mark abandoned if the user leaves before a successful create.
+      if (currentFlowId() === flowId) {
+        api.postClientLog({
+          event: 'template.flow.abandoned',
+          data: { origin: 'CreateTemplate' },
+        }).catch(() => {});
+        clearFlow();
+      }
+    };
+  }, []);
 
   function scrollToStep(n) {
     setTimeout(() => stepsRef.current[n]?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 100);
@@ -208,6 +229,11 @@ export default function CreateTemplate({ bearerToken = "" }) {
         setGcsPath(data.gcs_path);
         setStatusFor(4, 'Template created successfully!', 'success');
         completeStep(4);
+        api.postClientLog({
+          event: 'template.flow.completed',
+          data: { template_name: templateName, gcs_path: data.gcs_path, origin: 'CreateTemplate' },
+        }).catch(() => {});
+        clearFlow();
       } else {
         setLogOutput(data.error || data.output);
         throw new Error('Template creation failed -- check log output');
