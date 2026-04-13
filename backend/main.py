@@ -929,6 +929,16 @@ async def generate_template_summary(req: TemplateSummaryRequest):
     except Exception:
         data = {"message": resp.text}
 
+    emit_event(
+        E.EVENT_TEMPLATE_SUMMARY_GENERATED,
+        outcome="success",
+        duration_ms=(time.perf_counter() - _start) * 1000.0,
+        data={
+            "template_name": req.template_name,
+            "summary_length": len(str(data.get("app_summary") or data.get("summary") or "")) if isinstance(data, dict) else 0,
+        },
+    )
+
     return {
         "status": "success",
         "response": data,
@@ -979,14 +989,42 @@ async def update_category_config(req: UpdateCategoryConfigRequest):
             timeout=30,
         )
     except Exception as e:
+        emit_event(
+            E.EVENT_CATEGORY_CONFIG_UPDATED,
+            outcome="failure",
+            data={"config_id": req.config_id, "template_name": req.template_name},
+            error=logging_lib.format_exception(e),
+        )
         raise HTTPException(502, f"Failed to reach category config API: {e}")
 
     if resp.status_code >= 400:
+        emit_event(
+            E.EVENT_CATEGORY_CONFIG_UPDATED,
+            outcome="failure",
+            data={
+                "config_id": req.config_id,
+                "template_name": req.template_name,
+                "status_code": resp.status_code,
+                "response_tail": resp.text[-500:],
+            },
+        )
         raise HTTPException(resp.status_code, f"Update failed: {resp.text[:500]}")
 
     try:
         data = resp.json()
     except Exception:
         data = {"message": resp.text}
+
+    emit_event(
+        E.EVENT_CATEGORY_CONFIG_UPDATED,
+        outcome="success",
+        data={
+            "config_id": req.config_id,
+            "template_name": req.template_name,
+            "internal": req.internal,
+            "public": req.public,
+            "env_var_count": len(req.default_env_config or {}),
+        },
+    )
 
     return {"status": "success", "response": data}
