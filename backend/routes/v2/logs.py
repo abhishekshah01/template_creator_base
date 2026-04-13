@@ -12,7 +12,7 @@ All endpoints are additive — do not replace any v1 behavior.
 from __future__ import annotations
 
 from datetime import datetime, timedelta, timezone
-from typing import Any
+from typing import Any, Optional
 
 from bson import ObjectId
 from bson.errors import InvalidId
@@ -29,7 +29,7 @@ router = APIRouter(prefix="/api/v2", tags=["logs"])
 # Serialization helpers
 # ---------------------------------------------------------------------------
 
-def _serialize(doc: dict | None) -> dict | None:
+def _serialize(doc: Optional[dict]) -> Optional[dict]:
     if doc is None:
         return None
     out = dict(doc)
@@ -42,7 +42,7 @@ def _serialize(doc: dict | None) -> dict | None:
     return out
 
 
-def _parse_since(since: str | None) -> datetime | None:
+def _parse_since(since: Optional[str]) -> datetime | None:
     if not since:
         return None
     # Accept shorthand (5m, 1h, 24h, 7d) or ISO-8601
@@ -77,14 +77,14 @@ def _apply_since(query: dict, since_dt: datetime | None) -> dict:
 @router.get("/events")
 async def list_events(
     limit: int = Query(50, ge=1, le=500),
-    cursor: str | None = Query(None, description="Opaque pagination cursor (_id)"),
-    event: str | None = Query(None, description="Exact event name or prefix with trailing * e.g. template.*"),
-    flow_id: str | None = None,
-    request_id: str | None = None,
-    user_id: str | None = None,
-    env: str | None = None,
-    outcome: str | None = None,
-    since: str | None = Query(None, description="Shorthand (5m/1h/24h/7d) or ISO-8601"),
+    cursor: Optional[str] = Query(None, description="Opaque pagination cursor (_id)"),
+    event: Optional[str] = Query(None, description="Exact event name or prefix with trailing * e.g. template.*"),
+    flow_id: Optional[str] = None,
+    request_id: Optional[str] = None,
+    user_id: Optional[str] = None,
+    env: Optional[str] = None,
+    outcome: Optional[str] = None,
+    since: Optional[str] = Query(None, description="Shorthand (5m/1h/24h/7d) or ISO-8601"),
 ):
     q: dict[str, Any] = {}
     if event:
@@ -149,15 +149,15 @@ async def get_event(event_id: str):
 @router.get("/logs")
 async def list_logs(
     limit: int = Query(100, ge=1, le=1000),
-    cursor: str | None = None,
-    level: str | None = Query(None, description="debug | info | warn | error"),
-    min_level: str | None = Query(None, description="inclusive floor — e.g. 'warn' returns warn+error"),
-    flow_id: str | None = None,
-    request_id: str | None = None,
-    env: str | None = None,
-    kind: str | None = Query(None, description="log | event"),
-    q: str | None = Query(None, description="substring match in message/source"),
-    since: str | None = Query(None, description="5m/1h/24h/7d or ISO-8601"),
+    cursor: Optional[str] = None,
+    level: Optional[str] = Query(None, description="debug | info | warn | error"),
+    min_level: Optional[str] = Query(None, description="inclusive floor — e.g. 'warn' returns warn+error"),
+    flow_id: Optional[str] = None,
+    request_id: Optional[str] = None,
+    env: Optional[str] = None,
+    kind: Optional[str] = Query(None, description="log | event"),
+    q: Optional[str] = Query(None, description="substring match in message/source"),
+    since: Optional[str] = Query(None, description="5m/1h/24h/7d or ISO-8601"),
 ):
     query: dict[str, Any] = {}
     if level:
@@ -256,15 +256,15 @@ async def logs_summary(window: str = Query("1h", description="5m/1h/24h/7d")):
 
 class ClientLogPayload(BaseModel):
     level: str = Field(default="error")
-    message: str
-    source: str | None = None
-    url: str | None = None
-    user_agent: str | None = None
-    stack: str | None = None
-    flow_id: str | None = None
-    event: str | None = None          # optional — lets frontend emit flow.started etc.
-    data: dict | None = None
-    context: dict | None = None
+    message: str = ""
+    source: Optional[str] = None
+    url: Optional[str] = None
+    user_agent: Optional[str] = None
+    stack: Optional[str] = None
+    flow_id: Optional[str] = None
+    event: Optional[str] = None          # optional — lets frontend emit flow.started etc.
+    data: Optional[dict] = None
+    context: Optional[dict] = None
 
 
 @router.post("/client-logs")
