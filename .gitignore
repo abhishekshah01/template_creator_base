@@ -1,23 +1,22 @@
+# Python
 venv/
 __pycache__/
 *.pyc
-template-bot-key
-template-bot-key.pub
-*.pem
-sa-key.json
+
+# Node / build
 node_modules/
 dist/
 
--e 
-# Environment files
-*.env
-*.env.*
--e 
-# Environment and credential files
-.env
-.env.*
-*.env
-credentials.json
+# Secrets & keys
 *.pem
 *.key
+credentials.json
 .credentials
+sa-key.json
+template-bot-key
+template-bot-key.pub
+
+# Env files — .env.example is tracked as the template
+.env
+.env.local
+.env.*.local

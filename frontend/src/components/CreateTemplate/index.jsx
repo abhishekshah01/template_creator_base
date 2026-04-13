@@ -4,6 +4,7 @@ import StepCard from './StepCard';
 import StatusBar from './StatusBar';
 import ProgressBar from './ProgressBar';
 import InspectorPanel from './InspectorPanel';
+import Banner from '../Banner';
 
 function now() {
   return new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
@@ -27,9 +28,10 @@ export default function CreateTemplate({ bearerToken = "" }) {
   const [jobPaused, setJobPaused] = useState(false);
   const [podStatus, setPodStatus] = useState('');
 
-  // Inspector panel (split-screen)
-  const [inspectorOpen, setInspectorOpen] = useState(false);
+  // Inspector panel (always visible, status-driven)
   const [inspectCollection, setInspectCollection] = useState('');
+  const [inspectorStatus, setInspectorStatus] = useState('idle'); // 'idle' | 'loading' | 'error' | 'ready'
+  const [inspectorReason, setInspectorReason] = useState('');     // 'paused' | 'not-found' | 'other'
 
   const stepsRef = useRef({});
 
@@ -37,8 +39,8 @@ export default function CreateTemplate({ bearerToken = "" }) {
     setTimeout(() => stepsRef.current[n]?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 100);
   }
 
-  function setStatusFor(stepNum, message, type) {
-    setStatuses(prev => ({ ...prev, [stepNum]: { message, type } }));
+  function setStatusFor(stepNum, message, type, hint) {
+    setStatuses(prev => ({ ...prev, [stepNum]: { message, type, hint } }));
   }
 
   function completeStep(n) {
@@ -53,6 +55,7 @@ export default function CreateTemplate({ bearerToken = "" }) {
     setPodName(''); setDbName(''); setCollections([]); setSelected(new Set());
     setTimes({}); setStatuses({}); setGcsPath(''); setLogOutput(''); setLoading('');
     setJobPaused(false); setPodStatus('');
+    setInspectorStatus('idle'); setInspectorReason('');
   }
 
   function stepStatus(n) {
@@ -71,6 +74,8 @@ export default function CreateTemplate({ bearerToken = "" }) {
     setUserId('');
     setEnvId('');
     setPodName('');
+    setInspectorStatus('loading');
+    setInspectorReason('');
     setStatusFor(1, 'Fetching job details...', 'loading');
     try {
       const info = await api.getJobInfo(jobId, bearerToken);
@@ -85,6 +90,8 @@ export default function CreateTemplate({ bearerToken = "" }) {
         setTimes(prev => { const { 1: _, ...rest } = prev; return rest; });
         setPodStatus(info.pod_status || 'PAUSED');
         setStatusFor(1, 'failed', 'error');
+        setInspectorStatus('error');
+        setInspectorReason('paused');
         return;
       }
 
@@ -94,18 +101,37 @@ export default function CreateTemplate({ bearerToken = "" }) {
       setCollections(coll.collections);
       setSelected(new Set());
       setStatusFor(1, `Found ${coll.collections.length} collection(s) in "${coll.db_name}"`, 'success');
-      if (coll.collections.length > 0) setInspectorOpen(true);
+      setInspectorStatus('ready');
       completeStep(1);
     } catch (e) {
       setStep(1);
       setTimes(prev => { const { 1: _, ...rest } = prev; return rest; });
+      // Clear stale data from any previous successful fetch
+      setCollections([]);
+      setDbName('');
+      setUserId('');
+      setEnvId('');
+      setPodName('');
       const msg = e.message || '';
       if (msg.toLowerCase().includes('timed out') || msg.toLowerCase().includes('pod exec failed')) {
         setJobPaused(true);
         setPodStatus(podStatus || 'POD_NOT_FOUND');
         setStatusFor(1, 'failed', 'error');
+        setInspectorStatus('error');
+        setInspectorReason('paused');
       } else {
-        setStatusFor(1, msg, 'error');
+        const dotIdx = msg.indexOf('. ');
+        if (dotIdx > 0 && msg.toLowerCase().includes('not found')) {
+          const errorMsg = msg.slice(0, dotIdx + 1);
+          const hintMsg = msg.slice(dotIdx + 2);
+          setStatusFor(1, errorMsg, 'error', hintMsg);
+          setInspectorStatus('error');
+          setInspectorReason('not-found');
+        } else {
+          setStatusFor(1, msg, 'error');
+          setInspectorStatus('error');
+          setInspectorReason('other');
+        }
       }
     } finally {
       setLoading('');
@@ -151,7 +177,6 @@ export default function CreateTemplate({ bearerToken = "" }) {
 
   function inspectCollectionFromEye(name) {
     setInspectCollection(name);
-    if (!inspectorOpen) setInspectorOpen(true);
   }
 
   function selectAll(checked) {
@@ -208,26 +233,15 @@ export default function CreateTemplate({ bearerToken = "" }) {
 
   return (
     <>
-    <div className={`flex gap-6 ${inspectorOpen ? '' : 'justify-center'}`} style={{ minHeight: 'calc(100vh - 64px)' }}>
+    <div className="flex gap-6" style={{ minHeight: 'calc(100vh - 64px)' }}>
     {/* Left: Workflow */}
-    <div className={inspectorOpen ? 'flex-1 min-w-0' : 'w-full max-w-[680px]'}>
+    <div className="flex-1 min-w-0">
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
         <h1 className="text-[20px] font-semibold text-[#e6edf3]">Create Template</h1>
-        <div className="flex items-center gap-2">
-          {collections.length > 0 && (
-            <button onClick={() => setInspectorOpen(!inspectorOpen)}
-              className={`${btnDefault} ${inspectorOpen ? '!border-[#58a6ff] !text-[#58a6ff]' : ''}`}
-              title={inspectorOpen ? 'Close Inspector' : 'Open Inspector'}>
-              <svg className="w-4 h-4" viewBox="0 0 16 16" fill="currentColor">
-                <path d="M.75 1h14.5a.75.75 0 0 1 .75.75v12.5a.75.75 0 0 1-.75.75H.75a.75.75 0 0 1-.75-.75V1.75A.75.75 0 0 1 .75 1Zm0 1.5v11h5.75v-11Zm7.25 0v11h6.5v-11Z" />
-              </svg>
-            </button>
-          )}
-          <button onClick={reset} className={btnDefault}>
-            Reset
-          </button>
-        </div>
+        <button onClick={reset} className={btnDefault}>
+          Reset
+        </button>
       </div>
       <p className={`${helperCls} mb-4`}>
         Automate template creation from an ephemeral job environment. Required fields are marked with an asterisk (*).
@@ -258,28 +272,31 @@ export default function CreateTemplate({ bearerToken = "" }) {
             </button>
           </div>
           {jobPaused && (
-            <div className="mb-3 bg-[#9e6a03]/15 border border-[#9e6a03]/30 rounded-md px-3 py-[5px] text-[14px] text-[#d29922] flex items-center gap-2">
-              <svg className="w-4 h-4 shrink-0" viewBox="0 0 16 16" fill="currentColor">
-                <path d="M6.457 1.047c.659-1.234 2.427-1.234 3.086 0l6.082 11.378A1.75 1.75 0 0 1 14.082 15H1.918a1.75 1.75 0 0 1-1.543-2.575Zm1.763.707a.25.25 0 0 0-.44 0L1.698 13.132a.25.25 0 0 0 .22.368h12.164a.25.25 0 0 0 .22-.368Zm.53 3.996v2.5a.75.75 0 0 1-1.5 0v-2.5a.75.75 0 0 1 1.5 0ZM9 11a1 1 0 1 1-2 0 1 1 0 0 1 2 0Z" />
-              </svg>
+            <Banner variant="warning" className="mb-3">
               Job is paused (POD_NOT_FOUND). Resume first, then retry.
-            </div>
+            </Banner>
           )}
           <StatusBar {...(statuses[1] || {})} />
-          {userId && (
+          {(userId || envId || podName) && (
             <div className="flex gap-2 mt-3 flex-wrap">
-              <span className="inline-flex items-center gap-1.5 text-[12px] px-2.5 py-[3px] rounded-full font-mono"
-                style={{ backgroundColor: 'rgba(31,111,235,0.15)', color: '#58a6ff', border: '1px solid rgba(31,111,235,0.3)' }}>
-                User <span className="text-[#c9d1d9]">{userId}</span>
-              </span>
-              <span className="inline-flex items-center gap-1.5 text-[12px] px-2.5 py-[3px] rounded-full font-mono"
-                style={{ backgroundColor: 'rgba(35,134,54,0.15)', color: '#3fb950', border: '1px solid rgba(35,134,54,0.3)' }}>
-                Env <span className="text-[#c9d1d9]">{envId}</span>
-              </span>
-              <span className="inline-flex items-center gap-1.5 text-[12px] px-2.5 py-[3px] rounded-full font-mono"
-                style={{ backgroundColor: 'rgba(137,87,229,0.15)', color: '#bc8cff', border: '1px solid rgba(137,87,229,0.3)' }}>
-                Pod <span className="text-[#c9d1d9]">{podName}</span>
-              </span>
+              {userId && (
+                <span className="inline-flex items-center gap-1.5 text-[12px] px-2.5 py-[3px] rounded-full font-mono"
+                  style={{ backgroundColor: 'rgba(31,111,235,0.15)', color: '#58a6ff', border: '1px solid rgba(31,111,235,0.3)' }}>
+                  User <span className="text-[#c9d1d9]">{userId}</span>
+                </span>
+              )}
+              {envId && (
+                <span className="inline-flex items-center gap-1.5 text-[12px] px-2.5 py-[3px] rounded-full font-mono"
+                  style={{ backgroundColor: 'rgba(35,134,54,0.15)', color: '#3fb950', border: '1px solid rgba(35,134,54,0.3)' }}>
+                  Env <span className="text-[#c9d1d9]">{envId}</span>
+                </span>
+              )}
+              {podName && (
+                <span className="inline-flex items-center gap-1.5 text-[12px] px-2.5 py-[3px] rounded-full font-mono"
+                  style={{ backgroundColor: 'rgba(137,87,229,0.15)', color: '#bc8cff', border: '1px solid rgba(137,87,229,0.3)' }}>
+                  Pod <span className="text-[#c9d1d9]">{podName}</span>
+                </span>
+              )}
             </div>
           )}
         </StepCard>
@@ -350,12 +367,9 @@ export default function CreateTemplate({ bearerToken = "" }) {
       {/* Step 3 */}
       <div ref={el => stepsRef.current[3] = el}>
         <StepCard number={3} title="Pause Job" time={times[3]} status={stepStatus(3)} hasError={statuses[3]?.type === 'error'}>
-          <div className="bg-[#9e6a03]/15 border border-[#9e6a03]/30 rounded-md px-3 py-2 mb-3 text-[12px] text-[#d29922] flex items-center gap-2">
-            <svg className="w-4 h-4 shrink-0" viewBox="0 0 16 16" fill="currentColor">
-              <path d="M6.457 1.047c.659-1.234 2.427-1.234 3.086 0l6.082 11.378A1.75 1.75 0 0 1 14.082 15H1.918a1.75 1.75 0 0 1-1.543-2.575Zm1.763.707a.25.25 0 0 0-.44 0L1.698 13.132a.25.25 0 0 0 .22.368h12.164a.25.25 0 0 0 .22-.368Zm.53 3.996v2.5a.75.75 0 0 1-1.5 0v-2.5a.75.75 0 0 1 1.5 0ZM9 11a1 1 0 1 1-2 0 1 1 0 0 1 2 0Z" />
-            </svg>
+          <Banner variant="warning" className="mb-3">
             Do NOT refresh the app preview before pausing — it re-seeds the database.
-          </div>
+          </Banner>
           <p className={`${helperCls} mb-3`}>Creates a restic snapshot of the cleaned state.</p>
           <button onClick={pauseJob} disabled={loading === 'pause'} className={btnDefault} data-testid="pause-job-btn">
             {loading === 'pause' && <div className={spinner} />}
@@ -394,19 +408,18 @@ export default function CreateTemplate({ bearerToken = "" }) {
       </div>
     </div>
 
-    {/* Right: Inspector Panel */}
-    {inspectorOpen && (
-      <div className="w-[480px] shrink-0 sticky top-0 h-[calc(100vh-64px)]">
-        <InspectorPanel
-          jobId={jobId}
-          dbName={dbName}
-          collections={collections}
-          inspectCollection={inspectCollection}
-          onInspected={() => setInspectCollection('')}
-          onClose={() => setInspectorOpen(false)}
-        />
-      </div>
-    )}
+    {/* Right: Inspector Panel (always visible) */}
+    <div className="w-[480px] shrink-0 sticky top-0 h-[calc(100vh-64px)]">
+      <InspectorPanel
+        jobId={jobId}
+        dbName={dbName}
+        collections={collections}
+        inspectCollection={inspectCollection}
+        onInspected={() => setInspectCollection('')}
+        status={inspectorStatus}
+        errorReason={inspectorReason}
+      />
+    </div>
 
     </div>
     </>

@@ -5,6 +5,7 @@ import TemplateSummary from './components/TemplateSummary';
 import UpdateCategory from './components/UpdateCategory';
 import { ConfigAll, ConfigCreate, ConfigSummary, ConfigDetailPage } from './components/CategoryConfig';
 import Settings from './components/Settings';
+import Banner from './components/Banner';
 import { api } from './api';
 
 const MIN_SIDEBAR = 200;
@@ -15,6 +16,7 @@ export default function App() {
   const [activePage, setActivePage] = useState('create-template');
   const [bearerToken, setBearerToken] = useState(() => localStorage.getItem('bearer_token') || '');
   const [configDetailId, setConfigDetailId] = useState(null);
+  const [infoBannerDismissed, setInfoBannerDismissed] = useState(false);
 
   // Environment state
   const [activeEnv, setActiveEnv] = useState(() => localStorage.getItem('active_env') || 'eph-leadgen1');
@@ -52,17 +54,13 @@ export default function App() {
 
   async function refreshConfigs() {
     if (!bearerToken) return [];
-    try {
-      const data = await api.listCategoryConfigs(bearerToken);
-      const list = Array.isArray(data) ? data : (data?.configs || data?.data || data?.results || []);
-      const configs = Array.isArray(list) ? list : [];
-      setCachedConfigs(configs);
-      setConfigsStale(false);
-      setConfigsLoaded(true);
-      return configs;
-    } catch {
-      return cachedConfigs;
-    }
+    const data = await api.listCategoryConfigs(bearerToken);
+    const list = Array.isArray(data) ? data : (data?.configs || data?.data || data?.results || []);
+    const configs = Array.isArray(list) ? list : [];
+    setCachedConfigs(configs);
+    setConfigsStale(false);
+    setConfigsLoaded(true);
+    return configs;
   }
 
   function markConfigsStale() {
@@ -128,7 +126,7 @@ export default function App() {
         return <UpdateCategory bearerToken={bearerToken} onTokenExpired={() => updateToken('')} />;
       case 'config-all':
         return <ConfigAll onNavigate={navigate} bearerToken={bearerToken} onTokenExpired={() => updateToken('')}
-          cachedConfigs={cachedConfigs} configsStale={configsStale} configsLoaded={configsLoaded} refreshConfigs={refreshConfigs} />;
+          cachedConfigs={cachedConfigs} configsStale={configsStale} configsLoaded={configsLoaded} refreshConfigs={refreshConfigs} activeEnv={activeEnv} />;
       case 'config-create':
         return <ConfigCreate bearerToken={bearerToken} onTokenExpired={() => updateToken('')} onNavigate={navigate}
           cachedConfigs={cachedConfigs} refreshConfigs={refreshConfigs} markConfigsStale={markConfigsStale} />;
@@ -170,6 +168,12 @@ export default function App() {
       </div>
       <main style={{ marginLeft: sidebarWidth }} className="flex-1 min-h-screen">
         <div className={`px-6 py-8 ${activePage === 'create-template' ? '' : 'max-w-4xl mx-auto'}`}>
+          {/* Persistent auth info banner — shown on auth-dependent pages */}
+          {bearerToken && !infoBannerDismissed && activePage !== 'create-template' && activePage !== 'settings' && (
+            <Banner variant="upsell" onDismiss={() => setInfoBannerDismissed(true)} className="mb-4">
+              API tokens are environment-specific. Ensure your token matches the active environment <strong className="text-white">({activeEnv})</strong>.
+            </Banner>
+          )}
           {renderPage()}
         </div>
       </main>

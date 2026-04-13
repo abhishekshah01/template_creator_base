@@ -28,7 +28,6 @@ function JsonValue({ value, indent = 0 }) {
   if (typeof value === 'object') {
     const keys = Object.keys(value);
     if (keys.length === 0) return <span className="text-[#8b949e]">{'{}'}</span>;
-    // Handle $oid, $date etc
     if (keys.length === 1 && keys[0] === '$oid') return <span className="text-[#f47067]">ObjectId("{value.$oid}")</span>;
     if (keys.length === 1 && keys[0] === '$date') return <span className="text-[#7ee787]">{value.$date}</span>;
     return (
@@ -47,27 +46,33 @@ function JsonValue({ value, indent = 0 }) {
   return <span>{String(value)}</span>;
 }
 
-export default function InspectorPanel({ jobId, dbName, collections, inspectCollection, onInspected, onClose }) {
+// Per-reason messages for inspector and terminal (kept separate from left-side StatusBar)
+const INSPECTOR_MESSAGES = {
+  paused:      'Job is paused. Resume it to inspect collections.',
+  'not-found': 'Job not found in this environment.',
+  other:       'Could not connect to job.',
+};
+const TERMINAL_MESSAGES = {
+  paused:      'Job is paused. Resume the job to enable the terminal.',
+  'not-found': 'Job not found. Switch environment or fix the Job ID.',
+  other:       'Connection failed. See error details on the left.',
+};
+
+export default function InspectorPanel({ jobId, dbName, collections, inspectCollection, onInspected, status = 'idle', errorReason = '' }) {
+  const isReady = status === 'ready';
+
   // Document viewer state
   const [activeCollection, setActiveCollection] = useState('');
   const [viewerData, setViewerData] = useState(null);
   const [viewerLoading, setViewerLoading] = useState(false);
   const [viewerError, setViewerError] = useState('');
 
-  // React to external inspect request (eye icon click)
-  useEffect(() => {
-    if (inspectCollection && inspectCollection !== activeCollection) {
-      loadCollection(inspectCollection);
-      onInspected?.();
-    }
-  }, [inspectCollection]);
-
   // Terminal state
   const [termInput, setTermInput] = useState('');
   const [termHistory, setTermHistory] = useState([]);
   const [historyIdx, setHistoryIdx] = useState(-1);
   const [termOutput, setTermOutput] = useState([
-    { type: 'system', text: `Connected to ${dbName}. Type mongosh commands (read-only).` },
+    { type: 'system', text: 'Waiting for a job connection...' },
   ]);
   const [termLoading, setTermLoading] = useState(false);
   const termEndRef = useRef(null);
@@ -77,6 +82,34 @@ export default function InspectorPanel({ jobId, dbName, collections, inspectColl
   const [splitRatio, setSplitRatio] = useState(0.6);
   const isDragging = useRef(false);
   const panelRef = useRef(null);
+
+  // Reset viewer and terminal on status/db change
+  useEffect(() => {
+    setActiveCollection('');
+    setViewerData(null);
+    setViewerError('');
+    setTermInput('');
+    setTermHistory([]);
+    setHistoryIdx(-1);
+
+    if (status === 'ready' && dbName) {
+      setTermOutput([{ type: 'system', text: `Connected to ${dbName}. Type mongosh commands (read-only).` }]);
+    } else if (status === 'loading') {
+      setTermOutput([{ type: 'system', text: 'Connecting to job...' }]);
+    } else if (status === 'error') {
+      setTermOutput([{ type: 'system', text: TERMINAL_MESSAGES[errorReason] || TERMINAL_MESSAGES.other }]);
+    } else {
+      setTermOutput([{ type: 'system', text: 'Connect to a job to use the terminal.' }]);
+    }
+  }, [status, dbName, errorReason]);
+
+  // React to external inspect request (eye icon click)
+  useEffect(() => {
+    if (isReady && inspectCollection && inspectCollection !== activeCollection) {
+      loadCollection(inspectCollection);
+      onInspected?.();
+    }
+  }, [inspectCollection, status]);
 
   useEffect(() => {
     termEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -177,91 +210,127 @@ export default function InspectorPanel({ jobId, dbName, collections, inspectColl
             <path d="M8 1c-3.68 0-6 1.316-6 3v8c0 1.684 2.32 3 6 3s6-1.316 6-3V4c0-1.684-2.32-3-6-3Z" />
           </svg>
           <span className="text-[13px] font-semibold text-[#e6edf3]">Inspector</span>
-          <span className="text-[11px] text-[#484f58] font-mono">{dbName}</span>
+          {isReady && dbName && (
+            <span className="text-[11px] text-[#484f58] font-mono">{dbName}</span>
+          )}
         </div>
-        <button onClick={onClose}
-          className="p-1 rounded hover:bg-[#21262d] text-[#8b949e] hover:text-[#e6edf3] transition-colors">
-          <svg className="w-4 h-4" viewBox="0 0 16 16" fill="currentColor">
-            <path d="M3.72 3.72a.75.75 0 0 1 1.06 0L8 6.94l3.22-3.22a.749.749 0 0 1 1.275.326.749.749 0 0 1-.215.734L9.06 8l3.22 3.22a.749.749 0 0 1-.326 1.275.749.749 0 0 1-.734-.215L8 9.06l-3.22 3.22a.751.751 0 0 1-1.042-.018.751.751 0 0 1-.018-1.042L6.94 8 3.72 4.78a.75.75 0 0 1 0-1.06Z" />
-          </svg>
-        </button>
+        {status === 'loading' && (
+          <div className="w-3.5 h-3.5 border-2 border-[#30363d] border-t-[#58a6ff] rounded-full animate-spin" />
+        )}
+        {status === 'error' && (
+          <span className="text-[11px] font-medium text-[#f85149] bg-[#da3633]/10 border border-[#da3633]/30 rounded-full px-2 py-0.5">Error</span>
+        )}
+        {isReady && (
+          <span className="text-[11px] font-medium text-[#3fb950] bg-[#238636]/10 border border-[#238636]/30 rounded-full px-2 py-0.5">Connected</span>
+        )}
       </div>
 
       {/* Document Viewer (top) */}
       <div className="flex flex-col overflow-hidden" style={{ height: `${splitRatio * 100}%` }}>
-        {/* Collection tabs */}
-        <div className="flex items-center gap-0 border-b border-[#21262d] bg-[#0d1117] overflow-x-auto shrink-0">
-          {collNames.map(name => (
-            <button key={name} onClick={() => loadCollection(name)}
-              className={`px-3 py-[6px] text-[12px] border-b-2 transition-colors whitespace-nowrap ${
-                activeCollection === name
-                  ? 'text-[#e6edf3] border-[#f78166] bg-[#161b22]'
-                  : 'text-[#8b949e] border-transparent hover:text-[#e6edf3] hover:border-[#30363d]'
-              }`}>
-              {name}
-            </button>
-          ))}
-        </div>
-
-        {/* Viewer content */}
-        <div className="flex-1 overflow-y-auto">
-          {!activeCollection && (
-            <div className="flex items-center justify-center h-full text-[13px] text-[#484f58]">
-              Click a collection tab to preview documents
+        {isReady ? (
+          <>
+            {/* Collection tabs */}
+            <div className="flex items-center gap-0 border-b border-[#21262d] bg-[#0d1117] overflow-x-auto shrink-0">
+              {collNames.map(name => (
+                <button key={name} onClick={() => loadCollection(name)}
+                  className={`px-3 py-[6px] text-[12px] border-b-2 transition-colors whitespace-nowrap ${
+                    activeCollection === name
+                      ? 'text-[#e6edf3] border-[#f78166] bg-[#161b22]'
+                      : 'text-[#8b949e] border-transparent hover:text-[#e6edf3] hover:border-[#30363d]'
+                  }`}>
+                  {name}
+                </button>
+              ))}
             </div>
-          )}
 
-          {viewerLoading && (
-            <div className="flex items-center justify-center h-full gap-2">
-              <div className="w-4 h-4 border-2 border-[#30363d] border-t-[#58a6ff] rounded-full animate-spin" />
-              <span className="text-[13px] text-[#8b949e]">Loading...</span>
-            </div>
-          )}
-
-          {viewerError && (
-            <div className="p-3 m-3 rounded-md text-[12px] bg-[#da3633]/10 text-[#f85149] border border-[#da3633]/30">
-              {viewerError}
-            </div>
-          )}
-
-          {viewerData && !viewerLoading && (
-            <div className="p-3">
-              {/* Meta bar */}
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-[12px] text-[#8b949e]">
-                  Showing {Math.min(viewerData.limit, viewerData.documents?.length || 0)} of {viewerData.count} documents
-                </span>
-              </div>
-
-              {viewerData.documents?.length > 0 ? (
-                <div className="space-y-2">
-                  {viewerData.documents.map((doc, i) => (
-                    <div key={i} className="border border-[#30363d] rounded-md overflow-hidden">
-                      <div className="px-3 py-1.5 bg-[#161b22] border-b border-[#21262d] flex items-center justify-between">
-                        <span className="text-[11px] text-[#f47067] font-mono">
-                          {doc._id?.$oid || doc._id || `doc_${i}`}
-                        </span>
-                        <span className="text-[10px] text-[#484f58]">#{i + 1}</span>
-                      </div>
-                      <pre className="p-3 text-[11px] font-mono leading-[18px] overflow-x-auto text-[#c9d1d9]">
-                        <JsonValue value={doc} />
-                      </pre>
-                    </div>
-                  ))}
+            {/* Viewer content */}
+            <div className="flex-1 overflow-y-auto">
+              {!activeCollection && (
+                <div className="flex items-center justify-center h-full text-[13px] text-[#484f58]">
+                  Click a collection tab to preview documents
                 </div>
-              ) : (
-                <div className="text-center py-8 text-[13px] text-[#484f58]">Collection is empty</div>
+              )}
+
+              {viewerLoading && (
+                <div className="flex items-center justify-center h-full gap-2">
+                  <div className="w-4 h-4 border-2 border-[#30363d] border-t-[#58a6ff] rounded-full animate-spin" />
+                  <span className="text-[13px] text-[#8b949e]">Loading...</span>
+                </div>
+              )}
+
+              {viewerError && (
+                <div className="p-3 m-3 rounded-md text-[12px] bg-[#da3633]/10 text-[#f85149] border border-[#da3633]/30">
+                  {viewerError}
+                </div>
+              )}
+
+              {viewerData && !viewerLoading && (
+                <div className="p-3">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-[12px] text-[#8b949e]">
+                      Showing {Math.min(viewerData.limit, viewerData.documents?.length || 0)} of {viewerData.count} documents
+                    </span>
+                  </div>
+
+                  {viewerData.documents?.length > 0 ? (
+                    <div className="space-y-2">
+                      {viewerData.documents.map((doc, i) => (
+                        <div key={i} className="border border-[#30363d] rounded-md overflow-hidden">
+                          <div className="px-3 py-1.5 bg-[#161b22] border-b border-[#21262d] flex items-center justify-between">
+                            <span className="text-[11px] text-[#f47067] font-mono">
+                              {doc._id?.$oid || doc._id || `doc_${i}`}
+                            </span>
+                            <span className="text-[10px] text-[#484f58]">#{i + 1}</span>
+                          </div>
+                          <pre className="p-3 text-[11px] font-mono leading-[18px] overflow-x-auto text-[#c9d1d9]">
+                            <JsonValue value={doc} />
+                          </pre>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-8 text-[13px] text-[#484f58]">Collection is empty</div>
+                  )}
+                </div>
               )}
             </div>
-          )}
-        </div>
+          </>
+        ) : (
+          /* Idle / Loading / Error empty states */
+          <div className="flex-1 flex flex-col items-center justify-center px-6">
+            {status === 'idle' && (
+              <>
+                <svg className="w-12 h-12 text-[#30363d] mb-3" viewBox="0 0 16 16" fill="currentColor">
+                  <path d="M10.68 11.74a6 6 0 0 1-7.922-8.982 6 6 0 0 1 8.982 7.922l3.04 3.04a.749.749 0 0 1-.326 1.275.749.749 0 0 1-.734-.215ZM11.5 7a4.499 4.499 0 1 0-8.997 0A4.499 4.499 0 0 0 11.5 7Z" />
+                </svg>
+                <p className="text-[14px] text-[#8b949e] font-medium">No job connected</p>
+                <p className="text-[12px] text-[#484f58] mt-1 text-center leading-relaxed">
+                  Enter a Job ID and click &quot;Fetch Job Info&quot; to inspect collections and run commands.
+                </p>
+              </>
+            )}
+
+            {status === 'loading' && (
+              <>
+                <div className="w-8 h-8 border-2 border-[#30363d] border-t-[#58a6ff] rounded-full animate-spin mb-3" />
+                <p className="text-[14px] text-[#8b949e]">Fetching job details...</p>
+              </>
+            )}
+
+            {status === 'error' && (
+              <p className="text-[12px] text-[#484f58] italic">
+                {INSPECTOR_MESSAGES[errorReason] || INSPECTOR_MESSAGES.other}
+              </p>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Drag handle */}
       <div onMouseDown={handleDragStart}
         className="h-[5px] bg-[#0d1117] border-y border-[#21262d] cursor-row-resize hover:bg-[#1f6feb]/20 transition-colors shrink-0" />
 
-      {/* Terminal (bottom) */}
+      {/* Terminal (bottom) — always visible */}
       <div className="flex flex-col overflow-hidden" style={{ height: `${(1 - splitRatio) * 100}%` }}>
         {/* Terminal header */}
         <div className="flex items-center justify-between px-3 py-1.5 border-b border-[#21262d] bg-[#161b22] shrink-0">
@@ -271,7 +340,13 @@ export default function InspectorPanel({ jobId, dbName, collections, inspectColl
             </svg>
             <span className="text-[12px] font-medium text-[#e6edf3]">Terminal</span>
           </div>
-          <button onClick={() => setTermOutput([{ type: 'system', text: 'Terminal cleared.' }])}
+          <button onClick={() => {
+            if (isReady) {
+              setTermOutput([{ type: 'system', text: `Connected to ${dbName}. Type mongosh commands (read-only).` }]);
+            } else {
+              setTermOutput([{ type: 'system', text: 'Terminal cleared.' }]);
+            }
+          }}
             className="text-[11px] text-[#8b949e] hover:text-[#e6edf3] transition-colors">
             Clear
           </button>
@@ -279,7 +354,7 @@ export default function InspectorPanel({ jobId, dbName, collections, inspectColl
 
         {/* Terminal output */}
         <div className="flex-1 overflow-y-auto px-3 py-2 font-mono text-[12px] leading-[18px]"
-          onClick={() => termInputRef.current?.focus()}>
+          onClick={() => isReady && termInputRef.current?.focus()}>
           {termOutput.map((line, i) => (
             <div key={i} className="mb-1">
               {line.type === 'system' && (
@@ -310,15 +385,15 @@ export default function InspectorPanel({ jobId, dbName, collections, inspectColl
 
         {/* Terminal input */}
         <div className="flex items-center gap-2 px-3 py-2 border-t border-[#21262d] bg-[#0d1117] shrink-0">
-          <span className="text-[12px] text-[#3fb950] font-mono shrink-0">mongosh&gt;</span>
+          <span className={`text-[12px] font-mono shrink-0 ${isReady ? 'text-[#3fb950]' : 'text-[#484f58]'}`}>mongosh&gt;</span>
           <input
             ref={termInputRef}
             type="text"
             value={termInput}
             onChange={e => setTermInput(e.target.value)}
             onKeyDown={handleTermKeyDown}
-            disabled={termLoading}
-            placeholder="db.collection.find()"
+            disabled={termLoading || !isReady}
+            placeholder={isReady ? 'db.collection.find()' : 'Connect to a job to use the terminal'}
             className="flex-1 bg-transparent text-[12px] text-[#e6edf3] font-mono outline-none placeholder:text-[#484f58] disabled:opacity-50"
           />
         </div>

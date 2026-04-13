@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { api, AuthError } from '../api';
-import { CheckCircle } from './Icons';
+import Banner from './Banner';
 
 export default function TemplateSummary({ bearerToken, onTokenExpired }) {
   const [templateName, setTemplateName] = useState('');
@@ -9,8 +9,8 @@ export default function TemplateSummary({ bearerToken, onTokenExpired }) {
   const [result, setResult] = useState(null);
 
   async function generateSummary() {
-    if (!templateName.trim()) { setStatus({ message: 'Please enter a Template Name', type: 'error' }); return; }
-    if (!bearerToken) { setStatus({ message: 'Please set your API token in the sidebar first.', type: 'error' }); return; }
+    if (!templateName.trim()) { setStatus({ message: 'Please enter a template name.', type: 'error' }); return; }
+    if (!bearerToken) { setStatus({ message: 'Set your API token in Settings before generating.', type: 'error' }); return; }
 
     setLoading(true);
     setStatus({ message: 'Generating template summary (this may take a moment)...', type: 'loading' });
@@ -27,60 +27,86 @@ export default function TemplateSummary({ bearerToken, onTokenExpired }) {
     }
   }
 
-  return (
-    <>
-      <h2 className="text-lg font-medium mb-5">Template Summary</h2>
+  const statusVariant = { error: 'critical', success: 'success', loading: 'info', info: 'info' };
 
-      <div className="bg-gh-surface border border-gh-border rounded-md p-5 mb-3">
-        <p className="text-xs text-gh-text-secondary mb-3">
+  return (
+    <div>
+      {/* Page header */}
+      <div className="mb-6">
+        <h1 className="text-[24px] font-semibold text-[#e6edf3]">Generate Summary</h1>
+        <p className="text-[14px] text-[#8b949e] mt-1">
           Generate an app summary for a template. This calls the agent service to produce metadata and description.
         </p>
-        <div className="mb-3">
-          <label className="block text-[11px] text-gh-text-secondary uppercase tracking-wider mb-1 font-medium">Template Name</label>
-          <input type="text" value={templateName} onChange={e => setTemplateName(e.target.value)}
-            onKeyDown={e => e.key === 'Enter' && generateSummary()}
-            placeholder="e.g. real-estate-v0"
-            className="w-full px-3 py-2 bg-gh-canvas border border-gh-border rounded-md text-sm text-gh-text outline-none focus:border-gh-accent-blue placeholder:text-gh-text-muted" />
+      </div>
+
+      {/* Token warning */}
+      {!bearerToken && (
+        <Banner variant="warning" className="mb-4">
+          Set your API token in Settings before generating a summary.
+        </Banner>
+      )}
+
+      {/* Form card */}
+      <div className="border border-[#30363d] rounded-[6px] overflow-hidden">
+        {/* Card header */}
+        <div className="px-4 py-3 bg-[#161b22] border-b border-[#30363d]">
+          <h2 className="text-[14px] font-semibold text-[#e6edf3]">Template details</h2>
         </div>
 
-        {!bearerToken && (
-          <div className="mb-3 px-3.5 py-2.5 rounded-md text-xs flex items-center gap-2 border bg-gh-accent-amber/15 text-gh-accent-amber-text border-gh-accent-amber/30">
-            Set your API token in the sidebar before generating.
+        {/* Card body */}
+        <div className="px-4 py-4 bg-[#0d1117]">
+          <div className="mb-4">
+            <label className="block text-[14px] font-semibold text-[#e6edf3] mb-1.5">
+              Template name <span className="text-[#f85149]">*</span>
+            </label>
+            <input type="text" value={templateName} onChange={e => setTemplateName(e.target.value)}
+              onKeyDown={e => e.key === 'Enter' && generateSummary()}
+              placeholder="e.g. real-estate-v0"
+              className="w-full px-3 py-[5px] bg-[#0d1117] border border-[#30363d] rounded-[6px] text-[14px] text-[#e6edf3] outline-none focus:border-[#1f6feb] focus:shadow-[0_0_0_3px_rgba(31,111,235,0.3)] placeholder:text-[#484f58] transition-shadow" />
+            <p className="text-[12px] text-[#8b949e] mt-1.5">The unique identifier for the template to generate a summary for.</p>
           </div>
-        )}
 
-        <button onClick={generateSummary} disabled={loading}
-          data-testid="generate-summary-btn"
-          className="px-4 py-2 bg-gh-accent-blue text-white text-sm rounded-md hover:opacity-85 disabled:opacity-50 flex items-center gap-2 transition-opacity">
-          {loading && <div className="w-3.5 h-3.5 border-2 border-gh-accent-blue/30 border-t-white rounded-full animate-spin" />}
-          {loading ? 'Generating...' : 'Generate Summary'}
-        </button>
+          <button onClick={generateSummary} disabled={loading}
+            data-testid="generate-summary-btn"
+            className="px-4 py-[5px] bg-[#238636] text-white text-[14px] font-medium rounded-[6px] hover:bg-[#2ea043] disabled:opacity-50 flex items-center gap-2 transition-colors">
+            {loading && <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />}
+            {loading ? 'Generating...' : 'Generate Summary'}
+          </button>
 
-        {status && (
-          <div className={`mt-3 px-3.5 py-2.5 rounded-md text-xs flex items-center gap-2 border ${
-            { info: 'bg-gh-accent-blue/10 text-gh-accent-blue-text border-gh-accent-blue/30',
-              success: 'bg-gh-accent-green/10 text-gh-accent-green-text border-gh-accent-green/30',
-              error: 'bg-gh-accent-red/10 text-gh-accent-red-text border-gh-accent-red/30',
-              loading: 'bg-gh-surface text-gh-text-secondary border-gh-border',
-            }[status.type] || ''}`}>
-            {status.type === 'loading' && (
-              <div className="w-3.5 h-3.5 border-2 border-gh-text-muted border-t-gh-accent-blue-text rounded-full animate-spin shrink-0" />
-            )}
-            <span>{status.message}</span>
-          </div>
-        )}
-
-        {result && (
-          <div className="mt-4 p-3.5 bg-gh-accent-green/10 border border-gh-accent-green/30 rounded-md">
-            <div className="text-sm text-gh-accent-green-text font-medium flex items-center gap-2 mb-2">
-              <CheckCircle className="w-4 h-4" /> Summary generated!
+          {/* Status banner */}
+          {status && (
+            <div className="mt-4">
+              {status.type === 'loading' ? (
+                <Banner variant="info">
+                  <div className="flex items-center gap-2">
+                    <div className="w-3.5 h-3.5 border-2 border-[#30363d] border-t-[#0576ff] rounded-full animate-spin shrink-0" />
+                    {status.message}
+                  </div>
+                </Banner>
+              ) : (
+                <Banner variant={statusVariant[status.type] || 'info'}>
+                  {status.message}
+                </Banner>
+              )}
             </div>
-            <pre className="text-xs text-gh-accent-green-text bg-gh-canvas px-3.5 py-2.5 rounded-md overflow-auto max-h-[400px] font-mono whitespace-pre-wrap">
-              {JSON.stringify(result, null, 2)}
-            </pre>
-          </div>
-        )}
+          )}
+        </div>
       </div>
-    </>
+
+      {/* Result */}
+      {result && (
+        <div className="mt-4 border border-[#238636]/40 rounded-[6px] overflow-hidden">
+          <div className="px-4 py-3 bg-[#238636]/10 border-b border-[#238636]/40 flex items-center gap-2">
+            <svg className="w-4 h-4 text-[#388f3f]" viewBox="0 0 16 16" fill="currentColor">
+              <path d="M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0Z" />
+            </svg>
+            <span className="text-[14px] font-semibold text-[#e6edf3]">Summary generated</span>
+          </div>
+          <pre className="px-4 py-4 bg-[#0d1117] text-[13px] text-[#c9d1d9] font-mono leading-relaxed overflow-auto max-h-[500px] whitespace-pre-wrap">
+            {JSON.stringify(result, null, 2)}
+          </pre>
+        </div>
+      )}
+    </div>
   );
 }

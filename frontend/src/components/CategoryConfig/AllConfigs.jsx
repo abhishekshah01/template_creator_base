@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import Banner from '../Banner';
 
 // --- Helpers ---
 function timeAgo(dateStr) {
@@ -72,9 +73,10 @@ function RefreshIcon({ className }) {
   );
 }
 
-export default function AllConfigs({ onNavigate, bearerToken, onTokenExpired, cachedConfigs = [], configsStale, configsLoaded, refreshConfigs }) {
+export default function AllConfigs({ onNavigate, bearerToken, onTokenExpired, cachedConfigs = [], configsStale, configsLoaded, refreshConfigs, activeEnv = '' }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [isAuthError, setIsAuthError] = useState(false);
   const [search, setSearch] = useState('');
   const [tab, setTab] = useState('all');
   const [sortBy, setSortBy] = useState('newest');
@@ -87,14 +89,17 @@ export default function AllConfigs({ onNavigate, bearerToken, onTokenExpired, ca
   async function handleRefresh() {
     if (!bearerToken) {
       setError('Set your API token in the sidebar first.');
+      setIsAuthError(false);
       return;
     }
     setLoading(true);
     setError(null);
+    setIsAuthError(false);
     try {
       await refreshConfigs();
     } catch (e) {
-      setError(e.message);
+      setIsAuthError(e.name === 'AuthError');
+      setError(e.name === 'AuthError' ? 'Authentication failed — API token is expired or invalid.' : e.message);
     } finally {
       setLoading(false);
     }
@@ -164,9 +169,9 @@ export default function AllConfigs({ onNavigate, bearerToken, onTokenExpired, ca
 
       {/* Token warning */}
       {!bearerToken && (
-        <div className="mb-4 px-4 py-3 rounded-md text-sm border bg-gh-accent-amber/15 text-gh-accent-amber-text border-gh-accent-amber/30">
+        <Banner variant="warning" className="mb-4">
           Set your API token in the sidebar to load configs.
-        </div>
+        </Banner>
       )}
 
       {/* Search bar + action buttons */}
@@ -238,21 +243,25 @@ export default function AllConfigs({ onNavigate, bearerToken, onTokenExpired, ca
         </div>
       )}
 
-      {/* Error */}
+      {/* Error + auth hint */}
       {error && (
-        <div className="mb-4 px-4 py-3 rounded-md text-sm border bg-gh-accent-red/10 text-gh-accent-red-text border-gh-accent-red/30">
-          {error}
+        <div className="mb-4 space-y-2">
+          <Banner variant="critical" onDismiss={() => { setError(null); setIsAuthError(false); }}>
+            {error}
+          </Banner>
+          {isAuthError && (
+            <Banner variant="warning" onDismiss={() => setIsAuthError(false)}>
+              Regenerate your token, enter a valid token for <strong className="text-white">{activeEnv}</strong>, or switch to the correct environment.
+            </Banner>
+          )}
         </div>
       )}
 
       {configsStale && (
-        <div className="mb-4 px-4 py-[7px] rounded-md text-[13px] border bg-[#9e6a03]/8 text-[#d29922] border-[#9e6a03]/20 flex items-center gap-2">
-          <svg className="w-4 h-4 shrink-0" viewBox="0 0 16 16" fill="currentColor">
-            <path d="M6.457 1.047c.659-1.234 2.427-1.234 3.086 0l6.082 11.378A1.75 1.75 0 0 1 14.082 15H1.918a1.75 1.75 0 0 1-1.543-2.575Zm1.763.707a.25.25 0 0 0-.44 0L1.698 13.132a.25.25 0 0 0 .22.368h12.164a.25.25 0 0 0 .22-.368Zm.53 3.996v2.5a.75.75 0 0 1-1.5 0v-2.5a.75.75 0 0 1 1.5 0ZM9 11a1 1 0 1 1-2 0 1 1 0 0 1 2 0Z" />
-          </svg>
-          <span>Data may be out of sync.</span>
+        <Banner variant="warning" className="mb-4" onDismiss={() => handleRefresh()}>
+          Data may be out of sync.
           <button onClick={handleRefresh} className="text-[#58a6ff] hover:underline font-medium ml-1">Refresh</button>
-        </div>
+        </Banner>
       )}
 
       {/* Table */}

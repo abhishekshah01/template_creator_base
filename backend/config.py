@@ -72,11 +72,9 @@ ENVCORE_URL = os.environ.get("ENVCORE_URL", _cfg["envcore_url"])
 DB_DSN = os.environ.get("DB_DSN", _cfg["db_dsn"])
 PAUSE_URL = os.environ.get("PAUSE_URL", _cfg["pause_url"])
 
-# --- Dev VM SSH (legacy template creation) ---
+# --- Dev VM (template creation via `gcloud compute ssh`) ---
 VM_HOST = os.environ.get("VM_HOST", "emergent-dev-vm-anshul")
 VM_ZONE = os.environ.get("VM_ZONE", "us-central1-a")
-VM_USER = os.environ.get("VM_USER", "")
-VM_SSH_KEY = os.environ.get("VM_SSH_KEY", "")
 
 # --- Template defaults ---
 RESTIC_PASSWORD = os.environ.get("RESTIC_PASSWORD", "test123")
@@ -85,9 +83,6 @@ SOURCE_BUCKET = os.environ.get("SOURCE_BUCKET", "dev-snapshots-restic")
 
 # --- Script path on the VM ---
 TEMPLATE_SCRIPT_PATH = os.environ.get(
-    "TEMPLATE_SCRIPT_PATH", 
+    "TEMPLATE_SCRIPT_PATH",
     "/home/sritam_emergent_sh/create_template_gcs.sh"
 )
-
-# --- GCP Service Account key file ---
-GCP_SA_KEY_FILE = os.environ.get("GCP_SA_KEY_FILE", "")

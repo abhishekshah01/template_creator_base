@@ -370,7 +370,7 @@ export default function CreateConfig({ bearerToken, onTokenExpired, onNavigate, 
             <div className="flex items-center gap-2 shrink-0">
               <span className="text-[12px] text-[#8b949e] font-medium">{internal ? 'On' : 'Off'}</span>
               <button type="button" onClick={() => setInternal(!internal)}
-                className={`relative w-[48px] h-[24px] rounded-full transition-colors border flex items-center ${
+                className={`relative w-[48px] h-[24px] rounded-[6px] transition-colors border flex items-center ${
                   internal ? 'bg-[#1f6feb] border-[#1f6feb]' : 'bg-[#21262d] border-[#30363d]'
                 }`}>
                 <span className={`absolute left-[8px] text-[10px] font-bold leading-none transition-opacity ${internal ? 'opacity-100 text-white' : 'opacity-0'}`}>|</span>
@@ -387,7 +387,7 @@ export default function CreateConfig({ bearerToken, onTokenExpired, onNavigate, 
             <div className="flex items-center gap-2 shrink-0">
               <span className="text-[12px] text-[#8b949e] font-medium">{isPublic ? 'On' : 'Off'}</span>
               <button type="button" onClick={() => setIsPublic(!isPublic)}
-                className={`relative w-[48px] h-[24px] rounded-full transition-colors border flex items-center ${
+                className={`relative w-[48px] h-[24px] rounded-[6px] transition-colors border flex items-center ${
                   isPublic ? 'bg-[#238636] border-[#238636]' : 'bg-[#21262d] border-[#30363d]'
                 }`}>
                 <span className={`absolute left-[8px] text-[10px] font-bold leading-none transition-opacity ${isPublic ? 'opacity-100 text-white' : 'opacity-0'}`}>|</span>

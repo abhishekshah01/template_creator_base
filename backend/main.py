@@ -7,7 +7,6 @@ from __future__ import annotations
 
 import asyncio
 import json
-import os
 import re
 import subprocess
 
@@ -517,10 +516,9 @@ async def pause_job(req: JobRequest):
 
 @app.post("/api/create-template")
 async def create_template(req: CreateTemplateRequest):
-    """Run the template creation script on the dev VM.
+    """Run the template creation script on the dev VM via `gcloud compute ssh`.
 
-    Uses gcloud compute ssh (inherits local gcloud auth) via subprocess.
-    For deployed backends, switch to paramiko with SSH key.
+    Relies on the caller's local gcloud auth (`gcloud auth login`).
     """
     # Sanitize inputs
     if not re.match(r"^[a-zA-Z0-9_-]+$", req.template_name):
@@ -540,50 +538,12 @@ async def create_template(req: CreateTemplateRequest):
         f"'"
     )
 
-    # Activate service account if key file exists
-    if config.GCP_SA_KEY_FILE and os.path.exists(config.GCP_SA_KEY_FILE):
-        try:
-            subprocess.run(
-                ["gcloud", "auth", "activate-service-account", f"--key-file={config.GCP_SA_KEY_FILE}", "--quiet"],
-                capture_output=True, text=True, timeout=30,
-            )
-        except Exception as e:
-            print(f"[create-template] Warning: SA activation failed: {e}")
-
-    # Use gcloud compute ssh
     gcloud_cmd = [
         "gcloud", "compute", "ssh", config.VM_HOST,
         f"--zone={config.VM_ZONE}",
         "--command", script_command,
     ]
 
-    # If SSH key is configured, use paramiko instead (for deployed backends)
-    if config.VM_SSH_KEY and config.VM_USER:
-        import paramiko
-        ssh = paramiko.SSHClient()
-        ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-        try:
-            ssh.connect(
-                hostname=config.VM_HOST,
-                username=config.VM_USER,
-                key_filename=config.VM_SSH_KEY,
-            )
-            stdin, stdout, stderr = ssh.exec_command(script_command, timeout=300)
-            out = stdout.read().decode()
-            err = stderr.read().decode()
-            exit_code = stdout.channel.recv_exit_status()
-            ssh.close()
-        except Exception as e:
-            raise HTTPException(500, f"SSH failed: {e}")
-
-        return {
-            "status": "success" if exit_code == 0 else "failed",
-            "gcs_path": f"gs://{config.DEST_BUCKET}/{req.template_name}",
-            "output": out[-2000:],
-            "error": err[-1000:] if exit_code != 0 else "",
-        }
-
-    # Default: gcloud compute ssh (local backend)
     try:
         result = subprocess.run(
             gcloud_cmd,
@@ -598,7 +558,7 @@ async def create_template(req: CreateTemplateRequest):
     except subprocess.TimeoutExpired:
         raise HTTPException(504, "Template creation timed out (5 min limit)")
     except FileNotFoundError:
-        raise HTTPException(500, "gcloud CLI not found. Install Google Cloud SDK or configure SSH key.")
+        raise HTTPException(500, "gcloud CLI not found. Install Google Cloud SDK and run `gcloud auth login`.")
 
 
 @app.post("/api/env-variables")

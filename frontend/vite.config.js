@@ -23,6 +23,12 @@ export default defineConfig(({ mode }) => {
       ws: false,
       watch: null,
       ...(allowedHosts && { allowedHosts }),
+      proxy: {
+        '/api': {
+          target: 'http://localhost:8000',
+          changeOrigin: true,
+        },
+      },
     },
     build: {
       watch: null,
