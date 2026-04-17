@@ -625,8 +625,12 @@ async def list_category_configs(req: BearerTokenRequest):
     print(f"[list-configs] Response body (first 500 chars): {resp.text[:500]}")
     print(f"[list-configs] Response type: {type(resp.json()) if resp.status_code < 400 else 'error'}")
 
-    if resp.status_code >= 400:  
-        raise HTTPException(resp.status_code, f"Failed to fetch configs: {resp.text[:500]}")
+    if resp.status_code >= 400:
+        # Sanitize HTML error pages from upstream services
+        body = resp.text[:500]
+        if "<html" in body.lower():
+            raise HTTPException(resp.status_code, f"Upstream service returned {resp.status_code}. The environment may not have this endpoint available.")
+        raise HTTPException(resp.status_code, f"Failed to fetch configs: {body}")
 
     try:
         data = resp.json()

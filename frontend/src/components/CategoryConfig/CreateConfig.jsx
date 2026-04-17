@@ -1,5 +1,41 @@
 import { useState, useRef, useEffect } from 'react';
 import { api, AuthError } from '../../api';
+import Banner from '../Banner';
+
+const JSON_THEMES = {
+  request: {
+    key: 'text-[#79c0ff]',    // blue keys
+    string: 'text-[#a5d6ff]', // light blue strings
+    literal: 'text-[#f0883e]',// orange bools/numbers
+    bracket: 'text-[#8b949e]',// gray braces
+    text: 'text-[#e6edf3]',
+  },
+  response: {
+    key: 'text-[#56d4dd]',    // teal keys
+    string: 'text-[#adbac7]', // muted gray strings
+    literal: 'text-[#f0883e]',// orange bools/numbers (same as request)
+    bracket: 'text-[#636e7b]',
+    text: 'text-[#cdd9e5]',
+  },
+};
+
+function JsonHighlight({ json, theme = 'request' }) {
+  const t = JSON_THEMES[theme] || JSON_THEMES.request;
+  const text = typeof json === 'string' ? json : JSON.stringify(json, null, 2);
+  return text.split('\n').map((line, i) => (
+    <span key={i} className="block">{
+      line.split(/("[^"]*"\s*:)|(".*?")|(\btrue\b|\bfalse\b|\bnull\b)|(\b\d+(?:\.\d+)?\b)|([{}[\],])/g).map((part, j) => {
+        if (!part) return null;
+        if (/^"[^"]*"\s*:$/.test(part)) return <span key={j} className={t.key}>{part}</span>;
+        if (/^".*"$/.test(part)) return <span key={j} className={t.string}>{part}</span>;
+        if (/^(true|false|null)$/.test(part)) return <span key={j} className={t.literal}>{part}</span>;
+        if (/^\d+(?:\.\d+)?$/.test(part)) return <span key={j} className={t.literal}>{part}</span>;
+        if (/^[{}[\],]+$/.test(part)) return <span key={j} className={t.bracket}>{part}</span>;
+        return <span key={j} className={t.text}>{part}</span>;
+      })
+    }</span>
+  ));
+}
 
 const SOURCE_BADGE = {
   envcore: { label: 'ENVCORE', cls: 'bg-gh-accent-blue/15 text-gh-accent-blue-text border-gh-accent-blue/30' },
@@ -40,37 +76,27 @@ export default function CreateConfig({ bearerToken, onTokenExpired, onNavigate, 
   async function loadConfig(id) {
     if (!bearerToken) { setLoadStatus({ message: 'Set your API token first.', type: 'error' }); return; }
     const input = id || loadExistingInput.trim();
-    if (!input) { setLoadStatus({ message: 'Enter a template name or config ID.', type: 'error' }); return; }
+    if (!input) { setLoadStatus({ message: 'Enter a config ID or template name.', type: 'error' }); return; }
 
-    // Try to find in cached configs first (by template_name or id)
-    let foundConfig = cachedConfigs.find(c =>
-      c.template_name === input || String(c.id) === input
-    );
-
-    if (foundConfig) {
-      // Found in cache — fetch full config by id
-      return fetchFullConfig(String(foundConfig.id));
+    // If numeric, fetch directly by ID
+    if (/^\d+$/.test(input)) {
+      return fetchFullConfig(input);
     }
 
-    // Not in cache — prompt sync
-    setLoadStatus({ message: 'sync_needed', type: 'sync' });
-  }
-
-  async function syncAndRetry() {
-    const input = loadExistingInput.trim();
+    // Otherwise, search by template name — fetch all configs and find
     setLoading('load');
-    setLoadStatus({ message: 'Syncing configs...', type: 'loading' });
+    setLoadStatus({ message: 'Searching...', type: 'loading' });
     try {
-      const freshConfigs = await refreshConfigs();
-      const found = freshConfigs.find(c =>
-        c.template_name === input || String(c.id) === input
-      );
+      const allConfigs = await api.listCategoryConfigs(bearerToken);
+      const list = Array.isArray(allConfigs) ? allConfigs : (allConfigs?.configs || allConfigs?.data || allConfigs?.results || []);
+      const found = list.find(c => c.template_name === input || String(c.id) === input);
       if (found) {
         return fetchFullConfig(String(found.id));
       } else {
-        setLoadStatus({ message: `No config found with name "${input}". You can create a new one.`, type: 'error' });
+        setLoadStatus({ message: `No config found matching "${input}".`, type: 'error' });
       }
     } catch (e) {
+      if (e instanceof AuthError) onTokenExpired?.();
       setLoadStatus({ message: e.message, type: 'error' });
     } finally {
       setLoading('');
@@ -307,30 +333,17 @@ export default function CreateConfig({ bearerToken, onTokenExpired, onNavigate, 
                 {loading === 'load' ? 'Loading...' : 'Load'}
               </button>
             </div>
-            {loadStatus && loadStatus.type === 'sync' && (
-              <div className="mt-2 px-3 py-[7px] rounded-md text-[13px] flex items-center gap-2 border bg-[#9e6a03]/8 text-[#d29922] border-[#9e6a03]/20">
-                <svg className="w-4 h-4 shrink-0" viewBox="0 0 16 16" fill="currentColor">
-                  <path d="M6.457 1.047c.659-1.234 2.427-1.234 3.086 0l6.082 11.378A1.75 1.75 0 0 1 14.082 15H1.918a1.75 1.75 0 0 1-1.543-2.575Zm1.763.707a.25.25 0 0 0-.44 0L1.698 13.132a.25.25 0 0 0 .22.368h12.164a.25.25 0 0 0 .22-.368Zm.53 3.996v2.5a.75.75 0 0 1-1.5 0v-2.5a.75.75 0 0 1 1.5 0ZM9 11a1 1 0 1 1-2 0 1 1 0 0 1 2 0Z" />
-                </svg>
-                <span>Configs may be out of date. Sync to get the latest data and retry.</span>
-                <button onClick={syncAndRetry} disabled={loading === 'load'}
-                  className="text-[#58a6ff] hover:underline font-medium ml-1 flex items-center gap-1">
-                  {loading === 'load' && <div className="w-3 h-3 border-2 border-[#30363d] border-t-[#58a6ff] rounded-full animate-spin" />}
-                  Sync & Retry
-                </button>
+            {loadStatus && loadStatus.type === 'loading' && (
+              <div className="mt-2 flex items-center gap-2 text-[14px] text-[#8b949e]">
+                <div className="w-4 h-4 border-2 border-[#30363d] border-t-[#58a6ff] rounded-full animate-spin shrink-0" />
+                {loadStatus.message}
               </div>
             )}
-            {loadStatus && loadStatus.type !== 'sync' && (
-              <div className={`mt-2 px-3 py-[5px] rounded-md text-[13px] flex items-center gap-2 border ${
-                { success: 'bg-[#238636]/8 text-[#3fb950] border-[#238636]/20',
-                  error: 'bg-[#da3633]/8 text-[#f85149] border-[#da3633]/20',
-                  loading: 'bg-[#0d1117] text-[#8b949e] border-[#21262d]',
-                }[loadStatus.type] || ''}`}>
-                {loadStatus.type === 'loading' && <div className="w-3.5 h-3.5 border-2 border-[#30363d] border-t-[#58a6ff] rounded-full animate-spin shrink-0" />}
-                {loadStatus.type === 'success' && <svg className="w-4 h-4 shrink-0" viewBox="0 0 16 16" fill="currentColor"><path d="M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0Z" /></svg>}
-                {loadStatus.type === 'error' && <svg className="w-3.5 h-3.5 shrink-0" viewBox="0 0 16 16" fill="currentColor"><path d="M3.72 3.72a.75.75 0 0 1 1.06 0L8 6.94l3.22-3.22a.749.749 0 0 1 1.275.326.749.749 0 0 1-.215.734L9.06 8l3.22 3.22a.749.749 0 0 1-.326 1.275.749.749 0 0 1-.734-.215L8 9.06l-3.22 3.22a.751.751 0 0 1-1.042-.018.751.751 0 0 1-.018-1.042L6.94 8 3.72 4.78a.75.75 0 0 1 0-1.06Z" /></svg>}
-                <span>{loadStatus.message}</span>
-              </div>
+            {loadStatus && loadStatus.type === 'success' && (
+              <Banner variant="success" className="mt-2">{loadStatus.message}</Banner>
+            )}
+            {loadStatus && loadStatus.type === 'error' && (
+              <Banner variant="critical" className="mt-2">{loadStatus.message}</Banner>
             )}
           </div>
           <hr className="border-[#30363d] mb-6" />
@@ -530,142 +543,72 @@ export default function CreateConfig({ bearerToken, onTokenExpired, onNavigate, 
       </div>
 
       {/* Status */}
-      {submitStatus && (
-        <div className={`mt-4 px-3 py-[7px] rounded-md text-[13px] flex items-center gap-2 border ${
-          { success: 'bg-[#238636]/8 text-[#3fb950] border-[#238636]/20',
-            error: 'bg-[#da3633]/8 text-[#f85149] border-[#da3633]/20',
-            loading: 'bg-[#0d1117] text-[#8b949e] border-[#21262d]',
-          }[submitStatus.type] || ''}`}>
-          {submitStatus.type === 'loading' && <div className="w-3.5 h-3.5 border-2 border-[#30363d] border-t-[#58a6ff] rounded-full animate-spin shrink-0" />}
-          {submitStatus.type === 'success' && <svg className="w-4 h-4 shrink-0" viewBox="0 0 16 16" fill="currentColor"><path d="M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0Z" /></svg>}
-          {submitStatus.type === 'error' && <svg className="w-3.5 h-3.5 shrink-0" viewBox="0 0 16 16" fill="currentColor"><path d="M3.72 3.72a.75.75 0 0 1 1.06 0L8 6.94l3.22-3.22a.749.749 0 0 1 1.275.326.749.749 0 0 1-.215.734L9.06 8l3.22 3.22a.749.749 0 0 1-.326 1.275.749.749 0 0 1-.734-.215L8 9.06l-3.22 3.22a.751.751 0 0 1-1.042-.018.751.751 0 0 1-.018-1.042L6.94 8 3.72 4.78a.75.75 0 0 1 0-1.06Z" /></svg>}
-          <span>{submitStatus.message}</span>
-        </div>
+      {submitStatus && submitStatus.type !== 'loading' && (
+        <Banner variant={submitStatus.type === 'success' ? 'success' : 'critical'} className="mt-4">
+          {submitStatus.message}
+        </Banner>
       )}
-
-      {result && (
-        <div className="mt-4 p-3.5 bg-[#238636]/8 border border-[#238636]/20 rounded-md">
-          <div className="text-[14px] text-[#3fb950] font-medium flex items-center gap-2 mb-2">
-            <svg className="w-4 h-4" viewBox="0 0 16 16" fill="currentColor"><path d="M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0Z" /></svg>
-            {mode === 'edit' ? 'Config updated!' : 'Config created!'}
-          </div>
-          <pre className="text-[12px] text-[#3fb950] bg-[#0d1117] px-3.5 py-2.5 rounded-md overflow-x-auto font-mono whitespace-pre-wrap">
-            {JSON.stringify(result, null, 2)}
-          </pre>
+      {submitStatus && submitStatus.type === 'loading' && (
+        <div className="mt-4 flex items-center gap-2 text-[14px] text-[#8b949e]">
+          <div className="w-4 h-4 border-2 border-[#30363d] border-t-[#58a6ff] rounded-full animate-spin shrink-0" />
+          {submitStatus.message}
         </div>
       )}
       </div>{/* end left column */}
 
-      {/* ═══ RIGHT COLUMN: API Preview Panel ═══ */}
+      {/* ═══ RIGHT COLUMN: API Preview ═══ */}
       <div className="w-[420px] shrink-0 sticky top-8 self-start">
-        <div className="border border-[#30363d] rounded-lg overflow-hidden bg-[#0d1117]">
-          {/* Endpoint bar */}
-          <div className="flex items-center gap-2 px-3 py-2.5 bg-[#161b22] border-b border-[#30363d]">
-            <span className={`text-[11px] font-bold px-2 py-0.5 rounded ${
-              apiMethod === 'PUT'
-                ? 'bg-[#f0883e]/15 text-[#f0883e]'
-                : 'bg-[#3fb950]/15 text-[#3fb950]'
-            }`}>
-              {apiMethod}
-            </span>
-            <span className="flex-1 text-[12px] font-mono text-[#8b949e] truncate" title={apiEndpoint}>
-              {apiEndpoint || '/internal/category-config'}
-            </span>
+        {/* Endpoint bar — Postman-style */}
+        <div className="flex items-center gap-2 mb-3">
+          <span className={`text-[13px] font-semibold px-2.5 py-[5px] rounded-md border shrink-0 ${
+            apiMethod === 'PUT'
+              ? 'text-[#f0883e] bg-[#f0883e]/10 border-[#f0883e]/30'
+              : 'text-[#3fb950] bg-[#238636]/10 border-[#238636]/30'
+          }`}>
+            {apiMethod}
+          </span>
+          <div className="flex-1 min-w-0 px-3 py-[5px] bg-[#0d1117] border border-[#30363d] rounded-md text-[13px] text-[#8b949e] font-mono truncate" title={apiEndpoint}>
+            {apiEndpoint || '/internal/category-config'}
           </div>
+          <button onClick={submitConfig} disabled={loading === 'submit'}
+            className="px-4 py-[5px] bg-[#1f6feb] hover:bg-[#388bfd] text-white text-[14px] font-medium rounded-md border border-[#1f6feb] disabled:opacity-50 transition-colors shrink-0 flex items-center gap-1.5">
+            {loading === 'submit' && <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />}
+            {loading === 'submit' ? 'Sending...' : 'Send'}
+          </button>
+        </div>
 
-          {/* Headers */}
-          <div className="border-b border-[#21262d]">
-            <div className="px-3 py-2 flex items-center gap-2">
-              <span className="text-[11px] font-semibold text-[#8b949e] uppercase tracking-wider">Headers</span>
-            </div>
-            <div className="px-3 pb-2 space-y-1">
-              <div className="flex items-center gap-2 text-[11px] font-mono">
-                <span className="text-[#7ee787]">Authorization</span>
-                <span className="text-[#484f58]">:</span>
-                <span className="text-[#8b949e] truncate">Bearer {maskedToken}</span>
-              </div>
-              <div className="flex items-center gap-2 text-[11px] font-mono">
-                <span className="text-[#7ee787]">Content-Type</span>
-                <span className="text-[#484f58]">:</span>
-                <span className="text-[#8b949e]">application/json</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Request body */}
-          <div className="border-b border-[#21262d]">
-            <div className="px-3 py-2 flex items-center justify-between">
-              <span className="text-[11px] font-semibold text-[#8b949e] uppercase tracking-wider">Body</span>
-              <button
-                onClick={() => navigator.clipboard.writeText(JSON.stringify(requestBody, null, 2))}
-                className="text-[11px] text-[#484f58] hover:text-[#8b949e] transition-colors"
-                title="Copy JSON">
-                Copy
-              </button>
-            </div>
-            <pre className="px-3 pb-3 text-[11px] font-mono leading-[1.6] overflow-x-auto max-h-[400px] overflow-y-auto">
-              <code>{JSON.stringify(requestBody, null, 2).split('\n').map((line, i) => {
-                // Simple syntax highlighting
-                const colored = line
-                  .replace(/"([^"]+)":/g, '<key>"$1"</key>:')
-                  .replace(/: "(.*?)"/g, ': <str>"$1"</str>')
-                  .replace(/: (true|false)/g, ': <bool>$1</bool>')
-                  .replace(/: (\d+)/g, ': <num>$1</num>');
-                return (
-                  <span key={i} className="block">
-                    <span className="inline-block w-6 text-right mr-3 text-[#484f58] select-none">{i + 1}</span>
-                    {line.split(/("[^"]*"\s*:)|(".*?")|(\btrue\b|\bfalse\b)|(\b\d+\b)|([{}[\],])/g).map((part, j) => {
-                      if (!part) return null;
-                      if (/^"[^"]*"\s*:$/.test(part)) return <span key={j} className="text-[#7ee787]">{part}</span>;
-                      if (/^".*"$/.test(part)) return <span key={j} className="text-[#a5d6ff]">{part}</span>;
-                      if (part === 'true' || part === 'false') return <span key={j} className="text-[#f0883e]">{part}</span>;
-                      if (/^\d+$/.test(part)) return <span key={j} className="text-[#f0883e]">{part}</span>;
-                      if (/^[{}[\],]+$/.test(part)) return <span key={j} className="text-[#8b949e]">{part}</span>;
-                      return <span key={j} className="text-[#e6edf3]">{part}</span>;
-                    })}
-                  </span>
-                );
-              })}</code>
-            </pre>
-          </div>
-
-          {/* Send button */}
-          <div className="px-3 py-3 bg-[#161b22] border-b border-[#21262d]">
-            <button onClick={submitConfig} disabled={loading === 'submit'}
-              className={`w-full py-2 text-[13px] font-semibold text-white rounded-md border transition-colors flex items-center justify-center gap-2 ${
-                mode === 'edit'
-                  ? 'bg-[#f0883e] hover:bg-[#f09040] border-[#f0883e]/60 disabled:opacity-50'
-                  : 'bg-[#238636] hover:bg-[#2ea043] border-[#2ea043]/60 disabled:opacity-50'
-              }`}>
-              {loading === 'submit' && <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />}
-              {loading === 'submit'
-                ? 'Sending...'
-                : `Send ${apiMethod}`}
+        {/* Request body */}
+        <div className="border border-[#30363d] rounded-md overflow-hidden">
+          <div className="flex items-center justify-between px-3 py-2 bg-[#161b22] border-b border-[#30363d]">
+            <span className="text-[13px] font-medium text-[#e6edf3]">Request Body</span>
+            <button
+              onClick={() => navigator.clipboard.writeText(JSON.stringify(requestBody, null, 2))}
+              className="text-[12px] text-[#8b949e] hover:text-[#e6edf3] transition-colors">
+              Copy
             </button>
           </div>
-
-          {/* Response */}
-          {(result || (submitStatus && submitStatus.type === 'error')) && (
-            <div>
-              <div className="px-3 py-2 flex items-center gap-2">
-                <span className="text-[11px] font-semibold text-[#8b949e] uppercase tracking-wider">Response</span>
-                {result && (
-                  <span className="text-[11px] font-mono font-bold text-[#3fb950]">200 OK</span>
-                )}
-                {submitStatus?.type === 'error' && !result && (
-                  <span className="text-[11px] font-mono font-bold text-[#f85149]">Error</span>
-                )}
-              </div>
-              <pre className="px-3 pb-3 text-[11px] font-mono leading-[1.6] overflow-x-auto max-h-[300px] overflow-y-auto">
-                {result ? (
-                  <code className="text-[#3fb950]">{JSON.stringify(result, null, 2)}</code>
-                ) : submitStatus?.type === 'error' ? (
-                  <code className="text-[#f85149]">{submitStatus.message}</code>
-                ) : null}
-              </pre>
-            </div>
-          )}
+          <pre className="px-3.5 py-3 text-[13px] font-mono leading-[1.6] overflow-x-auto max-h-[400px] overflow-y-auto bg-[#0d1117]">
+            <JsonHighlight json={requestBody} />
+          </pre>
         </div>
+
+        {/* Response — appears after send */}
+        {(result || (submitStatus && submitStatus.type === 'error')) && (
+          <div className="mt-3 border border-[#30363d] rounded-md overflow-hidden">
+            <div className="flex items-center justify-between px-3 py-2 bg-[#161b22] border-b border-[#30363d]">
+              <span className="text-[13px] font-medium text-[#e6edf3]">Response</span>
+              {result && <span className="text-[13px] font-mono text-[#3fb950]">HTTP 200</span>}
+              {submitStatus?.type === 'error' && !result && <span className="text-[13px] font-mono text-[#f85149]">Error</span>}
+            </div>
+            <pre className="px-3.5 py-3 text-[13px] font-mono leading-[1.6] overflow-x-auto max-h-[350px] overflow-y-auto bg-[#0d1117]">
+              {result ? (
+                <JsonHighlight json={result} theme="response" />
+              ) : submitStatus?.type === 'error' ? (
+                <code className="text-[#f85149]">{submitStatus.message}</code>
+              ) : null}
+            </pre>
+          </div>
+        )}
       </div>
     </div>
   );

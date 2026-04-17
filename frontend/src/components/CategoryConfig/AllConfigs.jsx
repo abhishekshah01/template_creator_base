@@ -29,51 +29,43 @@ function extractSummaryPreview(config) {
   return text || null;
 }
 
-// --- Icons ---
+// --- Icons (GitHub Octicons 16px) ---
 function SearchIcon({ className }) {
-  return (
-    <svg className={className} viewBox="0 0 16 16" fill="currentColor">
-      <path d="M10.68 11.74a6 6 0 0 1-7.922-8.982 6 6 0 0 1 8.982 7.922l3.04 3.04a.749.749 0 0 1-.326 1.275.749.749 0 0 1-.734-.215ZM11.5 7a4.499 4.499 0 1 0-8.997 0A4.499 4.499 0 0 0 11.5 7Z" />
-    </svg>
-  );
+  return <svg className={className} viewBox="0 0 16 16" fill="currentColor"><path d="M10.68 11.74a6 6 0 0 1-7.922-8.982 6 6 0 0 1 8.982 7.922l3.04 3.04a.749.749 0 0 1-.326 1.275.749.749 0 0 1-.734-.215ZM11.5 7a4.499 4.499 0 1 0-8.997 0A4.499 4.499 0 0 0 11.5 7Z" /></svg>;
 }
-function TagIcon({ className }) {
-  return (
-    <svg className={className} viewBox="0 0 16 16" fill="currentColor">
-      <path d="M1 7.775V2.75C1 1.784 1.784 1 2.75 1h5.025c.464 0 .91.184 1.238.513l6.25 6.25a1.75 1.75 0 0 1 0 2.474l-5.026 5.026a1.75 1.75 0 0 1-2.474 0l-6.25-6.25A1.752 1.752 0 0 1 1 7.775Zm1.5 0c0 .066.026.13.073.177l6.25 6.25a.25.25 0 0 0 .354 0l5.025-5.025a.25.25 0 0 0 0-.354l-6.25-6.25a.25.25 0 0 0-.177-.073H2.75a.25.25 0 0 0-.25.25ZM6 5a1 1 0 1 1 0 2 1 1 0 0 1 0-2Z" />
-    </svg>
-  );
+function IssueOpenIcon({ className }) {
+  return <svg className={className} viewBox="0 0 16 16" fill="currentColor"><path d="M8 9.5a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3Z" /><path d="M8 0a8 8 0 1 1 0 16A8 8 0 0 1 8 0ZM1.5 8a6.5 6.5 0 1 0 13 0 6.5 6.5 0 0 0-13 0Z" /></svg>;
 }
 function ChevronDown({ className }) {
-  return (
-    <svg className={className} viewBox="0 0 16 16" fill="currentColor">
-      <path d="M12.78 5.22a.749.749 0 0 1 0 1.06l-4.25 4.25a.749.749 0 0 1-1.06 0L3.22 6.28a.749.749 0 1 1 1.06-1.06L8 8.939l3.72-3.719a.749.749 0 0 1 1.06 0Z" />
-    </svg>
-  );
+  return <svg className={className} viewBox="0 0 16 16" fill="currentColor"><path d="M12.78 5.22a.749.749 0 0 1 0 1.06l-4.25 4.25a.749.749 0 0 1-1.06 0L3.22 6.28a.749.749 0 1 1 1.06-1.06L8 8.939l3.72-3.719a.749.749 0 0 1 1.06 0Z" /></svg>;
 }
-function SortIcon({ className }) {
-  return (
-    <svg className={className} viewBox="0 0 16 16" fill="currentColor">
-      <path d="M15 8a.75.75 0 0 1-.75.75H1.75a.75.75 0 0 1 0-1.5h12.5A.75.75 0 0 1 15 8ZM2 3.75A.75.75 0 0 1 2.75 3h10.5a.75.75 0 0 1 0 1.5H2.75A.75.75 0 0 1 2 3.75Zm3 8.5a.75.75 0 0 1 .75-.75h4.5a.75.75 0 0 1 0 1.5h-4.5a.75.75 0 0 1-.75-.75Z" />
-    </svg>
-  );
+function TagIcon({ className }) {
+  return <svg className={className} viewBox="0 0 16 16" fill="currentColor"><path d="M1 7.775V2.75C1 1.784 1.784 1 2.75 1h5.025c.464 0 .91.184 1.238.513l6.25 6.25a1.75 1.75 0 0 1 0 2.474l-5.026 5.026a1.75 1.75 0 0 1-2.474 0l-6.25-6.25A1.752 1.752 0 0 1 1 7.775Zm1.5 0c0 .066.026.13.073.177l6.25 6.25a.25.25 0 0 0 .354 0l5.025-5.025a.25.25 0 0 0 0-.354l-6.25-6.25a.25.25 0 0 0-.177-.073H2.75a.25.25 0 0 0-.25.25ZM6 5a1 1 0 1 1 0 2 1 1 0 0 1 0-2Z" /></svg>;
 }
 function DatabaseIcon({ className }) {
-  return (
-    <svg className={className} viewBox="0 0 16 16" fill="currentColor">
-      <path d="M1 3.5c0-.626.292-1.165.7-1.59C2.105 1.496 2.747 1.2 3.45 1h9.1c.703.2 1.345.496 1.75.91.408.425.7.964.7 1.59v9c0 .626-.292 1.165-.7 1.59-.405.414-1.047.71-1.75.91h-9.1c-.703-.2-1.345-.496-1.75-.91C1.292 13.665 1 13.126 1 12.5Zm1.5 0c0 .238.148.473.36.674.213.2.526.374.89.5V5.5h8.5V4.674c.364-.126.677-.3.89-.5.212-.201.36-.436.36-.674 0-.238-.148-.473-.36-.674A2.727 2.727 0 0 0 12.25 2.5h-8.5a2.727 2.727 0 0 0-.89.326c-.212.201-.36.436-.36.674Zm0 3.5V9h9V7Zm9 3.5H2.5V12.5c0 .238.148.473.36.674.213.2.526.374.89.5h8.5c.364-.126.677-.3.89-.5.212-.201.36-.436.36-.674Z" />
-    </svg>
-  );
+  return <svg className={className} viewBox="0 0 16 16" fill="currentColor"><path d="M1 3.5c0-.626.292-1.165.7-1.59C2.105 1.496 2.747 1.2 3.45 1h9.1c.703.2 1.345.496 1.75.91.408.425.7.964.7 1.59v9c0 .626-.292 1.165-.7 1.59-.405.414-1.047.71-1.75.91h-9.1c-.703-.2-1.345-.496-1.75-.91C1.292 13.665 1 13.126 1 12.5Zm1.5 0c0 .238.148.473.36.674.213.2.526.374.89.5V5.5h8.5V4.674c.364-.126.677-.3.89-.5.212-.201.36-.436.36-.674 0-.238-.148-.473-.36-.674A2.727 2.727 0 0 0 12.25 2.5h-8.5a2.727 2.727 0 0 0-.89.326c-.212.201-.36.436-.36.674Zm0 3.5V9h9V7Zm9 3.5H2.5V12.5c0 .238.148.473.36.674.213.2.526.374.89.5h8.5c.364-.126.677-.3.89-.5.212-.201.36-.436.36-.674Z" /></svg>;
 }
-function RefreshIcon({ className }) {
+
+// GitHub-style label — tinted bg, colored text, colored border
+function Label({ text, color }) {
+  const colors = {
+    blue:   { bg: 'rgba(31,111,235,0.15)', text: '#58a6ff', border: 'rgba(31,111,235,0.4)' },
+    green:  { bg: 'rgba(35,134,54,0.15)',  text: '#3fb950', border: 'rgba(35,134,54,0.4)' },
+    purple: { bg: 'rgba(137,87,229,0.15)', text: '#bc8cff', border: 'rgba(137,87,229,0.4)' },
+    gray:   { bg: 'rgba(139,148,158,0.1)', text: '#8b949e', border: 'rgba(139,148,158,0.3)' },
+    red:    { bg: 'rgba(218,54,51,0.15)',   text: '#f85149', border: 'rgba(218,54,51,0.4)' },
+    cyan:   { bg: 'rgba(57,211,210,0.12)',  text: '#56d4dd', border: 'rgba(57,211,210,0.3)' },
+  };
+  const c = colors[color] || colors.gray;
   return (
-    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-      <path d="M1 4v6h6" /><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10" />
-    </svg>
+    <span className="text-[12px] font-medium px-[7px] py-[2px] rounded-full leading-tight inline-block"
+      style={{ backgroundColor: c.bg, color: c.text, border: `1px solid ${c.border}` }}>
+      {text}
+    </span>
   );
 }
 
-export default function AllConfigs({ onNavigate, bearerToken, onTokenExpired, cachedConfigs = [], configsStale, configsLoaded, refreshConfigs, activeEnv = '' }) {
+export default function AllConfigs({ onNavigate, bearerToken, onTokenExpired, cachedConfigs = [], configsStale, configsLoaded, refreshConfigs, activeEnv = '', envError, previousEnv, onSwitchBack, envSwitching, setEnvError }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [isAuthError, setIsAuthError] = useState(false);
@@ -98,17 +90,28 @@ export default function AllConfigs({ onNavigate, bearerToken, onTokenExpired, ca
     try {
       await refreshConfigs();
     } catch (e) {
-      setIsAuthError(e.name === 'AuthError');
-      setError(e.name === 'AuthError' ? 'Authentication failed — API token is expired or invalid.' : e.message);
+      if (e.name === 'AuthError') {
+        setIsAuthError(true);
+        setError('Authentication failed — API token is expired or invalid.');
+      } else {
+        // Escalate to global env error so the empty state shows consistently
+        setEnvError?.(`Could not reach "${activeEnv}". The environment may not exist or its services are not running.`);
+      }
     } finally {
       setLoading(false);
     }
   }
 
-  // Fetch on initial mount only if not already loaded
+  // Clear local auth error when env changes
   useEffect(() => {
-    if (bearerToken && !configsLoaded) handleRefresh();
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+    setError(null);
+    setIsAuthError(false);
+  }, [activeEnv]);
+
+  // Fetch only when cache is empty AND not during an env switch (App.jsx handles that fetch)
+  useEffect(() => {
+    if (bearerToken && !configsLoaded && !envError && !envSwitching) handleRefresh();
+  }, [configsLoaded, bearerToken, envError, envSwitching]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Close menus on outside click
   useEffect(() => {
@@ -126,15 +129,23 @@ export default function AllConfigs({ onNavigate, bearerToken, onTokenExpired, ca
     if (hasSummaryFilter && !c.config?.app_summary) return false;
     if (search) {
       const q = search.toLowerCase();
-      const matchName = c.template_name?.toLowerCase().includes(q);
-      const matchJobId = c.summary_source_job_id?.toLowerCase().includes(q);
-      const matchSummary = (c.config?.app_summary || '').toLowerCase().includes(q);
-      return matchName || matchJobId || matchSummary;
+      return (c.template_name?.toLowerCase().includes(q)) ||
+        (c.summary_source_job_id?.toLowerCase().includes(q)) ||
+        ((c.config?.app_summary || '').toLowerCase().includes(q));
     }
     return true;
   });
 
   // Sort
+  const SORT_OPTIONS = [
+    { key: 'newest', label: 'Newest' },
+    { key: 'oldest', label: 'Oldest' },
+    { key: 'recently-updated', label: 'Recently updated' },
+    { key: 'name-asc', label: 'Name (A-Z)' },
+    { key: 'name-desc', label: 'Name (Z-A)' },
+    { key: 'env-vars', label: 'Most env vars' },
+  ];
+
   filtered = [...filtered].sort((a, b) => {
     switch (sortBy) {
       case 'newest': return new Date(b.created_at || 0) - new Date(a.created_at || 0);
@@ -151,22 +162,41 @@ export default function AllConfigs({ onNavigate, bearerToken, onTokenExpired, ca
   const internalCount = configs.filter(c => c.internal).length;
   const publicCount = configs.filter(c => c.public).length;
 
-  const SORT_OPTIONS = [
-    { key: 'newest', label: 'Newest' },
-    { key: 'oldest', label: 'Oldest' },
-    { key: 'recently-updated', label: 'Recently updated' },
-    { key: 'name-asc', label: 'Name (A-Z)' },
-    { key: 'name-desc', label: 'Name (Z-A)' },
-    { key: 'env-vars', label: 'Most env vars' },
-  ];
+  // If env is broken, show clean empty state
+  if (envError) {
+    return (
+      <div>
+        <div className="border border-[#30363d] rounded-md overflow-hidden">
+          <div className="text-center py-20 px-6">
+            <svg className="w-12 h-12 text-[#484f58] mx-auto mb-4" viewBox="0 0 16 16" fill="currentColor">
+              <path d="M4.47.22A.749.749 0 0 1 5 0h6c.199 0 .389.079.53.22l4.25 4.25c.141.14.22.331.22.53v6a.749.749 0 0 1-.22.53l-4.25 4.25A.749.749 0 0 1 11 16H5a.749.749 0 0 1-.53-.22L.22 11.53A.749.749 0 0 1 0 11V5c0-.199.079-.389.22-.53Zm.84 1.28L1.5 5.31v5.38l3.81 3.81h5.38l3.81-3.81V5.31L10.69 1.5ZM8 4a.75.75 0 0 1 .75.75v3.5a.75.75 0 0 1-1.5 0v-3.5A.75.75 0 0 1 8 4Zm0 8a1 1 0 1 1 0-2 1 1 0 0 1 0 2Z" />
+            </svg>
+            <div className="text-[20px] font-semibold text-[#e6edf3] mb-2">
+              Could not connect to <span className="font-mono">{activeEnv}</span>
+            </div>
+            <p className="text-[14px] text-[#8b949e] mb-6 max-w-md mx-auto">
+              The environment may not exist or its services are not running. Check the environment name and try again.
+            </p>
+            <div className="flex items-center justify-center gap-3">
+              {previousEnv && onSwitchBack && (
+                <button onClick={onSwitchBack}
+                  className="px-4 py-[6px] bg-[#238636] text-white text-[14px] font-medium rounded-md hover:bg-[#2ea043] border border-[#2ea043]/60 transition-colors">
+                  Switch back to {previousEnv}
+                </button>
+              )}
+              <button onClick={() => onNavigate('settings')}
+                className="px-4 py-[6px] bg-[#21262d] border border-[#30363d] text-[14px] text-[#c9d1d9] rounded-md hover:bg-[#30363d] transition-colors">
+                Go to Settings
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div>
-      {/* Page header */}
-      <div className="mb-4">
-        <h1 className="text-2xl font-semibold text-gh-text">Category Configs</h1>
-      </div>
-
       {/* Token warning */}
       {!bearerToken && (
         <Banner variant="warning" className="mb-4">
@@ -174,48 +204,86 @@ export default function AllConfigs({ onNavigate, bearerToken, onTokenExpired, ca
         </Banner>
       )}
 
-      {/* Search bar + action buttons */}
+      {/* Error banners */}
+      {error && (
+        <div className="mb-4 space-y-2">
+          <Banner variant="critical" onDismiss={() => { setError(null); setIsAuthError(false); }}>
+            {error}
+          </Banner>
+          {isAuthError && (
+            <Banner variant="warning" onDismiss={() => setIsAuthError(false)}>
+              Regenerate your token, enter a valid token for <strong className="text-white">{activeEnv}</strong>, or switch to the correct environment.
+            </Banner>
+          )}
+        </div>
+      )}
+
+      {/* Search bar + filters — GitHub issues style */}
       <div className="flex items-center gap-2 mb-4">
-        <div className="flex-1 flex items-center bg-gh-canvas border border-gh-border rounded-md overflow-hidden">
-          <div className="px-3 py-[7px] flex items-center gap-2 flex-1">
-            <SearchIcon className="w-4 h-4 text-gh-text-muted shrink-0" />
+        {/* Search input with integrated label filter */}
+        <div className="flex-1 flex items-stretch border border-[#30363d] rounded-md overflow-hidden">
+          <div className="flex items-center gap-2 flex-1 px-3 py-[6px] bg-[#0d1117]">
+            <SearchIcon className="w-4 h-4 text-[#484f58] shrink-0" />
             <input type="text" value={search} onChange={e => setSearch(e.target.value)}
-              placeholder="Search by name, job ID, or summary..."
-              className="flex-1 bg-transparent text-sm text-gh-text outline-none placeholder:text-gh-text-muted" />
+              placeholder="Search configs..."
+              className="flex-1 bg-transparent text-[14px] text-[#e6edf3] outline-none placeholder:text-[#484f58]" />
           </div>
         </div>
-        <button onClick={handleRefresh} disabled={loading}
-          data-testid="refresh-configs-btn"
-          className="flex items-center gap-1.5 px-3 py-[7px] bg-gh-btn border border-gh-border rounded-md text-sm text-gh-text hover:bg-gh-btn-hover transition-colors disabled:opacity-50">
-          <RefreshIcon className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-        </button>
+
+        {/* Labels filter */}
         <div className="relative">
           <button onClick={e => { e.stopPropagation(); setShowLabelMenu(!showLabelMenu); setShowSortMenu(false); }}
-            className={`flex items-center gap-1.5 px-3 py-[7px] bg-gh-btn border border-gh-border rounded-md text-sm text-gh-text hover:bg-gh-btn-hover transition-colors ${hasSummaryFilter ? '!border-[#58a6ff] !text-[#58a6ff]' : ''}`}>
+            className={`flex items-center gap-1.5 px-3 py-[6px] bg-[#21262d] border border-[#30363d] rounded-md text-[14px] text-[#c9d1d9] hover:bg-[#30363d] hover:border-[#484f58] transition-colors ${hasSummaryFilter ? '!border-[#8957e5] !text-[#bc8cff]' : ''}`}>
             <TagIcon className="w-4 h-4" />
-            <span>Labels</span>
+            Labels
+            <ChevronDown className="w-4 h-4 text-[#484f58]" />
           </button>
           {showLabelMenu && (
-            <div className="absolute right-0 top-10 z-20 w-[200px] bg-[#161b22] border border-[#30363d] rounded-md shadow-xl overflow-hidden" onClick={e => e.stopPropagation()}>
+            <div className="absolute right-0 top-10 z-20 w-[220px] bg-[#161b22] border border-[#30363d] rounded-md shadow-xl overflow-hidden" onClick={e => e.stopPropagation()}>
               <div className="px-3 py-2 text-[12px] font-semibold text-[#e6edf3] border-b border-[#21262d]">Filter by label</div>
               <button onClick={() => { setHasSummaryFilter(!hasSummaryFilter); setShowLabelMenu(false); }}
-                className="w-full flex items-center gap-2 px-3 py-2 text-[13px] text-[#c9d1d9] hover:bg-[#1f6feb]/15 transition-colors text-left">
-                <div className={`w-[14px] h-[14px] rounded-[3px] flex items-center justify-center ${hasSummaryFilter ? 'bg-[#1f6feb]' : 'border border-[#484f58]'}`}>
-                  {hasSummaryFilter && <svg className="w-2.5 h-2.5 text-white" viewBox="0 0 16 16" fill="currentColor"><path d="M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0Z" /></svg>}
+                className="w-full flex items-center gap-2.5 px-3 py-2.5 text-[14px] text-[#c9d1d9] hover:bg-[#1f6feb]/10 transition-colors text-left">
+                <div className={`w-[16px] h-[16px] rounded-[3px] flex items-center justify-center shrink-0 ${hasSummaryFilter ? 'bg-[#1f6feb]' : 'border border-[#484f58]'}`}>
+                  {hasSummaryFilter && <svg className="w-3 h-3 text-white" viewBox="0 0 16 16" fill="currentColor"><path d="M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0Z" /></svg>}
                 </div>
-                <span className="text-[11px] font-medium px-[5px] py-[1px] rounded-full" style={{ backgroundColor: 'rgba(137,87,229,0.2)', color: '#bc8cff', border: '1px solid rgba(137,87,229,0.4)' }}>has summary</span>
+                <Label text="has summary" color="purple" />
               </button>
             </div>
           )}
         </div>
+
+        {/* Sort */}
+        <div className="relative">
+          <button onClick={e => { e.stopPropagation(); setShowSortMenu(!showSortMenu); setShowLabelMenu(false); }}
+            className="flex items-center gap-1.5 px-3 py-[6px] bg-[#21262d] border border-[#30363d] rounded-md text-[14px] text-[#c9d1d9] hover:bg-[#30363d] hover:border-[#484f58] transition-colors">
+            Sort
+            <ChevronDown className="w-4 h-4 text-[#484f58]" />
+          </button>
+          {showSortMenu && (
+            <div className="absolute right-0 top-10 z-20 w-[200px] bg-[#161b22] border border-[#30363d] rounded-md shadow-xl overflow-hidden" onClick={e => e.stopPropagation()}>
+              <div className="px-3 py-2 text-[12px] font-semibold text-[#e6edf3] border-b border-[#21262d]">Sort by</div>
+              {SORT_OPTIONS.map(opt => (
+                <button key={opt.key} onClick={() => { setSortBy(opt.key); setShowSortMenu(false); }}
+                  className={`w-full flex items-center gap-2 px-3 py-[7px] text-[14px] transition-colors text-left ${
+                    sortBy === opt.key ? 'text-[#e6edf3] font-medium' : 'text-[#8b949e] hover:bg-[#1f6feb]/10 hover:text-[#e6edf3]'
+                  }`}>
+                  <span className="w-4 text-center text-[#58a6ff]">{sortBy === opt.key ? '✓' : ''}</span>
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* New config button */}
         <button onClick={() => onNavigate('config-create')}
           data-testid="new-config-btn"
-          className="flex items-center gap-1.5 px-4 py-[7px] bg-gh-btn-primary text-white text-sm font-medium rounded-md hover:bg-gh-btn-primary-hover transition-colors">
+          className="flex items-center gap-1.5 px-4 py-[6px] bg-[#238636] text-white text-[14px] font-medium rounded-md hover:bg-[#2ea043] border border-[#2ea043]/60 transition-colors shrink-0">
           New config
         </button>
       </div>
 
-      {/* Active filters bar */}
+      {/* Active filter chips */}
       {(search || hasSummaryFilter || sortBy !== 'newest') && (
         <div className="flex items-center gap-2 mb-3 flex-wrap">
           {search && (
@@ -238,90 +306,53 @@ export default function AllConfigs({ onNavigate, bearerToken, onTokenExpired, ca
           )}
           <button onClick={() => { setSearch(''); setHasSummaryFilter(false); setSortBy('newest'); setTab('all'); }}
             className="text-[12px] text-[#58a6ff] hover:underline">
-            Clear all filters
+            Clear all
           </button>
         </div>
       )}
 
-      {/* Error + auth hint */}
-      {error && (
-        <div className="mb-4 space-y-2">
-          <Banner variant="critical" onDismiss={() => { setError(null); setIsAuthError(false); }}>
-            {error}
-          </Banner>
-          {isAuthError && (
-            <Banner variant="warning" onDismiss={() => setIsAuthError(false)}>
-              Regenerate your token, enter a valid token for <strong className="text-white">{activeEnv}</strong>, or switch to the correct environment.
-            </Banner>
-          )}
-        </div>
-      )}
-
-      {configsStale && (
-        <Banner variant="warning" className="mb-4" onDismiss={() => handleRefresh()}>
-          Data may be out of sync.
-          <button onClick={handleRefresh} className="text-[#58a6ff] hover:underline font-medium ml-1">Refresh</button>
-        </Banner>
-      )}
-
-      {/* Table */}
-      <div className="border border-gh-border rounded-md overflow-hidden">
-        {/* Tab header + filters */}
-        <div className="flex items-center px-4 py-3 bg-gh-canvas-subtle border-b border-gh-border">
-          <div className="flex items-center gap-4">
+      {/* Issues-style table */}
+      <div className="border border-[#30363d] rounded-md overflow-hidden">
+        {/* Tab header — matches GitHub "Open / Closed" bar */}
+        <div className="flex items-center px-4 py-3 bg-[#161b22] border-b border-[#30363d]">
+          <div className="flex items-center gap-4 flex-1">
             {[
-              { key: 'all', label: 'All', count: allCount },
+              { key: 'all', label: 'All', count: allCount, icon: IssueOpenIcon },
               { key: 'internal', label: 'Internal', count: internalCount },
               { key: 'public', label: 'Public', count: publicCount },
             ].map(t => (
               <button key={t.key} onClick={() => setTab(t.key)}
-                className={`flex items-center gap-1.5 text-sm transition-colors ${
-                  tab === t.key ? 'font-semibold text-gh-text' : 'text-gh-text-secondary hover:text-gh-text'
+                className={`flex items-center gap-1.5 text-[14px] transition-colors ${
+                  tab === t.key ? 'font-semibold text-[#e6edf3]' : 'text-[#8b949e] hover:text-[#e6edf3]'
                 }`}>
-                {t.key === 'all' && <DatabaseIcon className="w-4 h-4" />}
+                {t.icon && <t.icon className="w-4 h-4" />}
                 {t.label}
-                <span className={`text-xs px-[6px] py-[1px] rounded-full leading-tight ${
-                  tab === t.key ? 'bg-gh-text text-gh-canvas font-medium' : 'bg-gh-overlay text-gh-text-secondary'
+                <span className={`text-[12px] px-[6px] py-[1px] rounded-full leading-tight ${
+                  tab === t.key ? 'bg-[#e6edf3] text-[#0d1117] font-semibold' : 'bg-[#21262d] text-[#8b949e]'
                 }`}>{t.count}</span>
               </button>
             ))}
           </div>
-          <div className="ml-auto flex items-center gap-1 relative">
-            {/* Sort dropdown */}
-            <div className="relative">
-              <button onClick={e => { e.stopPropagation(); setShowSortMenu(!showSortMenu); setShowLabelMenu(false); }}
-                className="flex items-center gap-0.5 px-2 py-1 text-xs text-gh-text-secondary hover:text-gh-text transition-colors">
-                <SortIcon className="w-3.5 h-3.5 mr-0.5" />
-                <span>Sort</span>
-                <ChevronDown className="w-4 h-4" />
-              </button>
-              {showSortMenu && (
-                <div className="absolute right-0 top-8 z-20 w-[180px] bg-[#161b22] border border-[#30363d] rounded-md shadow-xl overflow-hidden" onClick={e => e.stopPropagation()}>
-                  <div className="px-3 py-2 text-[12px] font-semibold text-[#e6edf3] border-b border-[#21262d]">Sort by</div>
-                  {SORT_OPTIONS.map(opt => (
-                    <button key={opt.key} onClick={() => { setSortBy(opt.key); setShowSortMenu(false); }}
-                      className={`w-full flex items-center gap-2 px-3 py-[6px] text-[13px] transition-colors text-left ${
-                        sortBy === opt.key ? 'text-[#e6edf3] bg-[#1f6feb]/10' : 'text-[#8b949e] hover:bg-[#1f6feb]/10 hover:text-[#e6edf3]'
-                      }`}>
-                      <span className="w-3 text-center">{sortBy === opt.key ? '✓' : ''}</span>
-                      {opt.label}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
+          {/* Refresh in header */}
+          <button onClick={handleRefresh} disabled={loading}
+            data-testid="refresh-configs-btn"
+            title="Refresh configs"
+            className="text-[14px] text-[#8b949e] hover:text-[#e6edf3] transition-colors disabled:opacity-50">
+            <svg className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M1 4v6h6" /><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10" />
+            </svg>
+          </button>
         </div>
 
-        {/* Loading state */}
-        {loading && configs.length === 0 && (
+        {/* Loading state — during own fetch or env switch */}
+        {(loading || envSwitching) && configs.length === 0 && (
           <div className="text-center py-16">
-            <div className="w-5 h-5 border-2 border-gh-border border-t-gh-accent-blue-text rounded-full animate-spin mx-auto mb-3" />
-            <div className="text-sm text-gh-text-secondary">Loading configs...</div>
+            <div className="w-5 h-5 border-2 border-[#30363d] border-t-[#58a6ff] rounded-full animate-spin mx-auto mb-3" />
+            <div className="text-[14px] text-[#8b949e]">{envSwitching ? 'Switching environment...' : 'Loading configs...'}</div>
           </div>
         )}
 
-        {/* Config rows */}
+        {/* Config rows — GitHub issue row style */}
         {!loading && filtered.map(config => {
           const envVarCount = Object.keys(config.default_env_config || {}).length;
           const preview = extractSummaryPreview(config.config);
@@ -331,61 +362,33 @@ export default function AllConfigs({ onNavigate, bearerToken, onTokenExpired, ca
             <div key={config.id}
               data-testid={`config-row-${config.id}`}
               onClick={() => onNavigate('config-detail', config.id)}
-              className="flex items-start gap-3 px-4 py-3 border-b border-gh-border-muted hover:bg-gh-surface-hover cursor-pointer transition-colors group">
+              className="flex items-start px-4 py-2.5 border-b border-[#21262d] last:border-b-0 hover:bg-[#161b22] cursor-pointer transition-colors group">
               <div className="flex-1 min-w-0">
-                {/* Title + labels */}
+                {/* Title line + labels */}
                 <div className="flex items-center gap-2 flex-wrap">
-                  <span className="text-sm font-semibold text-gh-text group-hover:text-gh-accent-blue-text transition-colors">
+                  <span className="text-[16px] font-semibold text-[#e6edf3] group-hover:text-[#58a6ff] transition-colors leading-snug">
                     {config.template_name}
                   </span>
-                  {config.internal && (
-                    <span className="text-[11px] font-medium px-[7px] py-[1px] rounded-full leading-tight"
-                      style={{ backgroundColor: 'rgba(31,111,235,0.2)', color: '#58a6ff', border: '1px solid rgba(31,111,235,0.4)' }}>
-                      internal
-                    </span>
-                  )}
-                  {config.public && (
-                    <span className="text-[11px] font-medium px-[7px] py-[1px] rounded-full leading-tight"
-                      style={{ backgroundColor: 'rgba(35,134,54,0.2)', color: '#3fb950', border: '1px solid rgba(35,134,54,0.4)' }}>
-                      public
-                    </span>
-                  )}
-                  {hasSummary && (
-                    <span className="text-[11px] font-medium px-[7px] py-[1px] rounded-full leading-tight"
-                      style={{ backgroundColor: 'rgba(137,87,229,0.2)', color: '#bc8cff', border: '1px solid rgba(137,87,229,0.4)' }}>
-                      has summary
-                    </span>
-                  )}
-                  {config.summary_source_job_id && (
-                    <span className="text-[11px] font-mono font-medium px-[7px] py-[1px] rounded-full leading-tight"
-                      style={{ backgroundColor: 'rgba(139,148,158,0.15)', color: '#8b949e', border: '1px solid rgba(139,148,158,0.3)' }}>
-                      {config.summary_source_job_id}
-                    </span>
-                  )}
+                  {config.internal && <Label text="internal" color="blue" />}
+                  {config.public && <Label text="public" color="green" />}
+                  {hasSummary && <Label text="has summary" color="purple" />}
                 </div>
 
                 {/* Summary preview */}
                 {preview && (
-                  <div className="text-xs text-[#c9d1d9] mt-1 leading-relaxed truncate max-w-[600px]">
+                  <div className="text-[14px] text-[#8b949e] mt-0.5 truncate max-w-[700px] leading-snug">
                     {preview}
                   </div>
                 )}
 
-                {/* Meta line */}
-                <div className="flex items-center gap-2 text-xs text-gh-text-secondary mt-1 flex-wrap">
-                  <span>{envVarCount} env vars</span>
-                  {config.created_at && (
-                    <>
-                      <span>·</span>
-                      <span>created {timeAgo(config.created_at)}</span>
-                    </>
-                  )}
+                {/* Meta line — matches GitHub "#1234 · opened 3 days ago" */}
+                <div className="text-[12px] text-[#8b949e] mt-1 leading-snug">
+                  <span>#{config.id}</span>
+                  {config.created_at && <span> · created {timeAgo(config.created_at)}</span>}
                   {config.updated_at && config.created_at !== config.updated_at && (
-                    <>
-                      <span>·</span>
-                      <span>updated {timeAgo(config.updated_at)}</span>
-                    </>
+                    <span> · updated {timeAgo(config.updated_at)}</span>
                   )}
+                  <span> · {envVarCount} env var{envVarCount !== 1 ? 's' : ''}</span>
                 </div>
               </div>
             </div>
@@ -395,24 +398,24 @@ export default function AllConfigs({ onNavigate, bearerToken, onTokenExpired, ca
         {/* Empty states */}
         {!loading && configs.length > 0 && filtered.length === 0 && (
           <div className="text-center py-16">
-            <DatabaseIcon className="w-6 h-6 text-gh-text-muted mx-auto mb-3" />
-            <div className="text-lg font-medium text-gh-text mb-1">No results matched your search.</div>
-            <div className="text-sm text-gh-text-secondary">Try a different search term or filter.</div>
+            <SearchIcon className="w-6 h-6 text-[#484f58] mx-auto mb-3" />
+            <div className="text-[20px] font-semibold text-[#e6edf3] mb-1">No results matched your search.</div>
+            <div className="text-[14px] text-[#8b949e]">Try a different search term or filter.</div>
           </div>
         )}
 
         {!loading && configs.length === 0 && !error && bearerToken && (
           <div className="text-center py-16">
-            <DatabaseIcon className="w-6 h-6 text-gh-text-muted mx-auto mb-3" />
-            <div className="text-lg font-medium text-gh-text mb-1">No configs yet.</div>
-            <div className="text-sm text-gh-text-secondary">Create your first category config to get started.</div>
+            <DatabaseIcon className="w-6 h-6 text-[#484f58] mx-auto mb-3" />
+            <div className="text-[20px] font-semibold text-[#e6edf3] mb-1">No configs yet.</div>
+            <div className="text-[14px] text-[#8b949e]">Create your first category config to get started.</div>
           </div>
         )}
       </div>
 
       {!loading && filtered.length > 0 && (
-        <div className="mt-4 text-center text-xs text-gh-text-muted">
-          Showing {filtered.length} of {allCount} configs
+        <div className="mt-3 text-center text-[12px] text-[#484f58]">
+          Showing {filtered.length} of {allCount} config{allCount !== 1 ? 's' : ''}
         </div>
       )}
     </div>

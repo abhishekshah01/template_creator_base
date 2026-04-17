@@ -17,6 +17,7 @@ export default function App() {
   const [bearerToken, setBearerToken] = useState(() => localStorage.getItem('bearer_token') || '');
   const [configDetailId, setConfigDetailId] = useState(null);
   const [infoBannerDismissed, setInfoBannerDismissed] = useState(false);
+  const [envWarningDismissed, setEnvWarningDismissed] = useState(false);
 
   // Environment state
   const [activeEnv, setActiveEnv] = useState(() => localStorage.getItem('active_env') || 'eph-leadgen1');
@@ -24,31 +25,78 @@ export default function App() {
   const [standardEnvs, setStandardEnvs] = useState([]);
   const [deploymentScope, setDeploymentScope] = useState(null);
   const [ephemeralEnabled, setEphemeralEnabled] = useState(true);
+  const [envError, setEnvError] = useState(null); // global env connectivity error
+  const [previousEnv, setPreviousEnv] = useState(null);
 
-  // Load environments on mount
+  // Load environments on mount + validate current env
   useEffect(() => {
-    api.getEnvironments().then(data => {
+    api.getEnvironments().then(async (data) => {
       setActiveEnv(data.active);
       setEnvConfig(data.active_config);
       setStandardEnvs(data.environments || []);
       setDeploymentScope(data.deployment_scope || 'dev');
       setEphemeralEnabled(data.ephemeral_enabled ?? true);
+
+      // Validate env by trying a config fetch
+      const token = localStorage.getItem('bearer_token');
+      if (token) {
+        try {
+          const configs = await api.listCategoryConfigs(token);
+          const list = Array.isArray(configs) ? configs : (configs?.configs || configs?.data || configs?.results || []);
+          setCachedConfigs(Array.isArray(list) ? list : []);
+          setConfigsLoaded(true);
+        } catch {
+          setEnvError(`Could not reach "${data.active}". The environment may not exist or its services are not running.`);
+          setConfigsLoaded(true);
+        }
+      }
     }).catch(() => {});
   }, []);
 
+  const [envSwitching, setEnvSwitching] = useState(false);
+
   async function switchEnv(envName) {
+    setPreviousEnv(activeEnv);
+    setEnvError(null);
+    setEnvWarningDismissed(false);
+    setEnvSwitching(true);
+    // Clear immediately so AllConfigs shows loading state
+    setCachedConfigs([]);
+    setConfigsStale(false);
+    setConfigsLoaded(false);
     try {
       const data = await api.switchEnvironment(envName);
       setActiveEnv(data.env);
       setEnvConfig(prev => ({ ...prev, ...data.config, env: data.env, label: data.label }));
       localStorage.setItem('active_env', data.env);
-      // Clear cached data from old env
-      setCachedConfigs([]);
-      setConfigsStale(false);
-      setConfigsLoaded(false);
+
+      // Validate by fetching configs for the new env
+      if (bearerToken) {
+        try {
+          const configs = await api.listCategoryConfigs(bearerToken);
+          const list = Array.isArray(configs) ? configs : (configs?.configs || configs?.data || configs?.results || []);
+          setCachedConfigs(Array.isArray(list) ? list : []);
+          setConfigsStale(false);
+          setConfigsLoaded(true);
+        } catch (valErr) {
+          setEnvError(`Could not reach "${envName}". The environment may not exist or its services are not running.`);
+          setCachedConfigs([]);
+          setConfigsStale(false);
+          setConfigsLoaded(true); // prevent AllConfigs from retrying
+        }
+      } else {
+        setConfigsLoaded(false);
+      }
     } catch (e) {
-      console.error('Failed to switch environment:', e);
+      setEnvError(`Failed to switch to "${envName}": ${e.message}`);
+      setConfigsLoaded(true);
+    } finally {
+      setEnvSwitching(false);
     }
+  }
+
+  function switchToPreviousEnv() {
+    if (previousEnv) switchEnv(previousEnv);
   }
 
   // Cached configs state
@@ -130,7 +178,8 @@ export default function App() {
         return <UpdateCategory bearerToken={bearerToken} onTokenExpired={() => updateToken('')} />;
       case 'config-all':
         return <ConfigAll onNavigate={navigate} bearerToken={bearerToken} onTokenExpired={() => updateToken('')}
-          cachedConfigs={cachedConfigs} configsStale={configsStale} configsLoaded={configsLoaded} refreshConfigs={refreshConfigs} activeEnv={activeEnv} />;
+          cachedConfigs={cachedConfigs} configsStale={configsStale} configsLoaded={configsLoaded} refreshConfigs={refreshConfigs} activeEnv={activeEnv}
+          envError={envError} previousEnv={previousEnv} onSwitchBack={switchToPreviousEnv} envSwitching={envSwitching} setEnvError={setEnvError} />;
       case 'config-create':
         return <ConfigCreate bearerToken={bearerToken} onTokenExpired={() => updateToken('')} onNavigate={navigate}
           cachedConfigs={cachedConfigs} refreshConfigs={refreshConfigs} markConfigsStale={markConfigsStale} envConfig={envConfig} />;
@@ -174,8 +223,21 @@ export default function App() {
       </div>
       <main style={{ marginLeft: sidebarWidth }} className="flex-1 min-h-screen">
         <div className={`px-6 py-8 ${['create-template', 'config-create', 'config-edit'].includes(activePage) ? '' : 'max-w-4xl mx-auto'}`}>
+          {/* Global env error banners — shown on ALL pages */}
+          {envError && (
+            <div className="mb-4 space-y-2">
+              <Banner variant="critical" onDismiss={() => setEnvError(null)}>
+                {envError}{previousEnv && <> — <button onClick={switchToPreviousEnv} className="text-[#58a6ff] hover:underline font-medium">switch back to {previousEnv}</button></>}
+              </Banner>
+              {!envWarningDismissed && (
+                <Banner variant="warning" onDismiss={() => setEnvWarningDismissed(true)}>
+                  Switch to a valid environment using the dropdown in the sidebar, or check the environment name for typos.
+                </Banner>
+              )}
+            </div>
+          )}
           {/* Persistent auth info banner — shown on auth-dependent pages */}
-          {bearerToken && !infoBannerDismissed && activePage !== 'create-template' && activePage !== 'settings' && (
+          {!envError && bearerToken && !infoBannerDismissed && activePage !== 'create-template' && activePage !== 'settings' && (
             <Banner variant="upsell" onDismiss={() => setInfoBannerDismissed(true)} className="mb-4">
               API tokens are environment-specific. Ensure your token matches the active environment <strong className="text-white">({activeEnv})</strong>.
             </Banner>

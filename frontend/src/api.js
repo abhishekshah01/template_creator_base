@@ -7,6 +7,18 @@ class AuthError extends Error {
   }
 }
 
+function sanitizeErrorMessage(text, status) {
+  if (!text) return `Request failed (${status})`;
+  // Strip HTML responses (e.g. 404 pages from reverse proxies)
+  if (text.includes('<html') || text.includes('<!DOCTYPE')) {
+    const titleMatch = text.match(/<title>([^<]*)<\/title>/i);
+    const h1Match = text.match(/<h1>([^<]*)<\/h1>/i);
+    const clean = titleMatch?.[1] || h1Match?.[1] || `${status} error`;
+    return clean.trim();
+  }
+  return text;
+}
+
 async function request(path, body) {
   const resp = await fetch(`${BASE}${path}`, {
     method: 'POST',
@@ -15,11 +27,14 @@ async function request(path, body) {
   });
   const text = await resp.text();
   let data;
-  try { data = JSON.parse(text); } catch { data = { message: text }; }
+  try { data = JSON.parse(text); } catch { data = { message: sanitizeErrorMessage(text, resp.status) }; }
   if (resp.status === 401 || resp.status === 403) {
     throw new AuthError('Token expired or invalid. Please update your API token in the sidebar.');
   }
-  if (!resp.ok) throw new Error(data.detail || data.message || `Request failed (${resp.status})`);
+  if (!resp.ok) {
+    const raw = data.detail || data.message || `Request failed (${resp.status})`;
+    throw new Error(sanitizeErrorMessage(raw, resp.status));
+  }
   return data;
 }
 
