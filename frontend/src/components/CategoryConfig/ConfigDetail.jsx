@@ -182,7 +182,7 @@ export default function ConfigDetail({ configId, onNavigate, bearerToken, onToke
             <div className="px-4 py-2.5 bg-[#161b22] border-b border-[#30363d]">
               <span className="text-[14px] font-semibold text-[#e6edf3]">App summary</span>
             </div>
-            <div className="px-5 py-4 text-[14px] text-[#c9d1d9] leading-[1.6] whitespace-pre-wrap">
+            <div className="px-5 py-4 text-[14px] text-[#c9d1d9] leading-[1.6] whitespace-pre-wrap max-h-[400px] overflow-y-auto">
               {config.config.app_summary}
             </div>
           </div>

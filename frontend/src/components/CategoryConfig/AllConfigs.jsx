@@ -372,6 +372,7 @@ export default function AllConfigs({ onNavigate, bearerToken, onTokenExpired, ca
                   {config.internal && <Label text="internal" color="blue" />}
                   {config.public && <Label text="public" color="green" />}
                   {hasSummary && <Label text="has summary" color="purple" />}
+                  {config.summary_source_job_id && <Label text={config.summary_source_job_id} color="gray" />}
                 </div>
 
                 {/* Summary preview */}
