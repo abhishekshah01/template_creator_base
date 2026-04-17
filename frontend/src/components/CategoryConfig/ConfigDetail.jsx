@@ -162,12 +162,12 @@ export default function ConfigDetail({ configId, onNavigate, bearerToken, onToke
               <span className="text-[12px] text-[#8b949e]">{envVars.length} variable{envVars.length !== 1 ? 's' : ''}</span>
             </div>
             <div className="flex items-center gap-3 px-4 py-2 border-b border-[#30363d] text-[12px] text-[#8b949e] font-medium bg-[#161b22]">
-              <div className="w-[180px] shrink-0">Key</div>
+              <div className="w-[220px] shrink-0">Key</div>
               <div className="flex-1">Value</div>
             </div>
             {envVars.map(([key, value]) => (
               <div key={key} className="flex items-center gap-3 px-4 py-2.5 border-b border-[#21262d] last:border-b-0 hover:bg-[#161b22] transition-colors">
-                <span className="w-[180px] shrink-0 text-[14px] font-mono text-[#58a6ff]">{key}</span>
+                <span className="w-[220px] shrink-0 text-[14px] font-mono text-[#58a6ff] break-all">{key}</span>
                 <span className="text-[14px] font-mono text-[#c9d1d9] truncate">{String(value)}</span>
               </div>
             ))}
