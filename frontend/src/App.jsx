@@ -133,14 +133,14 @@ export default function App() {
           cachedConfigs={cachedConfigs} configsStale={configsStale} configsLoaded={configsLoaded} refreshConfigs={refreshConfigs} activeEnv={activeEnv} />;
       case 'config-create':
         return <ConfigCreate bearerToken={bearerToken} onTokenExpired={() => updateToken('')} onNavigate={navigate}
-          cachedConfigs={cachedConfigs} refreshConfigs={refreshConfigs} markConfigsStale={markConfigsStale} />;
+          cachedConfigs={cachedConfigs} refreshConfigs={refreshConfigs} markConfigsStale={markConfigsStale} envConfig={envConfig} />;
       case 'config-summary':
         return <ConfigSummary bearerToken={bearerToken} onTokenExpired={() => updateToken('')} />;
       case 'config-detail':
         return <ConfigDetailPage configId={configDetailId} onNavigate={navigate} bearerToken={bearerToken} onTokenExpired={() => updateToken('')} />;
       case 'config-edit':
         return <ConfigCreate bearerToken={bearerToken} onTokenExpired={() => updateToken('')} onNavigate={navigate} editConfigId={configDetailId}
-          cachedConfigs={cachedConfigs} refreshConfigs={refreshConfigs} markConfigsStale={markConfigsStale} />;
+          cachedConfigs={cachedConfigs} refreshConfigs={refreshConfigs} markConfigsStale={markConfigsStale} envConfig={envConfig} />;
       case 'settings':
         return <Settings activeEnv={activeEnv} standardEnvs={standardEnvs} onSwitchEnv={switchEnv} envConfig={envConfig}
           bearerToken={bearerToken} onTokenChange={updateToken} deploymentScope={deploymentScope} ephemeralEnabled={ephemeralEnabled} />;
@@ -173,7 +173,7 @@ export default function App() {
         <div className={`w-[2px] h-full mx-auto transition-colors ${isDragging ? 'bg-[#1f6feb]' : 'bg-transparent group-hover:bg-[#1f6feb]'}`} />
       </div>
       <main style={{ marginLeft: sidebarWidth }} className="flex-1 min-h-screen">
-        <div className={`px-6 py-8 ${activePage === 'create-template' ? '' : 'max-w-4xl mx-auto'}`}>
+        <div className={`px-6 py-8 ${['create-template', 'config-create', 'config-edit'].includes(activePage) ? '' : 'max-w-4xl mx-auto'}`}>
           {/* Persistent auth info banner — shown on auth-dependent pages */}
           {bearerToken && !infoBannerDismissed && activePage !== 'create-template' && activePage !== 'settings' && (
             <Banner variant="upsell" onDismiss={() => setInfoBannerDismissed(true)} className="mb-4">

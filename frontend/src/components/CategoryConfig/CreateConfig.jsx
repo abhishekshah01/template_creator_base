@@ -8,7 +8,7 @@ const SOURCE_BADGE = {
   existing: { label: 'EXISTING', cls: 'bg-[#30363d] text-[#8b949e] border-[#484f58]' },
 };
 
-export default function CreateConfig({ bearerToken, onTokenExpired, onNavigate, editConfigId, cachedConfigs = [], refreshConfigs, markConfigsStale }) {
+export default function CreateConfig({ bearerToken, onTokenExpired, onNavigate, editConfigId, cachedConfigs = [], refreshConfigs, markConfigsStale, envConfig }) {
   const [mode, setMode] = useState('create'); // 'create' | 'edit'
   const [configId, setConfigId] = useState(editConfigId || '');
   const [templateName, setTemplateName] = useState('');
@@ -231,8 +231,36 @@ export default function CreateConfig({ bearerToken, onTokenExpired, onNavigate, 
   const selectedCount = selected.size;
   const inputCls = "w-full px-3 py-[5px] bg-[#0d1117] border border-[#30363d] rounded-md text-[14px] text-[#e6edf3] outline-none focus:border-[#1f6feb] focus:shadow-[0_0_0_3px_rgba(31,111,235,0.3)] placeholder:text-[#484f58] transition-shadow";
 
+  // --- Compute live API preview ---
+  const baseApiUrl = envConfig?.api_url || '';
+  const apiEndpoint = mode === 'edit'
+    ? `${baseApiUrl}/internal/category-config/${configId || '{config_id}'}`
+    : `${baseApiUrl}/internal/category-config`;
+  const apiMethod = mode === 'edit' ? 'PUT' : 'POST';
+
+  const defaultEnvConfigPreview = {};
+  for (const idx of selected) {
+    const v = variables[idx];
+    if (v && v.key.trim()) defaultEnvConfigPreview[v.key] = v.value;
+  }
+
+  const requestBody = {
+    template_name: templateName || '',
+    config: {},
+    default_env_config: defaultEnvConfigPreview,
+    summary_source_job_id: jobId || '',
+    internal,
+    public: isPublic,
+  };
+
+  const maskedToken = bearerToken
+    ? bearerToken.slice(0, 12) + '...' + bearerToken.slice(-4)
+    : '<not set>';
+
   return (
-    <div className="max-w-[768px]">
+    <div className="flex gap-6 items-start">
+      {/* ═══ LEFT COLUMN: Form ═══ */}
+      <div className="flex-1 min-w-0 max-w-[768px]">
       {/* Page header */}
       <div className="flex items-center justify-between mb-2">
         <h1 className="text-[20px] font-semibold text-[#e6edf3]">
@@ -526,6 +554,119 @@ export default function CreateConfig({ bearerToken, onTokenExpired, onNavigate, 
           </pre>
         </div>
       )}
+      </div>{/* end left column */}
+
+      {/* ═══ RIGHT COLUMN: API Preview Panel ═══ */}
+      <div className="w-[420px] shrink-0 sticky top-8 self-start">
+        <div className="border border-[#30363d] rounded-lg overflow-hidden bg-[#0d1117]">
+          {/* Endpoint bar */}
+          <div className="flex items-center gap-2 px-3 py-2.5 bg-[#161b22] border-b border-[#30363d]">
+            <span className={`text-[11px] font-bold px-2 py-0.5 rounded ${
+              apiMethod === 'PUT'
+                ? 'bg-[#f0883e]/15 text-[#f0883e]'
+                : 'bg-[#3fb950]/15 text-[#3fb950]'
+            }`}>
+              {apiMethod}
+            </span>
+            <span className="flex-1 text-[12px] font-mono text-[#8b949e] truncate" title={apiEndpoint}>
+              {apiEndpoint || '/internal/category-config'}
+            </span>
+          </div>
+
+          {/* Headers */}
+          <div className="border-b border-[#21262d]">
+            <div className="px-3 py-2 flex items-center gap-2">
+              <span className="text-[11px] font-semibold text-[#8b949e] uppercase tracking-wider">Headers</span>
+            </div>
+            <div className="px-3 pb-2 space-y-1">
+              <div className="flex items-center gap-2 text-[11px] font-mono">
+                <span className="text-[#7ee787]">Authorization</span>
+                <span className="text-[#484f58]">:</span>
+                <span className="text-[#8b949e] truncate">Bearer {maskedToken}</span>
+              </div>
+              <div className="flex items-center gap-2 text-[11px] font-mono">
+                <span className="text-[#7ee787]">Content-Type</span>
+                <span className="text-[#484f58]">:</span>
+                <span className="text-[#8b949e]">application/json</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Request body */}
+          <div className="border-b border-[#21262d]">
+            <div className="px-3 py-2 flex items-center justify-between">
+              <span className="text-[11px] font-semibold text-[#8b949e] uppercase tracking-wider">Body</span>
+              <button
+                onClick={() => navigator.clipboard.writeText(JSON.stringify(requestBody, null, 2))}
+                className="text-[11px] text-[#484f58] hover:text-[#8b949e] transition-colors"
+                title="Copy JSON">
+                Copy
+              </button>
+            </div>
+            <pre className="px-3 pb-3 text-[11px] font-mono leading-[1.6] overflow-x-auto max-h-[400px] overflow-y-auto">
+              <code>{JSON.stringify(requestBody, null, 2).split('\n').map((line, i) => {
+                // Simple syntax highlighting
+                const colored = line
+                  .replace(/"([^"]+)":/g, '<key>"$1"</key>:')
+                  .replace(/: "(.*?)"/g, ': <str>"$1"</str>')
+                  .replace(/: (true|false)/g, ': <bool>$1</bool>')
+                  .replace(/: (\d+)/g, ': <num>$1</num>');
+                return (
+                  <span key={i} className="block">
+                    <span className="inline-block w-6 text-right mr-3 text-[#484f58] select-none">{i + 1}</span>
+                    {line.split(/("[^"]*"\s*:)|(".*?")|(\btrue\b|\bfalse\b)|(\b\d+\b)|([{}[\],])/g).map((part, j) => {
+                      if (!part) return null;
+                      if (/^"[^"]*"\s*:$/.test(part)) return <span key={j} className="text-[#7ee787]">{part}</span>;
+                      if (/^".*"$/.test(part)) return <span key={j} className="text-[#a5d6ff]">{part}</span>;
+                      if (part === 'true' || part === 'false') return <span key={j} className="text-[#f0883e]">{part}</span>;
+                      if (/^\d+$/.test(part)) return <span key={j} className="text-[#f0883e]">{part}</span>;
+                      if (/^[{}[\],]+$/.test(part)) return <span key={j} className="text-[#8b949e]">{part}</span>;
+                      return <span key={j} className="text-[#e6edf3]">{part}</span>;
+                    })}
+                  </span>
+                );
+              })}</code>
+            </pre>
+          </div>
+
+          {/* Send button */}
+          <div className="px-3 py-3 bg-[#161b22] border-b border-[#21262d]">
+            <button onClick={submitConfig} disabled={loading === 'submit'}
+              className={`w-full py-2 text-[13px] font-semibold text-white rounded-md border transition-colors flex items-center justify-center gap-2 ${
+                mode === 'edit'
+                  ? 'bg-[#f0883e] hover:bg-[#f09040] border-[#f0883e]/60 disabled:opacity-50'
+                  : 'bg-[#238636] hover:bg-[#2ea043] border-[#2ea043]/60 disabled:opacity-50'
+              }`}>
+              {loading === 'submit' && <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />}
+              {loading === 'submit'
+                ? 'Sending...'
+                : `Send ${apiMethod}`}
+            </button>
+          </div>
+
+          {/* Response */}
+          {(result || (submitStatus && submitStatus.type === 'error')) && (
+            <div>
+              <div className="px-3 py-2 flex items-center gap-2">
+                <span className="text-[11px] font-semibold text-[#8b949e] uppercase tracking-wider">Response</span>
+                {result && (
+                  <span className="text-[11px] font-mono font-bold text-[#3fb950]">200 OK</span>
+                )}
+                {submitStatus?.type === 'error' && !result && (
+                  <span className="text-[11px] font-mono font-bold text-[#f85149]">Error</span>
+                )}
+              </div>
+              <pre className="px-3 pb-3 text-[11px] font-mono leading-[1.6] overflow-x-auto max-h-[300px] overflow-y-auto">
+                {result ? (
+                  <code className="text-[#3fb950]">{JSON.stringify(result, null, 2)}</code>
+                ) : submitStatus?.type === 'error' ? (
+                  <code className="text-[#f85149]">{submitStatus.message}</code>
+                ) : null}
+              </pre>
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   );
 }
