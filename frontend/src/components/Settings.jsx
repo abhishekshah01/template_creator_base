@@ -55,7 +55,7 @@ function saveEphHistory(arr) {
   localStorage.setItem('eph_history', JSON.stringify(arr.slice(0, 5)));
 }
 
-export default function Settings({ activeEnv, standardEnvs, onSwitchEnv, envConfig, bearerToken = '', onTokenChange }) {
+export default function Settings({ activeEnv, standardEnvs, onSwitchEnv, envConfig, bearerToken = '', onTokenChange, deploymentScope, ephemeralEnabled = true }) {
   const [config, setConfig] = useState(null);
   const [loading, setLoading] = useState(true);
   const [ephInput, setEphInput] = useState('');
@@ -146,12 +146,27 @@ export default function Settings({ activeEnv, standardEnvs, onSwitchEnv, envConf
       {/* ── Active Environment ──────────────────────────── */}
       <section>
         <div className="pb-3 border-b border-[#30363d] mb-5">
-          <h2 className="text-[20px] font-semibold text-[#e6edf3]">Active Environment</h2>
-          <p className="text-[14px] text-[#c9d1d9] mt-1">All API calls use the selected environment's endpoints.</p>
+          <div className="flex items-center gap-3">
+            <h2 className="text-[20px] font-semibold text-[#e6edf3]">Active Environment</h2>
+            {deploymentScope && (
+              <span className={`text-[11px] font-bold uppercase tracking-wider px-2 py-0.5 rounded border ${
+                deploymentScope === 'prod'
+                  ? 'text-[#f0883e] bg-[#f0883e]/10 border-[#f0883e]/30'
+                  : 'text-[#3fb950] bg-[#3fb950]/10 border-[#3fb950]/30'
+              }`}>
+                {deploymentScope} scope
+              </span>
+            )}
+          </div>
+          <p className="text-[14px] text-[#c9d1d9] mt-1">
+            {deploymentScope === 'prod'
+              ? 'This deployment is locked to the prod environment.'
+              : 'All API calls use the selected environment\'s endpoints.'}
+          </p>
         </div>
 
-        {/* 3-card grid */}
-        <div className="grid grid-cols-3 gap-3">
+        {/* Environment cards */}
+        <div className={`grid gap-3 ${ephemeralEnabled ? 'grid-cols-3' : 'grid-cols-1 max-w-[260px]'}`}>
           {/* Standard env cards */}
           {standardEnvs.map(env => {
             const isActive = activeEnv === env.name;
@@ -178,45 +193,47 @@ export default function Settings({ activeEnv, standardEnvs, onSwitchEnv, envConf
             );
           })}
 
-          {/* Ephemeral card */}
-          <div className={`relative p-4 rounded-lg border transition-all ${
-            isEph
-              ? 'border-[#388bfd] bg-[#1f6feb]/10'
-              : 'border-[#30363d] bg-[#0d1117]'
-          }`}>
-            <div className="flex items-start justify-between gap-2 mb-2">
-              <div className="min-w-0">
-                <span className={`block text-[16px] font-semibold truncate ${isEph ? 'text-[#e6edf3]' : 'text-[#c9d1d9]'}`}>
-                  {isEph ? activeEnv : 'Ephemeral'}
-                </span>
-                <span className="text-[13px] text-[#8b949e]">{isEph ? 'Ephemeral' : 'Not connected'}</span>
+          {/* Ephemeral card — only in dev scope */}
+          {ephemeralEnabled && (
+            <div className={`relative p-4 rounded-lg border transition-all ${
+              isEph
+                ? 'border-[#388bfd] bg-[#1f6feb]/10'
+                : 'border-[#30363d] bg-[#0d1117]'
+            }`}>
+              <div className="flex items-start justify-between gap-2 mb-2">
+                <div className="min-w-0">
+                  <span className={`block text-[16px] font-semibold truncate ${isEph ? 'text-[#e6edf3]' : 'text-[#c9d1d9]'}`}>
+                    {isEph ? activeEnv : 'Ephemeral'}
+                  </span>
+                  <span className="text-[13px] text-[#8b949e]">{isEph ? 'Ephemeral' : 'Not connected'}</span>
+                </div>
+                {isEph && (
+                  <span className="shrink-0 mt-0.5 text-[11px] font-medium text-[#388bfd] bg-[#388bfd]/15 border border-[#388bfd]/40 rounded-full px-2 py-0.5">
+                    active
+                  </span>
+                )}
               </div>
-              {isEph && (
-                <span className="shrink-0 mt-0.5 text-[11px] font-medium text-[#388bfd] bg-[#388bfd]/15 border border-[#388bfd]/40 rounded-full px-2 py-0.5">
-                  active
-                </span>
-              )}
-            </div>
 
-            <div className="flex items-center gap-2 mt-3">
-              <button
-                onClick={() => { setShowEphInput(v => !v); setEphInput(''); }}
-                data-testid="eph-connect-toggle-btn"
-                className="text-[13px] font-medium text-[#c9d1d9] bg-[#21262d] hover:bg-[#30363d] border border-[#30363d] rounded-md px-3 py-1.5 transition-colors">
-                {isEph ? 'Switch' : 'Connect'}
-              </button>
-              {isEph && (
-                <button onClick={() => onSwitchEnv(standardEnvs[0]?.name || 'dev')}
-                  className="text-[13px] text-[#8b949e] hover:text-[#f85149] transition-colors">
-                  Disconnect
+              <div className="flex items-center gap-2 mt-3">
+                <button
+                  onClick={() => { setShowEphInput(v => !v); setEphInput(''); }}
+                  data-testid="eph-connect-toggle-btn"
+                  className="text-[13px] font-medium text-[#c9d1d9] bg-[#21262d] hover:bg-[#30363d] border border-[#30363d] rounded-md px-3 py-1.5 transition-colors">
+                  {isEph ? 'Switch' : 'Connect'}
                 </button>
-              )}
+                {isEph && (
+                  <button onClick={() => onSwitchEnv(standardEnvs[0]?.name || 'dev')}
+                    className="text-[13px] text-[#8b949e] hover:text-[#f85149] transition-colors">
+                    Disconnect
+                  </button>
+                )}
+              </div>
             </div>
-          </div>
+          )}
         </div>
 
         {/* Full-width connect form — appears below cards on Switch/Connect */}
-        {showEphInput && (
+        {ephemeralEnabled && showEphInput && (
           <div className="mt-3">
             <div className="flex items-center gap-2">
               <div className="flex-1 flex items-stretch rounded-md overflow-hidden border border-[#30363d] focus-within:border-[#388bfd] transition-colors">

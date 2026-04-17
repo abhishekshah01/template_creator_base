@@ -16,20 +16,11 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
 import config
-import db
-import events as E
-import logging_lib
-from logging_lib import emit_event, emit_log, hash_token, RequestContextMiddleware, httpx_event_hooks
-from routes.v2.logs import router as v2_logs_router
 
 # Async HTTP client — does NOT block the event loop
-_client = httpx.AsyncClient(follow_redirects=True, event_hooks=httpx_event_hooks())
+_client = httpx.AsyncClient(follow_redirects=True)
 
 app = FastAPI(title="template-automation-v0")
-
-# Order matters: RequestContextMiddleware runs outermost so request_id is
-# attached before CORS touches anything.
-app.add_middleware(RequestContextMiddleware)
 
 app.add_middleware(
     CORSMiddleware,
@@ -37,21 +28,7 @@ app.add_middleware(
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
-    expose_headers=["x-request-id", "x-flow-id"],
 )
-
-# v2 routes (logging UI, future versioned endpoints)
-app.include_router(v2_logs_router)
-
-
-@app.on_event("startup")
-async def _on_startup():
-    try:
-        await db.ensure_schema()
-        emit_log("backend started", level="info", source="main.startup")
-    except Exception as e:
-        emit_log(f"schema init failed: {e}", level="error", source="main.startup",
-                 error=logging_lib.format_exception(e))
 
 
 # ---------------------------------------------------------------------------
@@ -219,22 +196,6 @@ def health():
     return {"status": "ok", "service": "template-automation-v0"}
 
 
-@app.get("/healthz")
-def healthz():
-    """Liveness — process is up."""
-    return {"status": "ok"}
-
-
-@app.get("/readyz")
-async def readyz():
-    """Readiness — dependencies reachable."""
-    checks = {
-        "mongo": await db.ping(),
-    }
-    ok = all(checks.values())
-    return {"status": "ok" if ok else "degraded", "checks": checks}
-
-
 @app.get("/api/environments")
 def list_environments():
     """List available environments and the active one."""
@@ -243,6 +204,8 @@ def list_environments():
     for name, cfg in config.STANDARD_ENVS.items():
         envs.append({"name": name, "label": cfg["label"], "type": "standard"})
     return {
+        "deployment_scope": config.DEPLOYMENT_SCOPE,
+        "ephemeral_enabled": config.EPHEMERAL_ENABLED,
         "active": config.ENV,
         "environments": envs,
         "active_config": {
@@ -266,7 +229,12 @@ def switch_environment(req: SwitchEnvironmentRequest):
     if not env_name:
         raise HTTPException(400, "Environment name is required")
 
-    previous_env = config.ENV
+    if not config.is_env_allowed(env_name):
+        raise HTTPException(
+            403,
+            f"Environment '{env_name}' is not available in the '{config.DEPLOYMENT_SCOPE}' deployment scope.",
+        )
+
     cfg = config.get_env_config(env_name)
 
     # Update the module-level config
@@ -283,16 +251,6 @@ def switch_environment(req: SwitchEnvironmentRequest):
     # Update TEMPLATE_SUMMARY_URL
     global TEMPLATE_SUMMARY_URL
     TEMPLATE_SUMMARY_URL = f"{config.API_URL}/internal/category-config/template-app-summary"
-
-    emit_event(
-        E.EVENT_ENV_SWITCHED,
-        outcome="success",
-        data={
-            "from_env": previous_env,
-            "to_env": env_name,
-            "type": cfg.get("type"),
-        },
-    )
 
     return {
         "status": "success",
@@ -411,9 +369,6 @@ async def list_collections(req: JobRequest):
 @app.post("/api/delete-collections")
 async def delete_collections(req: DeleteCollectionsRequest):
     """Drop selected MongoDB collections from a job's pod."""
-    import time
-    _start = time.perf_counter()
-
     env_id = await _get_env_id(req.job_id)
     if not env_id:
         env_label = config.get_env_config(config.ENV).get("label", config.ENV)
@@ -442,30 +397,6 @@ async def delete_collections(req: DeleteCollectionsRequest):
             "return_code": rc,
             "db_name": req.db_name,
         })
-
-    dropped = [r for r in results if r["status"] == "dropped"]
-    failed = [r for r in results if r["status"] == "failed"]
-    skipped = [r for r in results if r["status"] == "skipped"]
-    if failed:
-        outcome = "failure" if not dropped else "partial"
-    else:
-        outcome = "success"
-
-    emit_event(
-        E.EVENT_COLLECTIONS_DROPPED,
-        outcome=outcome,
-        duration_ms=(time.perf_counter() - _start) * 1000.0,
-        data={
-            "job_id": req.job_id,
-            "env_id": env_id,
-            "db_name": req.db_name,
-            "requested": req.collections,
-            "results": results,
-            "dropped_count": len(dropped),
-            "failed_count": len(failed),
-            "skipped_count": len(skipped),
-        },
-    )
 
     return {"job_id": req.job_id, "results": results}
 
@@ -537,16 +468,6 @@ async def run_mongosh(req: MongoshRequest):
     cmd_lower = req.command.lower().strip()
     for blocked in _BLOCKED_COMMANDS:
         if blocked.lower() in cmd_lower:
-            emit_event(
-                E.EVENT_MONGOSH_BLOCKED,
-                outcome="failure",
-                data={
-                    "job_id": req.job_id,
-                    "db_name": req.db_name,
-                    "command": req.command,
-                    "blocked_keyword": blocked,
-                },
-            )
             return {"output": f"Error: '{blocked}' commands are blocked in the terminal. Use the UI controls for destructive operations.", "error": True}
 
     # Translate mongosh REPL commands to JavaScript equivalents
@@ -569,80 +490,30 @@ async def run_mongosh(req: MongoshRequest):
         result = await _pod_exec(env_id, full_cmd, timeout=15)
         stdout = result.get("stdout", "").strip()
         stderr = result.get("stderr", "").strip()
-        outcome = "success" if stdout and not stderr else ("failure" if stderr and not stdout else "success")
-        emit_event(
-            E.EVENT_MONGOSH_EXECUTED,
-            outcome=outcome,
-            data={
-                "job_id": req.job_id,
-                "db_name": req.db_name,
-                "command": req.command,
-                "stdout_tail": stdout[-1000:],
-                "stderr_tail": stderr[-1000:] if stderr else "",
-            },
-        )
         if stderr and not stdout:
             return {"output": stderr, "error": True}
         return {"output": stdout or "(no output)", "error": False}
     except Exception as e:
-        emit_event(
-            E.EVENT_MONGOSH_EXECUTED,
-            outcome="failure",
-            data={"job_id": req.job_id, "db_name": req.db_name, "command": req.command},
-            error=logging_lib.format_exception(e),
-        )
         return {"output": str(e), "error": True}
 
 
 @app.post("/api/pause-job")
 async def pause_job(req: JobRequest):
     """Pause a job to trigger restic backup."""
-    import time
-    _start = time.perf_counter()
     internal_url = f"{config.PAUSE_URL}/v0/pause-environment/{req.job_id}"
 
     try:
         resp = await _client.post(internal_url, timeout=120)
     except Exception as e:
-        emit_event(
-            E.EVENT_JOB_PAUSED,
-            outcome="failure",
-            duration_ms=(time.perf_counter() - _start) * 1000.0,
-            data={"job_id": req.job_id, "pause_url": internal_url},
-            error=logging_lib.format_exception(e),
-        )
         raise HTTPException(502, f"Failed to reach pause API: {e}")
 
     if resp.status_code >= 400:
-        emit_event(
-            E.EVENT_JOB_PAUSED,
-            outcome="failure",
-            duration_ms=(time.perf_counter() - _start) * 1000.0,
-            data={
-                "job_id": req.job_id,
-                "pause_url": internal_url,
-                "status_code": resp.status_code,
-                "response_tail": resp.text[-1000:],
-            },
-        )
         raise HTTPException(resp.status_code, f"Pause failed: {resp.text}")
 
     try:
         data = resp.json()
     except Exception:
         data = {"message": resp.text}
-
-    emit_event(
-        E.EVENT_JOB_PAUSED,
-        outcome="success",
-        duration_ms=(time.perf_counter() - _start) * 1000.0,
-        data={
-            "job_id": req.job_id,
-            "pause_url": internal_url,
-            "status": data.get("status", "success"),
-            "message": str(data.get("message", ""))[:500],
-        },
-    )
 
     return {
         "job_id": req.job_id,
@@ -681,33 +552,10 @@ async def create_template(req: CreateTemplateRequest):
         "--command", script_command,
     ]
 
-    import time
-    _start = time.perf_counter()
     try:
         result = subprocess.run(
             gcloud_cmd,
             capture_output=True, text=True, timeout=300,
-        )
-        duration_ms = (time.perf_counter() - _start) * 1000.0
-        outcome = "success" if result.returncode == 0 else "failure"
-        emit_event(
-            E.EVENT_TEMPLATE_CREATED,
-            outcome=outcome,
-            duration_ms=duration_ms,
-            data={
-                "template_name": req.template_name,
-                "source_job_id": req.job_id,
-                "source_user_id": req.user_id,
-                "gcs_path": f"gs://{config.DEST_BUCKET}/{req.template_name}",
-                "dest_bucket": config.DEST_BUCKET,
-                "source_bucket": config.SOURCE_BUCKET,
-                "vm_host": config.VM_HOST,
-                "vm_zone": config.VM_ZONE,
-                "script_path": config.TEMPLATE_SCRIPT_PATH,
-                "exit_code": result.returncode,
-                "stdout_tail": result.stdout[-2000:],
-                "stderr_tail": result.stderr[-2000:] if result.returncode != 0 else "",
-            },
         )
         return {
             "status": "success" if result.returncode == 0 else "failed",
@@ -715,28 +563,9 @@ async def create_template(req: CreateTemplateRequest):
             "output": result.stdout[-2000:],
             "error": result.stderr[-1000:] if result.returncode != 0 else "",
         }
-    except subprocess.TimeoutExpired as e:
-        emit_event(
-            E.EVENT_TEMPLATE_CREATED,
-            outcome="failure",
-            duration_ms=(time.perf_counter() - _start) * 1000.0,
-            data={
-                "template_name": req.template_name,
-                "source_job_id": req.job_id,
-                "source_user_id": req.user_id,
-                "timed_out": True,
-            },
-            error={"type": "TimeoutExpired", "message": str(e)},
-        )
+    except subprocess.TimeoutExpired:
         raise HTTPException(504, "Template creation timed out (5 min limit)")
-    except FileNotFoundError as e:
-        emit_event(
-            E.EVENT_TEMPLATE_CREATED,
-            outcome="failure",
-            duration_ms=(time.perf_counter() - _start) * 1000.0,
-            data={"template_name": req.template_name, "source_job_id": req.job_id},
-            error={"type": "FileNotFoundError", "message": "gcloud CLI not found"},
-        )
+    except FileNotFoundError:
         raise HTTPException(500, "gcloud CLI not found. Install Google Cloud SDK and run `gcloud auth login`.")
 
 
@@ -839,43 +668,15 @@ async def create_category_config(req: CategoryConfigRequest):
             timeout=30,
         )
     except Exception as e:
-        emit_event(
-            E.EVENT_CATEGORY_CONFIG_CREATED,
-            outcome="failure",
-            data={"template_name": req.template_name},
-            error=logging_lib.format_exception(e),
-        )
         raise HTTPException(502, f"Failed to reach category config API: {e}")
 
     if resp.status_code >= 400:
-        emit_event(
-            E.EVENT_CATEGORY_CONFIG_CREATED,
-            outcome="failure",
-            data={
-                "template_name": req.template_name,
-                "status_code": resp.status_code,
-                "response_tail": resp.text[-500:],
-            },
-        )
         raise HTTPException(resp.status_code, f"Category config creation failed: {resp.text[:500]}")
 
     try:
         data = resp.json()
     except Exception:
         data = {"message": resp.text}
-
-    emit_event(
-        E.EVENT_CATEGORY_CONFIG_CREATED,
-        outcome="success",
-        data={
-            "template_name": req.template_name,
-            "internal": req.internal,
-            "public": req.public,
-            "summary_source_job_id": req.summary_source_job_id,
-            "env_var_count": len(req.default_env_config or {}),
-            "config_id": (data.get("id") or data.get("_id") or data.get("config_id")) if isinstance(data, dict) else None,
-        },
-    )
 
     return {
         "status": "success",
@@ -889,8 +690,6 @@ TEMPLATE_SUMMARY_URL = f"{config.API_URL}/internal/category-config/template-app-
 @app.post("/api/template-summary")
 async def generate_template_summary(req: TemplateSummaryRequest):
     """Generate a template app summary via the agent service API."""
-    import time
-    _start = time.perf_counter()
     try:
         resp = await _client.post(
             TEMPLATE_SUMMARY_URL,
@@ -902,42 +701,15 @@ async def generate_template_summary(req: TemplateSummaryRequest):
             timeout=120,
         )
     except Exception as e:
-        emit_event(
-            E.EVENT_TEMPLATE_SUMMARY_GENERATED,
-            outcome="failure",
-            duration_ms=(time.perf_counter() - _start) * 1000.0,
-            data={"template_name": req.template_name},
-            error=logging_lib.format_exception(e),
-        )
         raise HTTPException(502, f"Failed to reach template summary API: {e}")
 
     if resp.status_code >= 400:
-        emit_event(
-            E.EVENT_TEMPLATE_SUMMARY_GENERATED,
-            outcome="failure",
-            duration_ms=(time.perf_counter() - _start) * 1000.0,
-            data={
-                "template_name": req.template_name,
-                "status_code": resp.status_code,
-                "response_tail": resp.text[-500:],
-            },
-        )
         raise HTTPException(resp.status_code, f"Template summary generation failed: {resp.text[:500]}")
 
     try:
         data = resp.json()
     except Exception:
         data = {"message": resp.text}
-
-    emit_event(
-        E.EVENT_TEMPLATE_SUMMARY_GENERATED,
-        outcome="success",
-        duration_ms=(time.perf_counter() - _start) * 1000.0,
-        data={
-            "template_name": req.template_name,
-            "summary_length": len(str(data.get("app_summary") or data.get("summary") or "")) if isinstance(data, dict) else 0,
-        },
-    )
 
     return {
         "status": "success",
@@ -989,42 +761,14 @@ async def update_category_config(req: UpdateCategoryConfigRequest):
             timeout=30,
         )
     except Exception as e:
-        emit_event(
-            E.EVENT_CATEGORY_CONFIG_UPDATED,
-            outcome="failure",
-            data={"config_id": req.config_id, "template_name": req.template_name},
-            error=logging_lib.format_exception(e),
-        )
         raise HTTPException(502, f"Failed to reach category config API: {e}")
 
     if resp.status_code >= 400:
-        emit_event(
-            E.EVENT_CATEGORY_CONFIG_UPDATED,
-            outcome="failure",
-            data={
-                "config_id": req.config_id,
-                "template_name": req.template_name,
-                "status_code": resp.status_code,
-                "response_tail": resp.text[-500:],
-            },
-        )
         raise HTTPException(resp.status_code, f"Update failed: {resp.text[:500]}")
 
     try:
         data = resp.json()
     except Exception:
         data = {"message": resp.text}
-
-    emit_event(
-        E.EVENT_CATEGORY_CONFIG_UPDATED,
-        outcome="success",
-        data={
-            "config_id": req.config_id,
-            "template_name": req.template_name,
-            "internal": req.internal,
-            "public": req.public,
-            "env_var_count": len(req.default_env_config or {}),
-        },
-    )
 
     return {"status": "success", "response": data}

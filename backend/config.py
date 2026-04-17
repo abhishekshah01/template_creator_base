@@ -10,11 +10,18 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+# --- Deployment scope (controls which environments are available) ---
+DEPLOYMENT_SCOPE = os.environ.get("DEPLOYMENT_SCOPE", "dev")
+if DEPLOYMENT_SCOPE not in ("dev", "prod"):
+    raise ValueError(f"DEPLOYMENT_SCOPE must be 'dev' or 'prod', got '{DEPLOYMENT_SCOPE}'")
+
+EPHEMERAL_ENABLED = DEPLOYMENT_SCOPE == "dev"
+
 # --- Active environment (can be changed at runtime) ---
 ENV = os.environ.get("TEMPLATE_ENV", "eph-leadgen1")
 
-# --- Standard environment presets ---
-STANDARD_ENVS = {
+# --- All standard environment presets ---
+_ALL_STANDARD_ENVS = {
     "dev": {
         "label": "dev",
         "type": "standard",
@@ -33,6 +40,10 @@ STANDARD_ENVS = {
     },
 }
 
+# Filter to only environments reachable from this deployment
+_SCOPE_ENVS = {"dev": ["dev"], "prod": ["prod"]}
+STANDARD_ENVS = {k: v for k, v in _ALL_STANDARD_ENVS.items() if k in _SCOPE_ENVS[DEPLOYMENT_SCOPE]}
+
 # --- Ephemeral environment URL templates ---
 EPH_API_URL_TEMPLATE = os.environ.get("EPH_API_URL_TEMPLATE", "")
 EPH_ENVCORE_URL = os.environ.get("EPH_ENVCORE_URL", "")
@@ -45,6 +56,15 @@ EPH_TEMPLATES = {
     "pause_url": EPH_PAUSE_URL_TEMPLATE,
     "db_dsn": EPH_DB_DSN_TEMPLATE,
 }
+
+
+def is_env_allowed(env_name):
+    """Check if an environment is reachable from this deployment scope."""
+    if env_name in STANDARD_ENVS:
+        return True
+    if env_name.startswith("eph-") and EPHEMERAL_ENABLED:
+        return True
+    return False
 
 
 def get_env_config(env_name):
@@ -64,7 +84,9 @@ def get_env_config(env_name):
     }
 
 
-# --- Resolve active environment ---
+# --- Resolve active environment (fall back if ENV is out of scope) ---
+if not is_env_allowed(ENV):
+    ENV = next(iter(STANDARD_ENVS))
 _cfg = get_env_config(ENV)
 
 API_URL = os.environ.get("EMERGENT_API_URL", _cfg["api_url"])
