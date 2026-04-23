@@ -98,10 +98,26 @@ PAUSE_URL = os.environ.get("PAUSE_URL", _cfg["pause_url"])
 VM_HOST = os.environ.get("VM_HOST", "emergent-dev-vm-anshul")
 VM_ZONE = os.environ.get("VM_ZONE", "us-central1-a")
 
-# --- Template defaults ---
-RESTIC_PASSWORD = os.environ.get("RESTIC_PASSWORD", "test123")
-DEST_BUCKET = os.environ.get("DEST_BUCKET", "emergent-dev-template-restic")
-SOURCE_BUCKET = os.environ.get("SOURCE_BUCKET", "dev-snapshots-restic")
+# --- Template defaults (scope-aware) ---
+_SCOPE_BUCKETS = {
+    "dev":  {"source": "dev-snapshots-restic",  "dest": "emergent-dev-template-restic"},
+    "prod": {"source": "prod-snapshots-restic", "dest": "emergent-template-restic"},
+}
+RESTIC_PASSWORD = (
+    os.environ.get("RESTIC_PASSWORD")
+    or os.environ.get(f"{DEPLOYMENT_SCOPE.upper()}_RESTIC_PASSWORD")
+    or "test123"
+)
+SOURCE_BUCKET = (
+    os.environ.get("SOURCE_BUCKET")
+    or os.environ.get(f"{DEPLOYMENT_SCOPE.upper()}_RESTIC_SOURCE_BUCKET")
+    or _SCOPE_BUCKETS[DEPLOYMENT_SCOPE]["source"]
+)
+DEST_BUCKET = (
+    os.environ.get("DEST_BUCKET")
+    or os.environ.get(f"{DEPLOYMENT_SCOPE.upper()}_RESTIC_DEST_BUCKET")
+    or _SCOPE_BUCKETS[DEPLOYMENT_SCOPE]["dest"]
+)
 
 # --- Script path on the VM ---
 TEMPLATE_SCRIPT_PATH = os.environ.get(
