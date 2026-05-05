@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { api } from '../../api';
+import { usePersistedState } from '../../hooks/usePersistedState';
 import StepCard from './StepCard';
 import StatusBar from './StatusBar';
 import ProgressBar from './ProgressBar';
@@ -28,6 +29,26 @@ function collectionInfo(name) {
 }
 
 const INITIAL_SUB = { status: 'idle', message: '', time: '' };
+
+const SET_OPTS = {
+  serialize: (s) => JSON.stringify([...s]),
+  deserialize: (s) => new Set(JSON.parse(s)),
+};
+
+const SUB_OPTS = {
+  sanitize: (sub) => (sub && sub.status === 'loading' ? INITIAL_SUB : sub),
+};
+
+const STATUSES_OPTS = {
+  sanitize: (statuses) => {
+    if (!statuses || typeof statuses !== 'object') return {};
+    const out = {};
+    for (const [k, v] of Object.entries(statuses)) {
+      if (v && v.type !== 'loading') out[k] = v;
+    }
+    return out;
+  },
+};
 
 function SubStepRow({ label, sub }) {
   const { status, message, time } = sub;
@@ -65,31 +86,31 @@ function SubStepRow({ label, sub }) {
 }
 
 export default function CreateTemplate({ bearerToken = "" }) {
-  const [step, setStep] = useState(1);
-  const [jobId, setJobId] = useState('');
-  const [templateName, setTemplateName] = useState('');
-  const [userId, setUserId] = useState('');
-  const [envId, setEnvId] = useState('');
-  const [podName, setPodName] = useState('');
-  const [dbName, setDbName] = useState('');
-  const [collections, setCollections] = useState([]);
-  const [selected, setSelected] = useState(new Set());
-  const [times, setTimes] = useState({});
-  const [statuses, setStatuses] = useState({});
-  const [gcsPath, setGcsPath] = useState('');
-  const [logOutput, setLogOutput] = useState('');
+  const [step, setStep] = usePersistedState('cT.step', 1);
+  const [jobId, setJobId] = usePersistedState('cT.jobId', '');
+  const [templateName, setTemplateName] = usePersistedState('cT.templateName', '');
+  const [userId, setUserId] = usePersistedState('cT.userId', '');
+  const [envId, setEnvId] = usePersistedState('cT.envId', '');
+  const [podName, setPodName] = usePersistedState('cT.podName', '');
+  const [dbName, setDbName] = usePersistedState('cT.dbName', '');
+  const [collections, setCollections] = usePersistedState('cT.collections', []);
+  const [selected, setSelected] = usePersistedState('cT.selected', new Set(), SET_OPTS);
+  const [times, setTimes] = usePersistedState('cT.times', {});
+  const [statuses, setStatuses] = usePersistedState('cT.statuses', {}, STATUSES_OPTS);
+  const [gcsPath, setGcsPath] = usePersistedState('cT.gcsPath', '');
+  const [logOutput, setLogOutput] = usePersistedState('cT.logOutput', '');
   const [loading, setLoading] = useState('');
-  const [jobPaused, setJobPaused] = useState(false);
-  const [podStatus, setPodStatus] = useState('');
+  const [jobPaused, setJobPaused] = usePersistedState('cT.jobPaused', false);
+  const [podStatus, setPodStatus] = usePersistedState('cT.podStatus', '');
 
-  // Inspector panel (always visible, status-driven)
-  const [inspectCollection, setInspectCollection] = useState('');
+  // Inspector panel state — re-derived from persisted data on mount, not persisted directly
+  const [inspectCollection, setInspectCollection] = usePersistedState('cT.inspectCollection', '');
   const [inspectorStatus, setInspectorStatus] = useState('idle'); // 'idle' | 'loading' | 'error' | 'ready'
   const [inspectorReason, setInspectorReason] = useState('');     // 'paused' | 'not-found' | 'other'
 
   // Step 3 sub-step status (pause + create run sequentially under one button)
-  const [pauseSub, setPauseSub] = useState(INITIAL_SUB);
-  const [createSub, setCreateSub] = useState(INITIAL_SUB);
+  const [pauseSub, setPauseSub] = usePersistedState('cT.pauseSub', INITIAL_SUB, SUB_OPTS);
+  const [createSub, setCreateSub] = usePersistedState('cT.createSub', INITIAL_SUB, SUB_OPTS);
 
   // Resume flow state for paused jobs
   const [resumeState, setResumeState] = useState('idle'); // 'idle' | 'resuming' | 'success' | 'error'
@@ -110,6 +131,18 @@ export default function CreateTemplate({ bearerToken = "" }) {
     }, 1000);
     return () => clearInterval(id);
   }, [resumeState]);
+
+  // On mount, re-derive transient inspector state from persisted data
+  // so a refresh lands in the same visual state as before.
+  useEffect(() => {
+    if (jobPaused) {
+      setInspectorStatus('error');
+      setInspectorReason('paused');
+    } else if (dbName && collections.length > 0) {
+      setInspectorStatus('ready');
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const stepsRef = useRef({});
 
