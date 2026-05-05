@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
+import { usePersistedState, SET_OPTS } from '../../hooks/usePersistedState';
 import { api, AuthError } from '../../api';
 import Banner from '../Banner';
 
@@ -45,23 +46,25 @@ const SOURCE_BADGE = {
 };
 
 export default function CreateConfig({ bearerToken, onTokenExpired, onNavigate, editConfigId, cachedConfigs = [], refreshConfigs, markConfigsStale, envConfig }) {
-  const [mode, setMode] = useState('create'); // 'create' | 'edit'
-  const [configId, setConfigId] = useState(editConfigId || '');
-  const [templateName, setTemplateName] = useState('');
-  const [jobId, setJobId] = useState('');
-  const [internal, setInternal] = useState(true);
-  const [isPublic, setIsPublic] = useState(false);
+  const [mode, setMode] = usePersistedState('cC.mode', 'create'); // 'create' | 'edit'
+  const [configId, setConfigId] = usePersistedState('cC.configId', editConfigId || '');
+  const [templateName, setTemplateName] = usePersistedState('cC.templateName', '');
+  const [jobId, setJobId] = usePersistedState('cC.jobId', '');
+  const [internal, setInternal] = usePersistedState('cC.internal', true);
+  const [isPublic, setIsPublic] = usePersistedState('cC.isPublic', false);
 
-  const [variables, setVariables] = useState([]);
-  const [selected, setSelected] = useState(new Set());
-  const [filter, setFilter] = useState('');
+  const [variables, setVariables] = usePersistedState('cC.variables', []);
+  const [selected, setSelected] = usePersistedState('cC.selected', new Set(), SET_OPTS);
+  const [filter, setFilter] = usePersistedState('cC.filter', '');
+  // Existing `config` blob (contains the generated summary). Preserved on update so we don't wipe it.
+  const [existingConfig, setExistingConfig] = usePersistedState('cC.existingConfig', {});
 
   const [loading, setLoading] = useState('');
-  const [loadExistingInput, setLoadExistingInput] = useState('');
+  const [loadExistingInput, setLoadExistingInput] = usePersistedState('cC.loadExistingInput', '');
   const [loadStatus, setLoadStatus] = useState(null);
   const [fetchStatus, setFetchStatus] = useState(null);
   const [submitStatus, setSubmitStatus] = useState(null);
-  const [result, setResult] = useState(null);
+  const [result, setResult] = usePersistedState('cC.result', null);
 
   const listRef = useRef(null);
 
@@ -113,6 +116,7 @@ export default function CreateConfig({ bearerToken, onTokenExpired, onNavigate, 
       setJobId(data.summary_source_job_id || '');
       setInternal(data.internal ?? true);
       setIsPublic(data.public ?? false);
+      setExistingConfig(data.config && typeof data.config === 'object' ? data.config : {});
 
       const envConfig = data.default_env_config || {};
       const vars = Object.entries(envConfig).map(([key, value]) => ({
@@ -142,6 +146,7 @@ export default function CreateConfig({ bearerToken, onTokenExpired, onNavigate, 
     setIsPublic(false);
     setVariables([]);
     setSelected(new Set());
+    setExistingConfig({});
     setLoadStatus(null);
     setFetchStatus(null);
     setSubmitStatus(null);
@@ -225,7 +230,7 @@ export default function CreateConfig({ bearerToken, onTokenExpired, onNavigate, 
         data = await api.updateCategoryConfig({
           config_id: configId,
           template_name: templateName,
-          config: {},
+          config: existingConfig,
           default_env_config: defaultEnvConfig,
           summary_source_job_id: jobId,
           internal,

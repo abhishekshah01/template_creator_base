@@ -1,23 +1,24 @@
 import { useState, useRef } from 'react';
 import { api, AuthError } from '../api';
+import { usePersistedState, SET_OPTS } from '../hooks/usePersistedState';
 import { CheckCircle } from './Icons';
 
 export default function UpdateCategory({ bearerToken, onTokenExpired }) {
-  const [jobId, setJobId] = useState('');
-  const [templateName, setTemplateName] = useState('');
-  const [internal, setInternal] = useState(true);
-  const [isPublic, setIsPublic] = useState(false);
+  const [jobId, setJobId] = usePersistedState('uC.jobId', '');
+  const [templateName, setTemplateName] = usePersistedState('uC.templateName', '');
+  const [internal, setInternal] = usePersistedState('uC.internal', true);
+  const [isPublic, setIsPublic] = usePersistedState('uC.isPublic', false);
 
   // Each entry: { key, value, originalValue, source }
   // source: 'envcore' | 'modified' | 'manual'
-  const [variables, setVariables] = useState([]);
-  const [selected, setSelected] = useState(new Set());
-  const [filter, setFilter] = useState('');
+  const [variables, setVariables] = usePersistedState('uC.variables', []);
+  const [selected, setSelected] = usePersistedState('uC.selected', new Set(), SET_OPTS);
+  const [filter, setFilter] = usePersistedState('uC.filter', '');
 
   const [loading, setLoading] = useState('');
   const [fetchStatus, setFetchStatus] = useState(null);
   const [submitStatus, setSubmitStatus] = useState(null);
-  const [result, setResult] = useState(null);
+  const [result, setResult] = usePersistedState('uC.result', null);
 
   const listRef = useRef(null);
 

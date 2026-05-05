@@ -1,12 +1,13 @@
 import { useState } from 'react';
 import { api, AuthError } from '../api';
+import { usePersistedState } from '../hooks/usePersistedState';
 import Banner from './Banner';
 
 export default function TemplateSummary({ bearerToken, onTokenExpired }) {
-  const [templateName, setTemplateName] = useState('');
+  const [templateName, setTemplateName] = usePersistedState('tS.templateName', '');
   const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState(null);
-  const [result, setResult] = useState(null);
+  const [result, setResult] = usePersistedState('tS.result', null);
 
   async function generateSummary() {
     if (!templateName.trim()) { setStatus({ message: 'Please enter a template name.', type: 'error' }); return; }

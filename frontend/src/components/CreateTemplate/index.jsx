@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { api } from '../../api';
-import { usePersistedState } from '../../hooks/usePersistedState';
+import { usePersistedState, SET_OPTS } from '../../hooks/usePersistedState';
+import { useConfirm } from '../../hooks/useConfirm';
 import StepCard from './StepCard';
 import StatusBar from './StatusBar';
 import ProgressBar from './ProgressBar';
@@ -29,11 +30,6 @@ function collectionInfo(name) {
 }
 
 const INITIAL_SUB = { status: 'idle', message: '', time: '' };
-
-const SET_OPTS = {
-  serialize: (s) => JSON.stringify([...s]),
-  deserialize: (s) => new Set(JSON.parse(s)),
-};
 
 const SUB_OPTS = {
   sanitize: (sub) => (sub && sub.status === 'loading' ? INITIAL_SUB : sub),
@@ -112,6 +108,8 @@ export default function CreateTemplate({ bearerToken = "" }) {
   const [pauseSub, setPauseSub] = usePersistedState('cT.pauseSub', INITIAL_SUB, SUB_OPTS);
   const [createSub, setCreateSub] = usePersistedState('cT.createSub', INITIAL_SUB, SUB_OPTS);
 
+  const { confirm, dialog: confirmDialog } = useConfirm();
+
   // Resume flow state for paused jobs
   const [resumeState, setResumeState] = useState('idle'); // 'idle' | 'resuming' | 'success' | 'error'
   const [resumeError, setResumeError] = useState('');
@@ -160,8 +158,17 @@ export default function CreateTemplate({ bearerToken = "" }) {
     scrollToStep(n + 1);
   }
 
-  function reset() {
-    if (step > 1 && !confirm('Reset the entire flow? All progress will be lost.')) return;
+  async function reset() {
+    if (step > 1) {
+      const ok = await confirm({
+        title: 'Reset workflow?',
+        description: "All progress in this flow will be lost. You'll need to start again from Step 1.",
+        confirmLabel: 'Reset',
+        cancelLabel: 'Cancel',
+        variant: 'danger',
+      });
+      if (!ok) return;
+    }
     setStep(1); setJobId(''); setTemplateName(''); setUserId(''); setEnvId('');
     setPodName(''); setDbName(''); setCollections([]); setSelected(new Set());
     setTimes({}); setStatuses({}); setGcsPath(''); setLogOutput(''); setLoading('');
@@ -254,7 +261,15 @@ export default function CreateTemplate({ bearerToken = "" }) {
   async function deleteSelected() {
     const toDelete = [...selected];
     if (toDelete.length === 0) { skipDelete(); return; }
-    if (!confirm(`Delete ${toDelete.length} collection(s)?\n\n${toDelete.join('\n')}\n\nThis cannot be undone.`)) return;
+    const ok = await confirm({
+      title: `Delete ${toDelete.length} collection${toDelete.length > 1 ? 's' : ''}?`,
+      description: `These collections will be permanently dropped from "${dbName}". This cannot be undone.`,
+      details: toDelete,
+      confirmLabel: 'Delete',
+      cancelLabel: 'Cancel',
+      variant: 'danger',
+    });
+    if (!ok) return;
 
     setLoading('delete');
     setStatusFor(2, `Deleting ${toDelete.length} collection(s)...`, 'loading');
@@ -443,7 +458,7 @@ export default function CreateTemplate({ bearerToken = "" }) {
                 ? 'Environment is ready. Continuing...'
                 : isError
                   ? `Resume failed: ${resumeError}`
-                  : 'This job is paused. Click Resume Job to wake the environment.';
+                  : 'This job is paused. Click Resume Job to wake the environment — takes ~30–60s.';
             return (
               <Banner
                 variant={variant}
@@ -616,6 +631,7 @@ export default function CreateTemplate({ bearerToken = "" }) {
     </div>
 
     </div>
+    {confirmDialog}
     </>
   );
 }

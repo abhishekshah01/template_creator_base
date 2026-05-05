@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { usePersistedState } from '../../hooks/usePersistedState';
 import Banner from '../Banner';
 
 // --- Helpers ---
@@ -69,11 +70,11 @@ export default function AllConfigs({ onNavigate, bearerToken, onTokenExpired, ca
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [isAuthError, setIsAuthError] = useState(false);
-  const [search, setSearch] = useState('');
-  const [tab, setTab] = useState('all');
-  const [sortBy, setSortBy] = useState('newest');
+  const [search, setSearch] = usePersistedState('aC.search', '');
+  const [tab, setTab] = usePersistedState('aC.tab', 'all');
+  const [sortBy, setSortBy] = usePersistedState('aC.sortBy', 'newest');
   const [showSortMenu, setShowSortMenu] = useState(false);
-  const [hasSummaryFilter, setHasSummaryFilter] = useState(false);
+  const [hasSummaryFilter, setHasSummaryFilter] = usePersistedState('aC.hasSummaryFilter', false);
   const [showLabelMenu, setShowLabelMenu] = useState(false);
 
   const configs = cachedConfigs;

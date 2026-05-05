@@ -1,5 +1,10 @@
 import { useEffect, useState } from 'react';
 
+export const SET_OPTS = {
+  serialize: (s) => JSON.stringify([...s]),
+  deserialize: (s) => new Set(JSON.parse(s)),
+};
+
 export function usePersistedState(key, initial, options = {}) {
   const { serialize = JSON.stringify, deserialize = JSON.parse, sanitize } = options;
 
