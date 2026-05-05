@@ -184,12 +184,36 @@ export default function CreateTemplate({ bearerToken = "" }) {
     return 'disabled';
   }
 
+  function resetStep3Only() {
+    setPauseSub(INITIAL_SUB);
+    setCreateSub(INITIAL_SUB);
+    setGcsPath('');
+    setLogOutput('');
+    setStatuses(prev => { const { 3: _3, ...rest } = prev; return rest; });
+    setTimes(prev => { const { 3: _3, ...rest } = prev; return rest; });
+  }
+
+  function resetDownstream() {
+    setCollections([]);
+    setSelected(new Set());
+    setDbName('');
+    setInspectCollection('');
+    resetStep3Only();
+    setStatuses(prev => { const { 2: _2, ...rest } = prev; return rest; });
+    setTimes(prev => { const { 2: _2, ...rest } = prev; return rest; });
+    setResumeState('idle');
+    setResumeError('');
+  }
+
   async function fetchJob() {
     if (!jobId.trim()) { setStatusFor(1, 'Please enter a Job ID', 'error'); return; }
     if (!templateName.trim()) { setStatusFor(1, 'Please enter a Template Name', 'error'); return; }
     if (!/^[a-zA-Z0-9_-]+$/.test(templateName)) { setStatusFor(1, 'Template name: only letters, numbers, hyphens, underscores', 'error'); return; }
 
     setLoading('fetch');
+    setStep(1);
+    setTimes(prev => { const { 1: _1, ...rest } = prev; return rest; });
+    resetDownstream();
     setJobPaused(false);
     setUserId('');
     setEnvId('');
@@ -271,6 +295,7 @@ export default function CreateTemplate({ bearerToken = "" }) {
     });
     if (!ok) return;
 
+    resetStep3Only();
     setLoading('delete');
     setStatusFor(2, `Deleting ${toDelete.length} collection(s)...`, 'loading');
     try {
@@ -291,6 +316,7 @@ export default function CreateTemplate({ bearerToken = "" }) {
   }
 
   function skipDelete() {
+    resetStep3Only();
     setStatusFor(2, 'Skipped collection cleanup', 'info');
     completeStep(2);
   }
