@@ -92,8 +92,24 @@ export default function CreateTemplate({ bearerToken = "" }) {
   const [createSub, setCreateSub] = useState(INITIAL_SUB);
 
   // Resume flow state for paused jobs
-  const [resumeState, setResumeState] = useState('idle'); // 'idle' | 'restarting' | 'polling' | 'error'
+  const [resumeState, setResumeState] = useState('idle'); // 'idle' | 'resuming' | 'success' | 'error'
   const [resumeError, setResumeError] = useState('');
+  const [resumeElapsed, setResumeElapsed] = useState(0);
+  const resumeStartRef = useRef(null);
+
+  // Tick a 1s counter for the entire active resume window (click → success/error).
+  useEffect(() => {
+    if (resumeState !== 'resuming') {
+      resumeStartRef.current = null;
+      setResumeElapsed(0);
+      return;
+    }
+    if (!resumeStartRef.current) resumeStartRef.current = Date.now();
+    const id = setInterval(() => {
+      setResumeElapsed(Math.floor((Date.now() - resumeStartRef.current) / 1000));
+    }, 1000);
+    return () => clearInterval(id);
+  }, [resumeState]);
 
   const stepsRef = useRef({});
 
@@ -119,7 +135,7 @@ export default function CreateTemplate({ bearerToken = "" }) {
     setJobPaused(false); setPodStatus('');
     setInspectorStatus('idle'); setInspectorReason('');
     setPauseSub(INITIAL_SUB); setCreateSub(INITIAL_SUB);
-    setResumeState('idle'); setResumeError('');
+    setResumeState('idle'); setResumeError(''); setResumeElapsed(0);
   }
 
   function stepStatus(n) {
@@ -248,8 +264,8 @@ export default function CreateTemplate({ bearerToken = "" }) {
   }
 
   async function resumeJob() {
-    if (!jobId || resumeState === 'restarting' || resumeState === 'polling') return;
-    setResumeState('restarting');
+    if (!jobId || resumeState === 'resuming') return;
+    setResumeState('resuming');
     setResumeError('');
     try {
       await api.restartJob(jobId, bearerToken);
@@ -259,7 +275,6 @@ export default function CreateTemplate({ bearerToken = "" }) {
       return;
     }
 
-    setResumeState('polling');
     const startTime = Date.now();
     const MAX_WAIT_MS = 90_000;
     const POLL_INTERVAL_MS = 3000;
@@ -275,9 +290,13 @@ export default function CreateTemplate({ bearerToken = "" }) {
       try {
         const info = await api.getJobInfo(jobId, bearerToken);
         if (!info.is_paused) {
-          setResumeState('idle');
-          setJobPaused(false);
-          fetchJob();
+          setResumeState('success');
+          setTimeout(() => {
+            if (jobId !== startingJobId) return;
+            setResumeState('idle');
+            setJobPaused(false);
+            fetchJob();
+          }, 1200);
           return;
         }
       } catch {
@@ -381,24 +400,27 @@ export default function CreateTemplate({ bearerToken = "" }) {
             </button>
           </div>
           {jobPaused && (() => {
-            const isWorking = resumeState === 'restarting' || resumeState === 'polling';
-            const message = resumeState === 'restarting'
-              ? 'Sending wake-up signal to the environment...'
-              : resumeState === 'polling'
-                ? 'Waking environment... this can take 30–60s.'
-                : resumeState === 'error'
+            const isResuming = resumeState === 'resuming';
+            const isSuccess = resumeState === 'success';
+            const isError = resumeState === 'error';
+            const variant = isSuccess ? 'success' : isError ? 'critical' : isResuming ? 'upsell' : 'warning';
+            const message = isResuming
+              ? `Resuming environment... ${resumeElapsed}s elapsed.`
+              : isSuccess
+                ? 'Environment is ready. Continuing...'
+                : isError
                   ? `Resume failed: ${resumeError}`
-                  : "This job's environment is asleep. Resume it to continue.";
+                  : 'This job is paused. Click Resume Job to wake the environment.';
             return (
               <Banner
-                variant={resumeState === 'error' ? 'critical' : 'warning'}
+                variant={variant}
                 className="mb-3"
-                action={
-                  <button onClick={resumeJob} disabled={isWorking} className={btnDefault} data-testid="resume-job-btn">
-                    {isWorking && <div className={spinner} />}
-                    {isWorking ? 'Resuming...' : resumeState === 'error' ? 'Retry' : 'Resume Job'}
+                action={isSuccess ? null : (
+                  <button onClick={resumeJob} disabled={isResuming} className={btnDefault} data-testid="resume-job-btn">
+                    {isResuming && <div className={spinner} />}
+                    {isResuming ? 'Resuming...' : isError ? 'Retry' : 'Resume Job'}
                   </button>
-                }
+                )}
               >
                 {message}
               </Banner>
