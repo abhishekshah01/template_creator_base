@@ -27,6 +27,43 @@ function collectionInfo(name) {
   return { caution, message };
 }
 
+const INITIAL_SUB = { status: 'idle', message: '', time: '' };
+
+function SubStepRow({ label, sub }) {
+  const { status, message, time } = sub;
+  const labelColor = status === 'idle' ? '#8b949e' : '#e6edf3';
+  let icon;
+  if (status === 'loading') {
+    icon = <div className="w-3.5 h-3.5 border-2 border-[#30363d] border-t-[#58a6ff] rounded-full animate-spin" />;
+  } else if (status === 'success') {
+    icon = (
+      <svg className="w-4 h-4" viewBox="0 0 16 16" fill="#3fb950">
+        <path d="M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0Z" />
+      </svg>
+    );
+  } else if (status === 'error') {
+    icon = (
+      <svg className="w-4 h-4" viewBox="0 0 16 16" fill="#f85149">
+        <path d="M3.72 3.72a.75.75 0 0 1 1.06 0L8 6.94l3.22-3.22a.749.749 0 0 1 1.275.326.749.749 0 0 1-.215.734L9.06 8l3.22 3.22a.749.749 0 0 1-.326 1.275.749.749 0 0 1-.734-.215L8 9.06l-3.22 3.22a.751.751 0 0 1-1.042-.018.751.751 0 0 1-.018-1.042L6.94 8 3.72 4.78a.75.75 0 0 1 0-1.06Z" />
+      </svg>
+    );
+  } else {
+    icon = <div className="w-3 h-3 rounded-full border border-[#484f58]" />;
+  }
+  return (
+    <div className="flex items-start gap-3 py-2">
+      <div className="w-4 h-4 flex items-center justify-center shrink-0 mt-[2px]">{icon}</div>
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-2">
+          <span className="text-[14px] font-medium" style={{ color: labelColor }}>{label}</span>
+          {time && <span className="text-[11px] text-[#484f58] font-mono">{time}</span>}
+        </div>
+        {message && <div className="text-[12px] text-[#8b949e] mt-0.5">{message}</div>}
+      </div>
+    </div>
+  );
+}
+
 export default function CreateTemplate({ bearerToken = "" }) {
   const [step, setStep] = useState(1);
   const [jobId, setJobId] = useState('');
@@ -49,6 +86,14 @@ export default function CreateTemplate({ bearerToken = "" }) {
   const [inspectCollection, setInspectCollection] = useState('');
   const [inspectorStatus, setInspectorStatus] = useState('idle'); // 'idle' | 'loading' | 'error' | 'ready'
   const [inspectorReason, setInspectorReason] = useState('');     // 'paused' | 'not-found' | 'other'
+
+  // Step 3 sub-step status (pause + create run sequentially under one button)
+  const [pauseSub, setPauseSub] = useState(INITIAL_SUB);
+  const [createSub, setCreateSub] = useState(INITIAL_SUB);
+
+  // Resume flow state for paused jobs
+  const [resumeState, setResumeState] = useState('idle'); // 'idle' | 'restarting' | 'polling' | 'error'
+  const [resumeError, setResumeError] = useState('');
 
   const stepsRef = useRef({});
 
@@ -73,6 +118,8 @@ export default function CreateTemplate({ bearerToken = "" }) {
     setTimes({}); setStatuses({}); setGcsPath(''); setLogOutput(''); setLoading('');
     setJobPaused(false); setPodStatus('');
     setInspectorStatus('idle'); setInspectorReason('');
+    setPauseSub(INITIAL_SUB); setCreateSub(INITIAL_SUB);
+    setResumeState('idle'); setResumeError('');
   }
 
   function stepStatus(n) {
@@ -200,37 +247,82 @@ export default function CreateTemplate({ bearerToken = "" }) {
     setSelected(checked ? new Set(collections.map(c => c.name)) : new Set());
   }
 
-  async function pauseJob() {
-    setLoading('pause');
-    setStatusFor(3, 'Pausing job and triggering restic backup...', 'loading');
+  async function resumeJob() {
+    if (!jobId || resumeState === 'restarting' || resumeState === 'polling') return;
+    setResumeState('restarting');
+    setResumeError('');
     try {
-      const data = await api.pauseJob(jobId);
-      setStatusFor(3, `Job paused: ${data.message || data.status}`, 'success');
-      completeStep(3);
+      await api.restartJob(jobId, bearerToken);
     } catch (e) {
-      setStatusFor(3, e.message, 'error');
-    } finally {
-      setLoading('');
+      setResumeState('error');
+      setResumeError(e.message);
+      return;
     }
+
+    setResumeState('polling');
+    const startTime = Date.now();
+    const MAX_WAIT_MS = 90_000;
+    const POLL_INTERVAL_MS = 3000;
+    const startingJobId = jobId;
+
+    const pollOnce = async () => {
+      if (jobId !== startingJobId) return;
+      if (Date.now() - startTime > MAX_WAIT_MS) {
+        setResumeState('error');
+        setResumeError('Environment did not become ready within 90 seconds. Try again.');
+        return;
+      }
+      try {
+        const info = await api.getJobInfo(jobId, bearerToken);
+        if (!info.is_paused) {
+          setResumeState('idle');
+          setJobPaused(false);
+          fetchJob();
+          return;
+        }
+      } catch {
+        // transient error during polling — keep going until timeout
+      }
+      setTimeout(pollOnce, POLL_INTERVAL_MS);
+    };
+    setTimeout(pollOnce, POLL_INTERVAL_MS);
   }
 
-  async function createTemplate() {
-    if (!userId) { setStatusFor(4, 'User ID not found.', 'error'); return; }
+  async function runCreateTemplate() {
+    if (!userId) {
+      setCreateSub({ status: 'error', message: 'User ID not found.', time: now() });
+      return;
+    }
     setLoading('create');
-    setStatusFor(4, 'Creating template (this may take a few minutes)...', 'loading');
+
+    if (pauseSub.status !== 'success') {
+      setPauseSub({ status: 'loading', message: 'Pausing job and triggering restic backup...', time: '' });
+      try {
+        const data = await api.pauseJob(jobId);
+        setPauseSub({ status: 'success', message: `Job paused: ${data.message || data.status}`, time: now() });
+      } catch (e) {
+        setPauseSub({ status: 'error', message: e.message, time: now() });
+        setLoading('');
+        return;
+      }
+    }
+
+    setCreateSub({ status: 'loading', message: 'Creating template (this may take a few minutes)...', time: '' });
+    setGcsPath('');
+    setLogOutput('');
     try {
       const data = await api.createTemplate(jobId, userId, templateName);
       if (data.output) setLogOutput(data.output);
       if (data.status === 'success') {
         setGcsPath(data.gcs_path);
-        setStatusFor(4, 'Template created successfully!', 'success');
-        completeStep(4);
+        setCreateSub({ status: 'success', message: 'Template created successfully!', time: now() });
+        completeStep(3);
       } else {
         setLogOutput(data.error || data.output);
-        throw new Error('Template creation failed -- check log output');
+        setCreateSub({ status: 'error', message: 'Template creation failed -- check log output', time: now() });
       }
     } catch (e) {
-      setStatusFor(4, e.message, 'error');
+      setCreateSub({ status: 'error', message: e.message, time: now() });
     } finally {
       setLoading('');
     }
@@ -264,7 +356,7 @@ export default function CreateTemplate({ bearerToken = "" }) {
         Automate template creation from an ephemeral job environment. Required fields are marked with an asterisk (*).
       </p>
 
-      <ProgressBar currentStep={step} onStepClick={(n) => scrollToStep(n)} />
+      <ProgressBar currentStep={step} totalSteps={3} onStepClick={(n) => scrollToStep(n)} />
 
       {/* Step 1 */}
       <div ref={el => stepsRef.current[1] = el}>
@@ -288,11 +380,30 @@ export default function CreateTemplate({ bearerToken = "" }) {
               Fetch Job Info
             </button>
           </div>
-          {jobPaused && (
-            <Banner variant="warning" className="mb-3">
-              Job is paused (POD_NOT_FOUND). Resume first, then retry.
-            </Banner>
-          )}
+          {jobPaused && (() => {
+            const isWorking = resumeState === 'restarting' || resumeState === 'polling';
+            const message = resumeState === 'restarting'
+              ? 'Sending wake-up signal to the environment...'
+              : resumeState === 'polling'
+                ? 'Waking environment... this can take 30–60s.'
+                : resumeState === 'error'
+                  ? `Resume failed: ${resumeError}`
+                  : "This job's environment is asleep. Resume it to continue.";
+            return (
+              <Banner
+                variant={resumeState === 'error' ? 'critical' : 'warning'}
+                className="mb-3"
+                action={
+                  <button onClick={resumeJob} disabled={isWorking} className={btnDefault} data-testid="resume-job-btn">
+                    {isWorking && <div className={spinner} />}
+                    {isWorking ? 'Resuming...' : resumeState === 'error' ? 'Retry' : 'Resume Job'}
+                  </button>
+                }
+              >
+                {message}
+              </Banner>
+            );
+          })()}
           <StatusBar {...(statuses[1] || {})} />
           {(userId || envId || podName) && (
             <div className="flex gap-2 mt-3 flex-wrap">
@@ -398,28 +509,24 @@ export default function CreateTemplate({ bearerToken = "" }) {
 
       {/* Step 3 */}
       <div ref={el => stepsRef.current[3] = el}>
-        <StepCard number={3} title="Pause Job" time={times[3]} status={stepStatus(3)} hasError={statuses[3]?.type === 'error'}>
-          <Banner variant="warning" className="mb-3">
-            Do NOT refresh the app preview before pausing — it re-seeds the database.
+        <StepCard number={3} title="Create Template" time={times[3]} status={stepStatus(3)}
+          hasError={pauseSub.status === 'error' || createSub.status === 'error'}>
+          <Banner variant="info" className="mb-3">
+            Don't refresh the app preview before clicking Create — it re-seeds the database.
           </Banner>
-          <p className={`${helperCls} mb-3`}>Creates a restic snapshot of the cleaned state.</p>
-          <button onClick={pauseJob} disabled={loading === 'pause'} className={btnDefault} data-testid="pause-job-btn">
-            {loading === 'pause' && <div className={spinner} />}
-            {loading === 'pause' ? 'Working...' : 'Pause Job'}
-          </button>
-          <StatusBar {...(statuses[3] || {})} />
-        </StepCard>
-      </div>
-
-      {/* Step 4 */}
-      <div ref={el => stepsRef.current[4] = el}>
-        <StepCard number={4} title="Create Template" time={times[4]} status={stepStatus(4)} hasError={statuses[4]?.type === 'error'}>
-          <p className={`${helperCls} mb-3`}>Runs the creation script on the dev VM. Sanitizes .env and stores in GCS.</p>
-          <button onClick={createTemplate} disabled={loading === 'create'} className={btnPrimary} data-testid="create-template-btn">
+          <p className={`${helperCls} mb-3`}>Pauses the job (restic snapshot) and runs the creation script on the dev VM. Sanitizes .env and stores in GCS.</p>
+          <button onClick={runCreateTemplate} disabled={loading === 'create'} className={btnPrimary} data-testid="create-template-btn">
             {loading === 'create' && <div className={spinner} />}
             {loading === 'create' ? 'Working...' : 'Create Template'}
           </button>
-          <StatusBar {...(statuses[4] || {})} />
+
+          {(pauseSub.status !== 'idle' || createSub.status !== 'idle') && (
+            <div className="mt-4 border border-[#30363d] rounded-md bg-[#0d1117] px-3 divide-y divide-[#21262d]">
+              <SubStepRow label="Pause job" sub={pauseSub} />
+              <SubStepRow label="Create template" sub={createSub} />
+            </div>
+          )}
+
           {logOutput && (
             <pre className="mt-3 bg-[#0d1117] border border-[#30363d] rounded-md p-3 text-[11px] text-[#8b949e] max-h-[180px] overflow-y-auto whitespace-pre-wrap font-mono">
               {logOutput}

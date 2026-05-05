@@ -497,6 +497,43 @@ async def run_mongosh(req: MongoshRequest):
         return {"output": str(e), "error": True}
 
 
+@app.post("/api/restart-job")
+async def restart_job(req: JobRequest):
+    """Wake a paused job environment via app-service restart-environment."""
+    if not config.API_URL:
+        raise HTTPException(503, "API_URL not configured for this environment.")
+
+    headers = {}
+    if req.bearer_token:
+        headers["Authorization"] = f"Bearer {req.bearer_token}"
+
+    url = f"{config.API_URL}/jobs/v0/{req.job_id}/restart-environment"
+    try:
+        resp = await _client.post(url, headers=headers, timeout=180)
+    except httpx.ReadTimeout:
+        # Restart kicked off server-side but our connection idled out.
+        # Frontend will poll for pod readiness, so treat as accepted.
+        return {"job_id": req.job_id, "status": "accepted", "message": "Restart initiated; awaiting pod readiness."}
+    except Exception as e:
+        raise HTTPException(502, f"Failed to reach restart API: {repr(e)}")
+
+    if resp.status_code in (401, 403):
+        raise HTTPException(resp.status_code, "Unauthorized — check your API token.")
+    if resp.status_code >= 400:
+        raise HTTPException(resp.status_code, f"Restart failed: {resp.text[:300]}")
+
+    try:
+        data = resp.json()
+    except Exception:
+        data = {"message": resp.text}
+
+    return {
+        "job_id": req.job_id,
+        "status": data.get("status", "ok"),
+        "message": data.get("message", ""),
+    }
+
+
 @app.post("/api/pause-job")
 async def pause_job(req: JobRequest):
     """Pause a job to trigger restic backup."""

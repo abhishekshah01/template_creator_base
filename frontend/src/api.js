@@ -46,6 +46,7 @@ export const api = {
   deleteCollections: (jobId, dbName, collections) =>
     request('/delete-collections', { job_id: jobId, db_name: dbName, collections }),
   pauseJob: (jobId) => request('/pause-job', { job_id: jobId }),
+  restartJob: (jobId, bearerToken) => request('/restart-job', { job_id: jobId, bearer_token: bearerToken || '' }),
   createTemplate: (jobId, userId, templateName) =>
     request('/create-template', { job_id: jobId, user_id: userId, template_name: templateName }),
   getEnvVariables: (jobId) => request('/env-variables', { job_id: jobId }),
