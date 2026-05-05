@@ -76,6 +76,8 @@ export default function AllConfigs({ onNavigate, bearerToken, onTokenExpired, ca
   const [showSortMenu, setShowSortMenu] = useState(false);
   const [hasSummaryFilter, setHasSummaryFilter] = usePersistedState('aC.hasSummaryFilter', false);
   const [showLabelMenu, setShowLabelMenu] = useState(false);
+  const [currentPage, setCurrentPage] = usePersistedState('aC.page', 1);
+  const [pageSize, setPageSize] = usePersistedState('aC.pageSize', 25);
 
   const configs = cachedConfigs;
 
@@ -162,6 +164,30 @@ export default function AllConfigs({ onNavigate, bearerToken, onTokenExpired, ca
   const allCount = configs.length;
   const internalCount = configs.filter(c => c.internal).length;
   const publicCount = configs.filter(c => c.public).length;
+
+  // Pagination math
+  const PAGE_SIZE_OPTIONS = [10, 25, 50, 100];
+  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
+  const safePage = Math.min(Math.max(1, currentPage), totalPages);
+  const startIdx = (safePage - 1) * pageSize;
+  const endIdx = Math.min(startIdx + pageSize, filtered.length);
+  const paginated = filtered.slice(startIdx, endIdx);
+
+  // Clamp current page when filters shrink the result set
+  useEffect(() => {
+    if (currentPage > totalPages) setCurrentPage(1);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [totalPages]);
+
+  function getPageNumbers(current, total) {
+    if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
+    const pages = [1];
+    if (current > 3) pages.push('…');
+    for (let p = Math.max(2, current - 1); p <= Math.min(total - 1, current + 1); p++) pages.push(p);
+    if (current < total - 2) pages.push('…');
+    pages.push(total);
+    return pages;
+  }
 
   // If env is broken, show clean empty state
   if (envError) {
@@ -354,7 +380,7 @@ export default function AllConfigs({ onNavigate, bearerToken, onTokenExpired, ca
         )}
 
         {/* Config rows — GitHub issue row style */}
-        {!loading && filtered.map(config => {
+        {!loading && paginated.map(config => {
           const envVarCount = Object.keys(config.default_env_config || {}).length;
           const preview = extractSummaryPreview(config.config);
           const hasSummary = !!config.config?.app_summary;
@@ -416,8 +442,49 @@ export default function AllConfigs({ onNavigate, bearerToken, onTokenExpired, ca
       </div>
 
       {!loading && filtered.length > 0 && (
-        <div className="mt-3 text-center text-[12px] text-[#484f58]">
-          Showing {filtered.length} of {allCount} config{allCount !== 1 ? 's' : ''}
+        <div className="mt-4 flex items-center justify-between gap-3 flex-wrap">
+          <div className="text-[12px] text-[#8b949e]">
+            Showing <span className="font-semibold text-[#e6edf3]">{startIdx + 1}–{endIdx}</span> of{' '}
+            <span className="font-semibold text-[#e6edf3]">{filtered.length}</span>
+            {filtered.length !== allCount && <span className="text-[#484f58]"> (filtered from {allCount})</span>}
+          </div>
+
+          {totalPages > 1 && (
+            <div className="flex items-center gap-1">
+              <button
+                onClick={() => setCurrentPage(safePage - 1)}
+                disabled={safePage === 1}
+                className="px-3 py-[5px] text-[14px] text-[#c9d1d9] bg-[#21262d] border border-[#30363d] rounded-md hover:bg-[#30363d] hover:border-[#484f58] disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-[#21262d] disabled:hover:border-[#30363d] transition-colors">
+                Previous
+              </button>
+              {getPageNumbers(safePage, totalPages).map((p, i) => p === '…' ? (
+                <span key={`ellipsis-${i}`} className="px-2 text-[14px] text-[#484f58] select-none">…</span>
+              ) : (
+                <button key={p} onClick={() => setCurrentPage(p)}
+                  className={`min-w-[32px] px-2 py-[5px] text-[14px] rounded-md border transition-colors ${
+                    p === safePage
+                      ? 'bg-[#1f6feb] text-white border-[#1f6feb] font-semibold'
+                      : 'bg-[#21262d] text-[#c9d1d9] border-[#30363d] hover:bg-[#30363d] hover:border-[#484f58]'
+                  }`}>
+                  {p}
+                </button>
+              ))}
+              <button
+                onClick={() => setCurrentPage(safePage + 1)}
+                disabled={safePage === totalPages}
+                className="px-3 py-[5px] text-[14px] text-[#c9d1d9] bg-[#21262d] border border-[#30363d] rounded-md hover:bg-[#30363d] hover:border-[#484f58] disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-[#21262d] disabled:hover:border-[#30363d] transition-colors">
+                Next
+              </button>
+            </div>
+          )}
+
+          <div className="flex items-center gap-2">
+            <span className="text-[12px] text-[#8b949e]">Per page</span>
+            <select value={pageSize} onChange={e => { setPageSize(Number(e.target.value)); setCurrentPage(1); }}
+              className="bg-[#0d1117] border border-[#30363d] text-[#c9d1d9] text-[12px] px-2 py-[3px] rounded-md hover:border-[#484f58] focus:border-[#1f6feb] focus:outline-none cursor-pointer">
+              {PAGE_SIZE_OPTIONS.map(size => <option key={size} value={size}>{size}</option>)}
+            </select>
+          </div>
         </div>
       )}
     </div>
