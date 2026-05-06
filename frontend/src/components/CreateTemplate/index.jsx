@@ -857,13 +857,13 @@ export default function CreateTemplate({ bearerToken = "" }) {
             )}
           <button onClick={skipDelete} className={btnGhost} data-testid="skip-delete-btn">Skip (DB already clean)</button>
           </div>
-          <StatusBar {...(statuses[2] || {})} />
+          <StatusBar {...(statuses[3] || {})} />
         </StepCard>
       </div>
 
-      {/* Step 3 */}
-      <div ref={el => stepsRef.current[3] = el}>
-        <StepCard number={3} title="Create Template" time={times[3]} status={stepStatus(3)}
+      {/* Step 4 — Create Template */}
+      <div ref={el => stepsRef.current[4] = el}>
+        <StepCard number={4} title="Create Template" time={times[4]} status={stepStatus(4)}
           hasError={pauseSub.status === 'error' || createSub.status === 'error'}>
           <Banner variant="info" className="mb-3">
             Don't refresh the app preview before clicking Create — it re-seeds the database.
