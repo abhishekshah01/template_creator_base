@@ -1,15 +1,6 @@
+import { useEffect, useState } from 'react';
 import DotsLoader from './DotsLoader';
-
-export const DEPLOY_PHASE_LABELS = {
-  build: 'Building Package',
-  mongodb_migrate: 'Migrate Database',
-  manage_secrets: 'Export Secrets',
-  deploy: 'Deploy',
-  health_check: 'Run Health Check',
-  transfer_files: 'Transfer Files',
-  switch_traffic: 'Switch Traffic',
-  cleanup_old_deployment: 'Clean Up',
-};
+import { DEPLOY_PHASE_LABELS } from '../constants/deployPhases';
 
 function formatElapsed(seconds) {
   if (seconds == null || seconds < 0) return '';
@@ -18,9 +9,9 @@ function formatElapsed(seconds) {
   return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
 }
 
-function timeAgo(dateStr) {
+function timeAgo(dateStr, nowMs) {
   if (!dateStr) return '';
-  const seconds = Math.floor((Date.now() - new Date(dateStr).getTime()) / 1000);
+  const seconds = Math.floor(((nowMs ?? 0) - new Date(dateStr).getTime()) / 1000);
   if (seconds < 60) return 'just now';
   const minutes = Math.floor(seconds / 60);
   if (minutes < 60) return `${minutes}m ago`;
@@ -108,6 +99,13 @@ function IdleView({ onStart, onSkip }) {
 }
 
 function ProgressView({ steps, isFailed, onRetry, onSkip }) {
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    if (isFailed) return;
+    const id = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(id);
+  }, [isFailed]);
+
   const expected = ['build', 'mongodb_migrate', 'manage_secrets', 'deploy', 'health_check'];
   const stepsByName = Object.fromEntries((steps || []).map(s => [s.name, s]));
   const extras = (steps || []).filter(s => !expected.includes(s.name)).map(s => s.name);
@@ -133,7 +131,7 @@ function ProgressView({ steps, isFailed, onRetry, onSkip }) {
             const start = new Date(step.created_at).getTime();
             const end = (isDone || isFailedRow) && step.updated_at
               ? new Date(step.updated_at).getTime()
-              : Date.now();
+              : now;
             elapsed = formatElapsed(Math.floor((end - start) / 1000));
           }
           return (
@@ -187,6 +185,12 @@ function ProgressView({ steps, isFailed, onRetry, onSkip }) {
 }
 
 function ManageView({ url, deployments, onRedeploy }) {
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const id = setInterval(() => setNow(Date.now()), 30_000);
+    return () => clearInterval(id);
+  }, []);
+
   return (
     <>
       {url && (
@@ -222,7 +226,7 @@ function ManageView({ url, deployments, onRedeploy }) {
                 <div className="flex-1 min-w-0">
                   <div className="text-[#c9d1d9] truncate">Deployment {deployments.length - i}</div>
                   {d.created_at && (
-                    <div className="text-[11px] text-[#8b949e]">{timeAgo(d.created_at)}{d.run_id ? ` · ${String(d.run_id).slice(0, 8)}` : ''}</div>
+                    <div className="text-[11px] text-[#8b949e]">{timeAgo(d.created_at, now)}{d.run_id ? ` · ${String(d.run_id).slice(0, 8)}` : ''}</div>
                   )}
                 </div>
               </div>
