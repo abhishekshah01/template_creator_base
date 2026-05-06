@@ -186,48 +186,83 @@ function ProgressView({ steps, isFailed, onRetry, onSkip }) {
 
 function ManageView({ url, deployments, onRedeploy }) {
   const [now, setNow] = useState(() => Date.now());
+  const [copied, setCopied] = useState(false);
   useEffect(() => {
     const id = setInterval(() => setNow(Date.now()), 30_000);
     return () => clearInterval(id);
   }, []);
 
+  function copyUrl() {
+    if (!url) return;
+    navigator.clipboard.writeText(url).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    }).catch(() => {});
+  }
+
   return (
     <>
+      {/* Top section: preview + URL/actions */}
       {url && (
-        <div className="mb-4">
-          <div className="flex items-center gap-2 mb-2">
-            <span className="inline-flex items-center gap-1.5 text-[12px] px-2 py-[2px] rounded-full font-medium"
+        <div className="flex gap-3 mb-4">
+          <div className="relative w-[160px] h-[110px] rounded-lg overflow-hidden border border-[#30363d] bg-[#0d1117] shrink-0">
+            <iframe src={url} title="App preview"
+              width="1280" height="880"
+              className="border-0 absolute top-0 left-0 pointer-events-none"
+              style={{ transform: 'scale(0.125)', transformOrigin: 'top left' }}
+              sandbox="allow-scripts allow-same-origin allow-forms" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <span className="inline-flex items-center gap-1.5 text-[12px] px-2 py-[2px] rounded-full font-medium mb-2"
               style={{ backgroundColor: 'rgba(35,134,54,0.15)', color: '#3fb950', border: '1px solid rgba(35,134,54,0.3)' }}>
               <span className="w-1.5 h-1.5 rounded-full bg-[#3fb950]" />
               Live
             </span>
+            <div className="flex items-start gap-1.5 mb-2">
+              <a href={url} target="_blank" rel="noopener noreferrer"
+                className="flex-1 font-mono text-[12px] text-[#58a6ff] hover:underline break-all leading-snug">
+                {url}
+              </a>
+              <button onClick={copyUrl} title={copied ? 'Copied!' : 'Copy URL'}
+                className="p-1 rounded text-[#8b949e] hover:text-[#e6edf3] hover:bg-[#30363d] transition-colors shrink-0">
+                {copied ? (
+                  <svg className="w-3.5 h-3.5" viewBox="0 0 16 16" fill="#3fb950"><path d="M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0Z" /></svg>
+                ) : (
+                  <svg className="w-3.5 h-3.5" viewBox="0 0 16 16" fill="currentColor"><path d="M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 0 1 0 1.5h-1.5a.25.25 0 0 0-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 0 0 .25-.25v-1.5a.75.75 0 0 1 1.5 0v1.5A1.75 1.75 0 0 1 9.25 16h-7.5A1.75 1.75 0 0 1 0 14.25Z" /><path d="M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0 1 14.25 11h-7.5A1.75 1.75 0 0 1 5 9.25Zm1.75-.25a.25.25 0 0 0-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 0 0 .25-.25v-7.5a.25.25 0 0 0-.25-.25Z" /></svg>
+                )}
+              </button>
+            </div>
+            <a href={url} target="_blank" rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 px-3 py-[5px] bg-white text-[#0d1117] text-[13px] font-medium rounded-md hover:bg-[#f0f6fc] transition-colors">
+              <svg className="w-3.5 h-3.5" viewBox="0 0 16 16" fill="currentColor">
+                <path d="M3.75 2h3.5a.75.75 0 0 1 0 1.5h-3.5a.25.25 0 0 0-.25.25v8.5c0 .138.112.25.25.25h8.5a.25.25 0 0 0 .25-.25v-3.5a.75.75 0 0 1 1.5 0v3.5A1.75 1.75 0 0 1 12.25 14h-8.5A1.75 1.75 0 0 1 2 12.25v-8.5C2 2.784 2.784 2 3.75 2Zm6.854-1h4.146a.25.25 0 0 1 .25.25v4.146a.25.25 0 0 1-.427.177L13.03 4.03 9.28 7.78a.751.751 0 0 1-1.042-.018.751.751 0 0 1-.018-1.042l3.75-3.75-1.543-1.543A.25.25 0 0 1 10.604 1Z" />
+              </svg>
+              Visit
+            </a>
           </div>
-          <a href={url} target="_blank" rel="noopener noreferrer"
-            className="block font-mono text-[12px] text-[#58a6ff] hover:underline truncate mb-3 bg-[#161b22] border border-[#30363d] rounded-md px-3 py-2">
-            {url}
-          </a>
-          <a href={url} target="_blank" rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 px-3 py-[5px] bg-[#21262d] border border-[#30363d] text-[14px] text-[#c9d1d9] rounded-md hover:bg-[#30363d] hover:border-[#484f58] transition-colors">
-            <svg className="w-3.5 h-3.5" viewBox="0 0 16 16" fill="currentColor">
-              <path d="M3.75 2h3.5a.75.75 0 0 1 0 1.5h-3.5a.25.25 0 0 0-.25.25v8.5c0 .138.112.25.25.25h8.5a.25.25 0 0 0 .25-.25v-3.5a.75.75 0 0 1 1.5 0v3.5A1.75 1.75 0 0 1 12.25 14h-8.5A1.75 1.75 0 0 1 2 12.25v-8.5C2 2.784 2.784 2 3.75 2Zm6.854-1h4.146a.25.25 0 0 1 .25.25v4.146a.25.25 0 0 1-.427.177L13.03 4.03 9.28 7.78a.751.751 0 0 1-1.042-.018.751.751 0 0 1-.018-1.042l3.75-3.75-1.543-1.543A.25.25 0 0 1 10.604 1Z" />
-            </svg>
-            Visit
-          </a>
         </div>
       )}
 
+      {/* Deployments timeline */}
       {(deployments || []).length > 0 && (
-        <div className="mt-5 border-t border-[#30363d] pt-4">
-          <div className="text-[11px] uppercase tracking-wide text-[#8b949e] mb-3 font-semibold">Deployment history</div>
-          <div className="space-y-2.5">
+        <div className="mt-5 border border-[#30363d] rounded-md p-4 bg-[#0d1117]">
+          <div className="mb-3">
+            <div className="text-[14px] font-semibold text-[#e6edf3]">Deployments</div>
+            <div className="text-[12px] text-[#8b949e]">All deployed versions of your app</div>
+          </div>
+          <div className="space-y-3">
             {deployments.slice(0, 10).map((d, i) => (
               <div key={d.id || d.run_id || i} className="flex items-start gap-3 text-[13px]">
-                <div className={`w-2 h-2 rounded-full shrink-0 mt-1.5 ${i === 0 ? 'bg-[#3fb950]' : 'bg-[#484f58]'}`} />
-                <div className="flex-1 min-w-0">
-                  <div className="text-[#c9d1d9] truncate">Deployment {deployments.length - i}</div>
-                  {d.created_at && (
-                    <div className="text-[11px] text-[#8b949e]">{timeAgo(d.created_at, now)}{d.run_id ? ` · ${String(d.run_id).slice(0, 8)}` : ''}</div>
-                  )}
+                <div className="flex flex-col items-center pt-1 shrink-0">
+                  <div className={`w-2.5 h-2.5 rounded-full ${i === 0 ? 'bg-[#3fb950]' : 'bg-[#484f58]'}`} />
+                  {i < deployments.slice(0, 10).length - 1 && <div className="w-px flex-1 bg-[#30363d] mt-1 min-h-[20px]" />}
+                </div>
+                <div className="flex-1 min-w-0 pb-2">
+                  <div className="text-[#e6edf3] font-medium">Deployment {deployments.length - i}</div>
+                  <div className="text-[11px] text-[#8b949e] mt-0.5">
+                    {d.created_at ? timeAgo(d.created_at, now) : 'unknown time'}
+                    {d.run_id && <span className="font-mono ml-2">{String(d.run_id).slice(0, 8)}</span>}
+                  </div>
                 </div>
               </div>
             ))}
@@ -235,10 +270,13 @@ function ManageView({ url, deployments, onRedeploy }) {
         </div>
       )}
 
-      <button onClick={onRedeploy}
-        className="w-full mt-5 px-4 py-2 bg-[#1f6feb] text-white text-[14px] font-medium rounded-md hover:bg-[#388bfd] border border-[#1f6feb]/60 transition-colors">
-        Re-deploy changes
-      </button>
+      {/* Footer actions */}
+      <div className="flex items-center justify-end gap-2 mt-5 pt-4 border-t border-[#30363d]">
+        <button onClick={onRedeploy}
+          className="px-4 py-[6px] bg-white text-[#0d1117] text-[13px] font-semibold rounded-md hover:bg-[#f0f6fc] transition-colors">
+          Re-deploy changes
+        </button>
+      </div>
     </>
   );
 }
