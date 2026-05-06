@@ -244,13 +244,26 @@ export default function CreateTemplate({ bearerToken = "" }) {
     return 'disabled';
   }
 
-  function resetStep3Only() {
+  function resetCreateStep() {
     setPauseSub(INITIAL_SUB);
     setCreateSub(INITIAL_SUB);
     setGcsPath('');
     setLogOutput('');
+    setStatuses(prev => { const { 4: _4, ...rest } = prev; return rest; });
+    setTimes(prev => { const { 4: _4, ...rest } = prev; return rest; });
+  }
+
+  function resetClearStep() {
     setStatuses(prev => { const { 3: _3, ...rest } = prev; return rest; });
     setTimes(prev => { const { 3: _3, ...rest } = prev; return rest; });
+  }
+
+  function resetDeployStep() {
+    setDeployStatus('idle');
+    setDeploySteps([]);
+    setDeployUrl('');
+    setStatuses(prev => { const { 2: _2, ...rest } = prev; return rest; });
+    setTimes(prev => { const { 2: _2, ...rest } = prev; return rest; });
   }
 
   function resetDownstream() {
@@ -258,9 +271,9 @@ export default function CreateTemplate({ bearerToken = "" }) {
     setSelected(new Set());
     setDbName('');
     setInspectCollection('');
-    resetStep3Only();
-    setStatuses(prev => { const { 2: _2, ...rest } = prev; return rest; });
-    setTimes(prev => { const { 2: _2, ...rest } = prev; return rest; });
+    resetDeployStep();
+    resetClearStep();
+    resetCreateStep();
     setResumeState('idle');
     setResumeError('');
   }
