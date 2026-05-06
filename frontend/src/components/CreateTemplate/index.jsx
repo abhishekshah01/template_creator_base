@@ -154,6 +154,42 @@ export default function CreateTemplate({ bearerToken = "" }) {
     return () => clearInterval(id);
   }, [resumeState]);
 
+  // 1s tick while deployment is in progress so the active phase's elapsed time updates live.
+  useEffect(() => {
+    if (deployStatus !== 'deploying') return;
+    const id = setInterval(() => setDeployTick(t => t + 1), 1000);
+    return () => clearInterval(id);
+  }, [deployStatus]);
+
+  // On mount, if a deployment was in progress when we last unmounted, resume it.
+  // Does an immediate sync to seed the UI, then starts the polling loop if still running.
+  useEffect(() => {
+    if (deployStatus !== 'deploying' || !jobId) return;
+    setStatusFor(2, 'Deployment in progress...', 'loading');
+    api.getDeployStatus(jobId, bearerToken).then(data => {
+      setDeploySteps(data.steps || []);
+      if (data.status === 'success') {
+        setDeployUrl(data.deploy_url || '');
+        setDeployStatus('success');
+        setStatusFor(2, 'Deployment complete.', 'success');
+        completeStep(2);
+      } else if (data.status === 'failed') {
+        setDeployStatus('failed');
+        const failedStep = (data.steps || []).find(s => s.status === 'failed');
+        const errMsg = failedStep
+          ? `Failed at "${DEPLOY_PHASE_LABELS[failedStep.name] || failedStep.name}": ${failedStep.error || 'see logs'}`
+          : 'Deployment failed.';
+        setStatusFor(2, errMsg, 'error');
+      } else {
+        startDeployPolling();
+      }
+    }).catch(() => {
+      // If the immediate sync fails, still start polling — could be a transient blip.
+      startDeployPolling();
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // On mount, re-derive transient inspector state from persisted data
   // so a refresh lands in the same visual state as before.
   useEffect(() => {
