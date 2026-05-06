@@ -31,6 +31,24 @@ function collectionInfo(name) {
 
 const INITIAL_SUB = { status: 'idle', message: '', time: '' };
 
+const DEPLOY_PHASE_LABELS = {
+  build: 'Building Package',
+  mongodb_migrate: 'Migrate Database',
+  manage_secrets: 'Export Secrets',
+  deploy: 'Deploy',
+  health_check: 'Run Health Check',
+  transfer_files: 'Transfer Files',
+  switch_traffic: 'Switch Traffic',
+  cleanup_old_deployment: 'Clean Up',
+};
+
+function formatElapsed(seconds) {
+  if (seconds == null || seconds < 0) return '';
+  const m = Math.floor(seconds / 60);
+  const s = Math.floor(seconds % 60);
+  return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+}
+
 const SUB_OPTS = {
   sanitize: (sub) => (sub && sub.status === 'loading' ? INITIAL_SUB : sub),
 };
@@ -104,9 +122,15 @@ export default function CreateTemplate({ bearerToken = "" }) {
   const [inspectorStatus, setInspectorStatus] = useState('idle'); // 'idle' | 'loading' | 'error' | 'ready'
   const [inspectorReason, setInspectorReason] = useState('');     // 'paused' | 'not-found' | 'other'
 
-  // Step 3 sub-step status (pause + create run sequentially under one button)
+  // Step 4 sub-step status (pause + create run sequentially under one button)
   const [pauseSub, setPauseSub] = usePersistedState('cT.pauseSub', INITIAL_SUB, SUB_OPTS);
   const [createSub, setCreateSub] = usePersistedState('cT.createSub', INITIAL_SUB, SUB_OPTS);
+
+  // Step 2 deploy state
+  const [deployStatus, setDeployStatus] = usePersistedState('cT.deployStatus', 'idle'); // 'idle' | 'deploying' | 'success' | 'failed' | 'skipped'
+  const [deploySteps, setDeploySteps] = useState([]); // transient (live timestamps)
+  const [deployUrl, setDeployUrl] = usePersistedState('cT.deployUrl', '');
+  const [, setDeployTick] = useState(0); // forces re-render every 1s while deploying for live elapsed
 
   const { confirm, dialog: confirmDialog } = useConfirm();
 
