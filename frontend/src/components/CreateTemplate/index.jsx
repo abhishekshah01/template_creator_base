@@ -903,44 +903,26 @@ export default function CreateTemplate({ bearerToken = "" }) {
       </div>
     </div>
 
-    {/* Right: tabbed side panel — Inspector + Deployments */}
+    {/* Right: side panel — Inspector by default, Deploy/Redeploy button toggles the deploy view */}
     <div className="w-[480px] shrink-0 sticky top-0 h-[calc(100vh-64px)] flex flex-col">
-      {/* Tab strip */}
-      <div className="flex items-center border-b border-[#30363d] mb-3 shrink-0">
-        <button onClick={() => setRightPanelTab('inspector')}
-          className={`px-4 py-2.5 text-[13px] font-medium border-b-2 transition-colors -mb-[1px] ${
-            rightPanelTab === 'inspector'
-              ? 'border-[#1f6feb] text-[#e6edf3]'
-              : 'border-transparent text-[#8b949e] hover:text-[#e6edf3]'
-          }`}>
-          Inspector
-        </button>
-        <button onClick={() => setRightPanelTab('deployments')}
-          className={`px-4 py-2.5 text-[13px] font-medium border-b-2 transition-colors -mb-[1px] flex items-center gap-2 ${
-            rightPanelTab === 'deployments'
-              ? `border-[#1f6feb] ${deployments.length > 0 ? 'text-[#58a6ff]' : 'text-[#3fb950]'}`
-              : 'border-transparent text-[#8b949e] hover:text-[#e6edf3]'
-          }`}>
-          {deployments.length > 0 ? 'Redeploy' : 'Deploy'}
-          {deployStatus === 'deploying' && (
-            <DotsLoader size={12} dotSize={2} className="text-[#58a6ff]" />
-          )}
-        </button>
+      {/* Header: section title + Deploy/Redeploy action button */}
+      <div className="flex items-center justify-between mb-3 shrink-0 h-[36px]">
+        <span className="text-[14px] font-semibold text-[#e6edf3]">
+          {rightPanelTab === 'deployments' ? 'Deployments' : 'Inspector'}
+        </span>
+        {rightPanelTab === 'inspector' && (
+          <DeployButton
+            hasDeployments={deployments.length > 0}
+            loading={loadingDeployments}
+            deploying={deployStatus === 'deploying'}
+            onClick={() => setRightPanelTab('deployments')}
+          />
+        )}
       </div>
 
-      {/* Active panel */}
+      {/* Content */}
       <div className="flex-1 min-h-0">
-        {rightPanelTab === 'inspector' ? (
-          <InspectorPanel
-            jobId={jobId}
-            dbName={dbName}
-            collections={collections}
-            inspectCollection={inspectCollection}
-            onInspected={() => setInspectCollection('')}
-            status={inspectorStatus}
-            errorReason={inspectorReason}
-          />
-        ) : (
+        {rightPanelTab === 'deployments' ? (
           <DeployPanel
             deployStatus={deployStatus}
             deploySteps={deploySteps}
@@ -950,6 +932,16 @@ export default function CreateTemplate({ bearerToken = "" }) {
             onSkipDeploy={skipDeploy}
             onClose={() => setRightPanelTab('inspector')}
           />
+        ) : (
+          <InspectorPanel
+            jobId={jobId}
+            dbName={dbName}
+            collections={collections}
+            inspectCollection={inspectCollection}
+            onInspected={() => setInspectCollection('')}
+            status={inspectorStatus}
+            errorReason={inspectorReason}
+          />
         )}
       </div>
     </div>
@@ -957,5 +949,53 @@ export default function CreateTemplate({ bearerToken = "" }) {
     </div>
     {confirmDialog}
     </>
+  );
+}
+
+function DeployButton({ hasDeployments, loading, deploying, onClick }) {
+  const baseCls = "px-3 py-[5px] text-[13px] font-medium rounded-md flex items-center gap-2 transition-colors";
+
+  if (loading) {
+    return (
+      <button disabled className={`${baseCls} bg-[#21262d] border border-[#30363d] text-[#8b949e] cursor-default`}>
+        <DotsLoader size={12} dotSize={2} />
+        Loading...
+      </button>
+    );
+  }
+
+  if (deploying) {
+    return (
+      <button onClick={onClick} className={`${baseCls} bg-[#21262d] border border-[#30363d] text-[#58a6ff] hover:bg-[#30363d]`}>
+        <DotsLoader size={12} dotSize={2} className="text-[#58a6ff]" />
+        Deploying...
+      </button>
+    );
+  }
+
+  if (hasDeployments) {
+    return (
+      <button onClick={onClick}
+        className={`${baseCls} bg-[#21262d] border border-[#30363d] text-[#e6edf3] hover:bg-[#30363d] hover:border-[#484f58]`}>
+        <span className="relative inline-flex">
+          <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M19.35 10.04A7.49 7.49 0 0 0 12 4C9.11 4 6.6 5.64 5.35 8.04A5.994 5.994 0 0 0 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96Z" />
+          </svg>
+          <span className="absolute -bottom-0.5 -right-0.5 w-2 h-2 bg-[#3fb950] rounded-full ring-2 ring-[#0d1117]" />
+        </span>
+        Redeploy
+      </button>
+    );
+  }
+
+  return (
+    <button onClick={onClick}
+      className={`${baseCls} text-[#0d1117] font-semibold hover:opacity-90 shadow-sm`}
+      style={{ background: 'linear-gradient(135deg, #7df9ff 0%, #58a6ff 100%)' }}>
+      <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+        <path d="M19.35 10.04A7.49 7.49 0 0 0 12 4C9.11 4 6.6 5.64 5.35 8.04A5.994 5.994 0 0 0 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96ZM14 13v4h-4v-4H7l5-5 5 5h-3Z" />
+      </svg>
+      Deploy
+    </button>
   );
 }
