@@ -9,6 +9,7 @@ import InspectorPanel from './InspectorPanel';
 import DeployPanel from '../DeployPanel';
 import DotsLoader from '../DotsLoader';
 import Banner from '../Banner';
+import { DEPLOY_PHASE_LABELS } from '../../constants/deployPhases';
 
 function now() {
   return new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
@@ -32,24 +33,6 @@ function collectionInfo(name) {
 }
 
 const INITIAL_SUB = { status: 'idle', message: '', time: '' };
-
-const DEPLOY_PHASE_LABELS = {
-  build: 'Building Package',
-  mongodb_migrate: 'Migrate Database',
-  manage_secrets: 'Export Secrets',
-  deploy: 'Deploy',
-  health_check: 'Run Health Check',
-  transfer_files: 'Transfer Files',
-  switch_traffic: 'Switch Traffic',
-  cleanup_old_deployment: 'Clean Up',
-};
-
-function formatElapsed(seconds) {
-  if (seconds == null || seconds < 0) return '';
-  const m = Math.floor(seconds / 60);
-  const s = Math.floor(seconds % 60);
-  return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
-}
 
 const SUB_OPTS = {
   sanitize: (sub) => (sub && sub.status === 'loading' ? INITIAL_SUB : sub),
@@ -508,6 +491,7 @@ export default function CreateTemplate({ bearerToken = "" }) {
 
   async function runDeploy() {
     if (!jobId || deployStatus === 'deploying') return;
+    setRightPanelTab('deployments');
     resetClearStep();
     resetCreateStep();
     setDeployStatus('deploying');
@@ -702,90 +686,48 @@ export default function CreateTemplate({ bearerToken = "" }) {
             </div>
           )}
 
-          {/* Phase list — shown while deploying or after success/failure */}
-          {(deployStatus === 'deploying' || deployStatus === 'success' || deployStatus === 'failed') && (
-            <>
-              {deployStatus === 'deploying' && (
-                <div className="text-center mb-3 mt-1">
-                  <div className="text-[15px] font-semibold text-[#e6edf3]">Your app will be live soon</div>
-                  <div className="text-[12px] text-[#8b949e] mt-0.5">It takes around 5–7 minutes.</div>
-                </div>
-              )}
-              <div className="border border-[#30363d] rounded-md bg-[#0d1117] overflow-hidden">
-                {(() => {
-                  const expected = ['build', 'mongodb_migrate', 'manage_secrets', 'deploy', 'health_check'];
-                  const stepsByName = Object.fromEntries((deploySteps || []).map(s => [s.name, s]));
-                  // Include any extra steps the API returns that aren't in our expected list
-                  const extras = (deploySteps || []).filter(s => !expected.includes(s.name)).map(s => s.name);
-                  const ordered = [...expected, ...extras];
-                  return ordered.map((name, i) => {
-                    const step = stepsByName[name];
-                    const status = step?.status || 'pending';
-                    const isActive = status === 'running';
-                    const isDone = status === 'success';
-                    const isFailed = status === 'failed';
-                    let elapsed = '';
-                    if (step?.created_at && (isActive || isDone || isFailed)) {
-                      const start = new Date(step.created_at).getTime();
-                      const end = (isDone || isFailed) && step.updated_at
-                        ? new Date(step.updated_at).getTime()
-                        : Date.now();
-                      elapsed = formatElapsed(Math.floor((end - start) / 1000));
-                    }
-                    return (
-                      <div key={name}
-                        className={`flex items-center gap-3 px-4 py-2.5 ${i > 0 ? 'border-t border-[#21262d]' : ''} ${
-                          isActive ? 'bg-gradient-to-r from-[#1f6feb]/10 to-transparent' : ''
-                        }`}>
-                        <div className="w-4 h-4 flex items-center justify-center shrink-0">
-                          {isActive && <div className="w-3.5 h-3.5 border-2 border-[#30363d] border-t-[#58a6ff] rounded-full animate-spin" />}
-                          {isDone && (
-                            <svg className="w-4 h-4" viewBox="0 0 16 16" fill="#3fb950">
-                              <path d="M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0Z" />
-                            </svg>
-                          )}
-                          {isFailed && (
-                            <svg className="w-4 h-4" viewBox="0 0 16 16" fill="#f85149">
-                              <path d="M3.72 3.72a.75.75 0 0 1 1.06 0L8 6.94l3.22-3.22a.749.749 0 0 1 1.275.326.749.749 0 0 1-.215.734L9.06 8l3.22 3.22a.749.749 0 0 1-.326 1.275.749.749 0 0 1-.734-.215L8 9.06l-3.22 3.22a.751.751 0 0 1-1.042-.018.751.751 0 0 1-.018-1.042L6.94 8 3.72 4.78a.75.75 0 0 1 0-1.06Z" />
-                            </svg>
-                          )}
-                          {status === 'pending' && <div className="w-3 h-3 rounded-full border border-[#484f58]" />}
-                        </div>
-                        <span className={`flex-1 font-mono text-[13px] ${
-                          isActive ? 'text-[#58a6ff] font-medium'
-                          : isDone ? 'text-[#c9d1d9]'
-                          : isFailed ? 'text-[#f85149]'
-                          : 'text-[#8b949e]'
-                        }`}>
-                          {DEPLOY_PHASE_LABELS[name] || name}{isActive ? '...' : ''}
-                        </span>
-                        {elapsed && (
-                          <span className="font-mono text-[12px] text-[#8b949e] tabular-nums">{elapsed}</span>
-                        )}
-                      </div>
-                    );
-                  });
-                })()}
+          {/* Deploying — compact card pointing to right panel for the rich progress view */}
+          {deployStatus === 'deploying' && (
+            <div className="flex items-center gap-3 px-4 py-3 border border-[#30363d] rounded-md bg-[#161b22]">
+              <DotsLoader size={16} dotSize={2} className="text-[#58a6ff] shrink-0" />
+              <div className="flex-1 min-w-0">
+                <div className="text-[14px] font-medium text-[#e6edf3]">Deployment in progress</div>
+                <div className="text-[12px] text-[#8b949e] mt-0.5">View phase progress in the Deploy panel on the right →</div>
               </div>
-              {deployStatus === 'failed' && (
-                <div className="flex gap-2 mt-3">
-                  <button onClick={runDeploy} className={btnDefault} data-testid="retry-deploy-btn">
-                    Retry Deploy
-                  </button>
-                  <button onClick={skipDeploy} className={btnGhost}>Skip (already deployed)</button>
+              <button onClick={() => setRightPanelTab('deployments')}
+                className={btnDefault}>
+                View
+              </button>
+            </div>
+          )}
+
+          {/* Failed — error summary + Retry/Skip; full phase detail lives in right panel */}
+          {deployStatus === 'failed' && (
+            <div className="border border-[#da3633]/40 bg-[#da3633]/5 rounded-md px-4 py-3">
+              <div className="flex items-start gap-2 mb-3">
+                <svg className="w-4 h-4 text-[#f85149] shrink-0 mt-0.5" viewBox="0 0 16 16" fill="currentColor">
+                  <path d="M3.72 3.72a.75.75 0 0 1 1.06 0L8 6.94l3.22-3.22a.749.749 0 0 1 1.275.326.749.749 0 0 1-.215.734L9.06 8l3.22 3.22a.749.749 0 0 1-.326 1.275.749.749 0 0 1-.734-.215L8 9.06l-3.22 3.22a.751.751 0 0 1-1.042-.018.751.751 0 0 1-.018-1.042L6.94 8 3.72 4.78a.75.75 0 0 1 0-1.06Z" />
+                </svg>
+                <div className="flex-1 text-[13px] text-[#e6edf3]">
+                  {statuses[2]?.message || 'Deployment failed.'}
+                  <div className="text-[12px] text-[#8b949e] mt-0.5">See phase details in the Deploy panel on the right →</div>
                 </div>
-              )}
-            </>
+              </div>
+              <div className="flex gap-2">
+                <button onClick={runDeploy} className={btnDefault} data-testid="retry-deploy-btn">Retry Deploy</button>
+                <button onClick={skipDeploy} className={btnGhost}>Skip (already deployed)</button>
+              </div>
+            </div>
           )}
 
-          {/* Skipped state */}
+          {/* Skipped */}
           {deployStatus === 'skipped' && (
-            <div className="text-[13px] text-[#8b949e]">Deployment skipped. Proceed to clearing collections below.</div>
+            <div className="text-[13px] text-[#8b949e]">Deployment skipped — assumed already deployed.</div>
           )}
 
-          {/* Success block with deploy URL */}
+          {/* Success — compact URL chip pointing to right panel for manage view */}
           {deployUrl && deployStatus === 'success' && (
-            <div className="mt-3 p-3 bg-[#238636]/10 border border-[#238636]/30 rounded-md">
+            <div className="p-3 bg-[#238636]/10 border border-[#238636]/30 rounded-md">
               <div className="text-[14px] text-[#3fb950] font-medium flex items-center gap-2 mb-1.5">
                 <svg className="w-4 h-4" viewBox="0 0 16 16" fill="currentColor">
                   <path d="M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0Z" />
@@ -793,9 +735,13 @@ export default function CreateTemplate({ bearerToken = "" }) {
                 Deployment complete
               </div>
               <a href={deployUrl} target="_blank" rel="noopener noreferrer"
-                className="font-mono text-[12px] text-[#3fb950] bg-[#0d1117] px-3 py-2 rounded-md break-all block hover:underline">
+                className="font-mono text-[12px] text-[#3fb950] bg-[#0d1117] px-3 py-2 rounded-md break-all block hover:underline mb-2">
                 {deployUrl}
               </a>
+              <button onClick={() => setRightPanelTab('deployments')}
+                className="text-[12px] text-[#58a6ff] hover:underline">
+                Manage on right →
+              </button>
             </div>
           )}
 
