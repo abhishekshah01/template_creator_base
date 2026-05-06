@@ -6,6 +6,8 @@ import StepCard from './StepCard';
 import StatusBar from './StatusBar';
 import ProgressBar from './ProgressBar';
 import InspectorPanel from './InspectorPanel';
+import DeployPanel from '../DeployPanel';
+import DotsLoader from '../DotsLoader';
 import Banner from '../Banner';
 
 function now() {
@@ -130,7 +132,9 @@ export default function CreateTemplate({ bearerToken = "" }) {
   const [deployStatus, setDeployStatus] = usePersistedState('cT.deployStatus', 'idle'); // 'idle' | 'deploying' | 'success' | 'failed' | 'skipped'
   const [deploySteps, setDeploySteps] = usePersistedState('cT.deploySteps', []);
   const [deployUrl, setDeployUrl] = usePersistedState('cT.deployUrl', '');
+  const [deployments, setDeployments] = usePersistedState('cT.deployments', []);
   const [, setDeployTick] = useState(0); // forces re-render every 1s while deploying for live elapsed
+  const [rightPanelTab, setRightPanelTab] = usePersistedState('cT.rightPanelTab', 'inspector'); // 'inspector' | 'deployments'
 
   const { confirm, dialog: confirmDialog } = useConfirm();
 
@@ -160,6 +164,16 @@ export default function CreateTemplate({ bearerToken = "" }) {
     const id = setInterval(() => setDeployTick(t => t + 1), 1000);
     return () => clearInterval(id);
   }, [deployStatus]);
+
+  // Fetch deploy history whenever job changes, so right panel can show "Redeploy"
+  // tab + history list for jobs that already have past deployments.
+  useEffect(() => {
+    if (!jobId || !bearerToken) return;
+    api.getDeployHistory(jobId, bearerToken).then(data => {
+      setDeployments(data.deployments || []);
+    }).catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [jobId, bearerToken]);
 
   // On mount, if a deployment was in progress when we last unmounted, resume it.
   // Does an immediate sync to seed the UI, then starts the polling loop if still running.
@@ -236,7 +250,8 @@ export default function CreateTemplate({ bearerToken = "" }) {
     setInspectorStatus('idle'); setInspectorReason('');
     setPauseSub(INITIAL_SUB); setCreateSub(INITIAL_SUB);
     setResumeState('idle'); setResumeError(''); setResumeElapsed(0);
-    setDeployStatus('idle'); setDeploySteps([]); setDeployUrl('');
+    setDeployStatus('idle'); setDeploySteps([]); setDeployUrl(''); setDeployments([]);
+    setRightPanelTab('inspector');
   }
 
   function stepStatus(n) {
@@ -469,6 +484,9 @@ export default function CreateTemplate({ bearerToken = "" }) {
           setDeployUrl(data.deploy_url || '');
           setDeployStatus('success');
           setStatusFor(2, 'Deployment complete.', 'success');
+          api.getDeployHistory(jobId, bearerToken)
+            .then(d => setDeployments(d.deployments || []))
+            .catch(() => {});
           completeStep(2);
           return;
         } else if (runStatus === 'failed') {
@@ -902,17 +920,55 @@ export default function CreateTemplate({ bearerToken = "" }) {
       </div>
     </div>
 
-    {/* Right: Inspector Panel (always visible) */}
-    <div className="w-[480px] shrink-0 sticky top-0 h-[calc(100vh-64px)]">
-      <InspectorPanel
-        jobId={jobId}
-        dbName={dbName}
-        collections={collections}
-        inspectCollection={inspectCollection}
-        onInspected={() => setInspectCollection('')}
-        status={inspectorStatus}
-        errorReason={inspectorReason}
-      />
+    {/* Right: tabbed side panel — Inspector + Deployments */}
+    <div className="w-[480px] shrink-0 sticky top-0 h-[calc(100vh-64px)] flex flex-col">
+      {/* Tab strip */}
+      <div className="flex items-center border-b border-[#30363d] mb-3 shrink-0">
+        <button onClick={() => setRightPanelTab('inspector')}
+          className={`px-4 py-2.5 text-[13px] font-medium border-b-2 transition-colors -mb-[1px] ${
+            rightPanelTab === 'inspector'
+              ? 'border-[#1f6feb] text-[#e6edf3]'
+              : 'border-transparent text-[#8b949e] hover:text-[#e6edf3]'
+          }`}>
+          Inspector
+        </button>
+        <button onClick={() => setRightPanelTab('deployments')}
+          className={`px-4 py-2.5 text-[13px] font-medium border-b-2 transition-colors -mb-[1px] flex items-center gap-2 ${
+            rightPanelTab === 'deployments'
+              ? `border-[#1f6feb] ${deployments.length > 0 ? 'text-[#58a6ff]' : 'text-[#3fb950]'}`
+              : 'border-transparent text-[#8b949e] hover:text-[#e6edf3]'
+          }`}>
+          {deployments.length > 0 ? 'Redeploy' : 'Deploy'}
+          {deployStatus === 'deploying' && (
+            <DotsLoader size={12} dotSize={2} className="text-[#58a6ff]" />
+          )}
+        </button>
+      </div>
+
+      {/* Active panel */}
+      <div className="flex-1 min-h-0">
+        {rightPanelTab === 'inspector' ? (
+          <InspectorPanel
+            jobId={jobId}
+            dbName={dbName}
+            collections={collections}
+            inspectCollection={inspectCollection}
+            onInspected={() => setInspectCollection('')}
+            status={inspectorStatus}
+            errorReason={inspectorReason}
+          />
+        ) : (
+          <DeployPanel
+            deployStatus={deployStatus}
+            deploySteps={deploySteps}
+            deployUrl={deployUrl}
+            deployments={deployments}
+            onStartDeploy={runDeploy}
+            onSkipDeploy={skipDeploy}
+            onClose={() => setRightPanelTab('inspector')}
+          />
+        )}
+      </div>
     </div>
 
     </div>
