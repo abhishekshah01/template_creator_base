@@ -599,9 +599,133 @@ export default function CreateTemplate({ bearerToken = "" }) {
         </StepCard>
       </div>
 
-      {/* Step 2 */}
+      {/* Step 2 — Deploy App */}
       <div ref={el => stepsRef.current[2] = el}>
-        <StepCard number={2} title="Clear Database Collections" time={times[2]} status={stepStatus(2)} hasError={statuses[2]?.type === 'error'}>
+        <StepCard number={2} title="Deploy App" time={times[2]} status={stepStatus(2)}
+          hasError={deployStatus === 'failed' || statuses[2]?.type === 'error'}>
+          <Banner variant="info" className="mb-3">
+            Deploys this job's app to a live emergent environment. Required so the database is fully seeded before templating. Takes ~5–7 minutes.
+          </Banner>
+
+          {/* Pre-deploy buttons (idle state) */}
+          {deployStatus === 'idle' && (
+            <div className="flex gap-2 mb-3">
+              <button onClick={runDeploy} disabled={loading === 'deploy'} className={btnPrimary} data-testid="deploy-app-btn">
+                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M19.35 10.04A7.49 7.49 0 0 0 12 4C9.11 4 6.6 5.64 5.35 8.04A5.994 5.994 0 0 0 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96ZM14 13v4h-4v-4H7l5-5 5 5h-3Z" />
+                </svg>
+                Start Deployment
+              </button>
+              <button onClick={skipDeploy} className={btnGhost} data-testid="skip-deploy-btn">
+                Skip (already deployed)
+              </button>
+            </div>
+          )}
+
+          {/* Phase list — shown while deploying or after success/failure */}
+          {(deployStatus === 'deploying' || deployStatus === 'success' || deployStatus === 'failed') && (
+            <>
+              {deployStatus === 'deploying' && (
+                <div className="text-center mb-3 mt-1">
+                  <div className="text-[15px] font-semibold text-[#e6edf3]">Your app will be live soon</div>
+                  <div className="text-[12px] text-[#8b949e] mt-0.5">It takes around 5–7 minutes.</div>
+                </div>
+              )}
+              <div className="border border-[#30363d] rounded-md bg-[#0d1117] overflow-hidden">
+                {(() => {
+                  const expected = ['build', 'mongodb_migrate', 'manage_secrets', 'deploy', 'health_check'];
+                  const stepsByName = Object.fromEntries((deploySteps || []).map(s => [s.name, s]));
+                  // Include any extra steps the API returns that aren't in our expected list
+                  const extras = (deploySteps || []).filter(s => !expected.includes(s.name)).map(s => s.name);
+                  const ordered = [...expected, ...extras];
+                  return ordered.map((name, i) => {
+                    const step = stepsByName[name];
+                    const status = step?.status || 'pending';
+                    const isActive = status === 'running';
+                    const isDone = status === 'success';
+                    const isFailed = status === 'failed';
+                    let elapsed = '';
+                    if (step?.created_at && (isActive || isDone || isFailed)) {
+                      const start = new Date(step.created_at).getTime();
+                      const end = (isDone || isFailed) && step.updated_at
+                        ? new Date(step.updated_at).getTime()
+                        : Date.now();
+                      elapsed = formatElapsed(Math.floor((end - start) / 1000));
+                    }
+                    return (
+                      <div key={name}
+                        className={`flex items-center gap-3 px-4 py-2.5 ${i > 0 ? 'border-t border-[#21262d]' : ''} ${
+                          isActive ? 'bg-gradient-to-r from-[#1f6feb]/10 to-transparent' : ''
+                        }`}>
+                        <div className="w-4 h-4 flex items-center justify-center shrink-0">
+                          {isActive && <div className="w-3.5 h-3.5 border-2 border-[#30363d] border-t-[#58a6ff] rounded-full animate-spin" />}
+                          {isDone && (
+                            <svg className="w-4 h-4" viewBox="0 0 16 16" fill="#3fb950">
+                              <path d="M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0Z" />
+                            </svg>
+                          )}
+                          {isFailed && (
+                            <svg className="w-4 h-4" viewBox="0 0 16 16" fill="#f85149">
+                              <path d="M3.72 3.72a.75.75 0 0 1 1.06 0L8 6.94l3.22-3.22a.749.749 0 0 1 1.275.326.749.749 0 0 1-.215.734L9.06 8l3.22 3.22a.749.749 0 0 1-.326 1.275.749.749 0 0 1-.734-.215L8 9.06l-3.22 3.22a.751.751 0 0 1-1.042-.018.751.751 0 0 1-.018-1.042L6.94 8 3.72 4.78a.75.75 0 0 1 0-1.06Z" />
+                            </svg>
+                          )}
+                          {status === 'pending' && <div className="w-3 h-3 rounded-full border border-[#484f58]" />}
+                        </div>
+                        <span className={`flex-1 font-mono text-[13px] ${
+                          isActive ? 'text-[#58a6ff] font-medium'
+                          : isDone ? 'text-[#c9d1d9]'
+                          : isFailed ? 'text-[#f85149]'
+                          : 'text-[#8b949e]'
+                        }`}>
+                          {DEPLOY_PHASE_LABELS[name] || name}{isActive ? '...' : ''}
+                        </span>
+                        {elapsed && (
+                          <span className="font-mono text-[12px] text-[#8b949e] tabular-nums">{elapsed}</span>
+                        )}
+                      </div>
+                    );
+                  });
+                })()}
+              </div>
+              {deployStatus === 'failed' && (
+                <div className="flex gap-2 mt-3">
+                  <button onClick={runDeploy} className={btnDefault} data-testid="retry-deploy-btn">
+                    Retry Deploy
+                  </button>
+                  <button onClick={skipDeploy} className={btnGhost}>Skip (already deployed)</button>
+                </div>
+              )}
+            </>
+          )}
+
+          {/* Skipped state */}
+          {deployStatus === 'skipped' && (
+            <div className="text-[13px] text-[#8b949e]">Deployment skipped. Proceed to clearing collections below.</div>
+          )}
+
+          {/* Success block with deploy URL */}
+          {deployUrl && deployStatus === 'success' && (
+            <div className="mt-3 p-3 bg-[#238636]/10 border border-[#238636]/30 rounded-md">
+              <div className="text-[14px] text-[#3fb950] font-medium flex items-center gap-2 mb-1.5">
+                <svg className="w-4 h-4" viewBox="0 0 16 16" fill="currentColor">
+                  <path d="M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0Z" />
+                </svg>
+                Deployment complete
+              </div>
+              <a href={deployUrl} target="_blank" rel="noopener noreferrer"
+                className="font-mono text-[12px] text-[#3fb950] bg-[#0d1117] px-3 py-2 rounded-md break-all block hover:underline">
+                {deployUrl}
+              </a>
+            </div>
+          )}
+
+          <StatusBar {...(statuses[2] || {})} />
+        </StepCard>
+      </div>
+
+      {/* Step 3 — Clear Database Collections */}
+      <div ref={el => stepsRef.current[3] = el}>
+        <StepCard number={3} title="Clear Database Collections" time={times[3]} status={stepStatus(3)} hasError={statuses[3]?.type === 'error'}>
           <p className={`${helperCls} mb-3`}>Select collections to delete. Unselected will be preserved.</p>
           {collections.length > 0 && (
             <Banner variant="info" className="mb-3">
