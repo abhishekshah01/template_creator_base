@@ -566,6 +566,38 @@ async def deploy_status(req: JobRequest):
     }
 
 
+@app.post("/api/deploy-history")
+async def deploy_history(req: JobRequest):
+    """Fetch past deployments for a job (for the right-panel history list)."""
+    if not config.API_URL:
+        raise HTTPException(503, "API_URL not configured for this environment.")
+
+    headers = {}
+    if req.bearer_token:
+        headers["Authorization"] = f"Bearer {req.bearer_token}"
+
+    url = f"{config.API_URL}/jobs/v0/deploy/{req.job_id}/history"
+    try:
+        resp = await _client.get(url, headers=headers, timeout=15)
+    except Exception as e:
+        raise HTTPException(502, f"Failed to reach deploy history API: {repr(e)}")
+
+    if resp.status_code in (401, 403):
+        raise HTTPException(resp.status_code, "Unauthorized — check your API token.")
+    if resp.status_code == 404:
+        return {"deployments": []}
+    if resp.status_code >= 400:
+        raise HTTPException(resp.status_code, f"Deploy history fetch failed: {resp.text[:300]}")
+
+    try:
+        data = resp.json()
+    except Exception:
+        data = {}
+
+    deployments = data if isinstance(data, list) else (data.get("deployments") or data.get("history") or [])
+    return {"deployments": deployments}
+
+
 @app.post("/api/restart-job")
 async def restart_job(req: JobRequest):
     """Wake a paused job environment via app-service restart-environment."""
