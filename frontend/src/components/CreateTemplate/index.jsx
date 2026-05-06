@@ -454,6 +454,67 @@ export default function CreateTemplate({ bearerToken = "" }) {
     setTimeout(pollOnce, POLL_INTERVAL_MS);
   }
 
+  function startDeployPolling() {
+    const POLL_INTERVAL_MS = 3000;
+    const startingJobId = jobId;
+
+    const pollOnce = async () => {
+      if (jobId !== startingJobId) return;
+      try {
+        const data = await api.getDeployStatus(jobId, bearerToken);
+        setDeploySteps(data.steps || []);
+        const runStatus = data.status;
+        if (runStatus === 'success') {
+          setDeployUrl(data.deploy_url || '');
+          setDeployStatus('success');
+          setStatusFor(2, 'Deployment complete.', 'success');
+          completeStep(2);
+          return;
+        } else if (runStatus === 'failed') {
+          setDeployStatus('failed');
+          const failedStep = (data.steps || []).find(s => s.status === 'failed');
+          const errMsg = failedStep
+            ? `Failed at "${DEPLOY_PHASE_LABELS[failedStep.name] || failedStep.name}": ${failedStep.error || 'see logs'}`
+            : 'Deployment failed.';
+          setStatusFor(2, errMsg, 'error');
+          return;
+        }
+      } catch {
+        // transient — keep polling
+      }
+      setTimeout(pollOnce, POLL_INTERVAL_MS);
+    };
+    setTimeout(pollOnce, POLL_INTERVAL_MS);
+  }
+
+  async function runDeploy() {
+    if (!jobId || deployStatus === 'deploying') return;
+    resetClearStep();
+    resetCreateStep();
+    setDeployStatus('deploying');
+    setDeployUrl('');
+    setDeploySteps([]);
+    setStatusFor(2, 'Deployment in progress...', 'loading');
+
+    try {
+      await api.deployApp(jobId, bearerToken);
+    } catch (e) {
+      setDeployStatus('failed');
+      setStatusFor(2, e.message, 'error');
+      return;
+    }
+
+    startDeployPolling();
+  }
+
+  function skipDeploy() {
+    resetClearStep();
+    resetCreateStep();
+    setDeployStatus('skipped');
+    setStatusFor(2, 'Skipped deployment (already deployed)', 'info');
+    completeStep(2);
+  }
+
   async function runCreateTemplate() {
     if (!userId) {
       setCreateSub({ status: 'error', message: 'User ID not found.', time: now() });
