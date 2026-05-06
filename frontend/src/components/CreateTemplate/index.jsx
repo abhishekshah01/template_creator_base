@@ -491,6 +491,23 @@ export default function CreateTemplate({ bearerToken = "" }) {
 
   async function runDeploy() {
     if (!jobId || deployStatus === 'deploying') return;
+
+    const isRedeploy = deployments.length > 0;
+    const ok = await confirm(isRedeploy ? {
+      title: 'Redeploy this app?',
+      description: 'This will trigger a fresh build and replace your previous deployment. No additional credits are charged for redeploys.',
+      confirmLabel: 'Redeploy',
+      cancelLabel: 'Cancel',
+      variant: 'default',
+    } : {
+      title: 'Start deployment?',
+      description: 'Deploy credits will be deducted from your account. The deployment will be live in your emergent account once complete.',
+      confirmLabel: 'Start Deployment',
+      cancelLabel: 'Cancel',
+      variant: 'default',
+    });
+    if (!ok) return;
+
     setRightPanelTab('deployments');
     resetClearStep();
     resetCreateStep();
