@@ -368,30 +368,30 @@ export default function CreateTemplate({ bearerToken = "" }) {
     });
     if (!ok) return;
 
-    resetStep3Only();
+    resetCreateStep();
     setLoading('delete');
-    setStatusFor(2, `Deleting ${toDelete.length} collection(s)...`, 'loading');
+    setStatusFor(3, `Deleting ${toDelete.length} collection(s)...`, 'loading');
     try {
       const data = await api.deleteCollections(jobId, dbName, toDelete);
       const dropped = data.results.filter(r => r.status === 'dropped').length;
       const failed = data.results.filter(r => r.status === 'failed');
       if (failed.length > 0) {
-        setStatusFor(2, `Dropped ${dropped}, failed ${failed.length}: ${failed.map(f => f.collection).join(', ')}`, 'error');
+        setStatusFor(3, `Dropped ${dropped}, failed ${failed.length}: ${failed.map(f => f.collection).join(', ')}`, 'error');
       } else {
-        setStatusFor(2, `Dropped ${dropped} collection(s)`, 'success');
-        completeStep(2);
+        setStatusFor(3, `Dropped ${dropped} collection(s)`, 'success');
+        completeStep(3);
       }
     } catch (e) {
-      setStatusFor(2, e.message, 'error');
+      setStatusFor(3, e.message, 'error');
     } finally {
       setLoading('');
     }
   }
 
   function skipDelete() {
-    resetStep3Only();
-    setStatusFor(2, 'Skipped collection cleanup', 'info');
-    completeStep(2);
+    resetCreateStep();
+    setStatusFor(3, 'Skipped collection cleanup', 'info');
+    completeStep(3);
   }
 
   function toggleCollection(name) {
@@ -482,7 +482,7 @@ export default function CreateTemplate({ bearerToken = "" }) {
       if (data.status === 'success') {
         setGcsPath(data.gcs_path);
         setCreateSub({ status: 'success', message: 'Template created successfully!', time: now() });
-        completeStep(3);
+        completeStep(4);
       } else {
         setLogOutput(data.error || data.output);
         setCreateSub({ status: 'error', message: 'Template creation failed -- check log output', time: now() });
