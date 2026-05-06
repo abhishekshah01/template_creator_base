@@ -497,6 +497,75 @@ async def run_mongosh(req: MongoshRequest):
         return {"output": str(e), "error": True}
 
 
+@app.post("/api/deploy-app")
+async def deploy_app(req: JobRequest):
+    """Trigger an emergent deployment for a job."""
+    if not config.API_URL:
+        raise HTTPException(503, "API_URL not configured for this environment.")
+
+    headers = {"Content-Type": "application/json"}
+    if req.bearer_token:
+        headers["Authorization"] = f"Bearer {req.bearer_token}"
+
+    url = f"{config.API_URL}/jobs/v0/deploy"
+    try:
+        resp = await _client.post(url, headers=headers, json={"job_id": req.job_id}, timeout=60)
+    except Exception as e:
+        raise HTTPException(502, f"Failed to reach deploy API: {repr(e)}")
+
+    if resp.status_code in (401, 403):
+        raise HTTPException(resp.status_code, "Unauthorized — check your API token.")
+    if resp.status_code >= 400:
+        raise HTTPException(resp.status_code, f"Deploy failed: {resp.text[:300]}")
+
+    try:
+        data = resp.json()
+    except Exception:
+        data = {"message": resp.text}
+
+    return {
+        "job_id": req.job_id,
+        "run_id": data.get("run_id"),
+        "deploy_url": data.get("deploy_url"),
+    }
+
+
+@app.post("/api/deploy-status")
+async def deploy_status(req: JobRequest):
+    """Poll latest deployment status for a job (per-phase steps)."""
+    if not config.API_URL:
+        raise HTTPException(503, "API_URL not configured for this environment.")
+
+    headers = {}
+    if req.bearer_token:
+        headers["Authorization"] = f"Bearer {req.bearer_token}"
+
+    url = f"{config.API_URL}/jobs/v0/deploy/{req.job_id}/latest"
+    try:
+        resp = await _client.get(url, headers=headers, timeout=15)
+    except Exception as e:
+        raise HTTPException(502, f"Failed to reach deploy status API: {repr(e)}")
+
+    if resp.status_code in (401, 403):
+        raise HTTPException(resp.status_code, "Unauthorized — check your API token.")
+    if resp.status_code == 404:
+        return {"status": "no_deployment", "steps": [], "deploy_url": None}
+    if resp.status_code >= 400:
+        raise HTTPException(resp.status_code, f"Deploy status fetch failed: {resp.text[:300]}")
+
+    try:
+        data = resp.json()
+    except Exception:
+        data = {}
+
+    latest = data.get("latest_run") or {}
+    return {
+        "status": latest.get("status"),
+        "steps": latest.get("steps") or [],
+        "deploy_url": data.get("deploy_url") or latest.get("deploy_url"),
+    }
+
+
 @app.post("/api/restart-job")
 async def restart_job(req: JobRequest):
     """Wake a paused job environment via app-service restart-environment."""
