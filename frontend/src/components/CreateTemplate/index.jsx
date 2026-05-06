@@ -128,7 +128,7 @@ export default function CreateTemplate({ bearerToken = "" }) {
 
   // Step 2 deploy state
   const [deployStatus, setDeployStatus] = usePersistedState('cT.deployStatus', 'idle'); // 'idle' | 'deploying' | 'success' | 'failed' | 'skipped'
-  const [deploySteps, setDeploySteps] = useState([]); // transient (live timestamps)
+  const [deploySteps, setDeploySteps] = usePersistedState('cT.deploySteps', []);
   const [deployUrl, setDeployUrl] = usePersistedState('cT.deployUrl', '');
   const [, setDeployTick] = useState(0); // forces re-render every 1s while deploying for live elapsed
 
@@ -236,6 +236,7 @@ export default function CreateTemplate({ bearerToken = "" }) {
     setInspectorStatus('idle'); setInspectorReason('');
     setPauseSub(INITIAL_SUB); setCreateSub(INITIAL_SUB);
     setResumeState('idle'); setResumeError(''); setResumeElapsed(0);
+    setDeployStatus('idle'); setDeploySteps([]); setDeployUrl('');
   }
 
   function stepStatus(n) {
