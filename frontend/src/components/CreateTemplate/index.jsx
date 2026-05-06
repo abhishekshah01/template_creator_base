@@ -583,7 +583,7 @@ export default function CreateTemplate({ bearerToken = "" }) {
         Automate template creation from an ephemeral job environment. Required fields are marked with an asterisk (*).
       </p>
 
-      <ProgressBar currentStep={step} totalSteps={3} onStepClick={(n) => scrollToStep(n)} />
+      <ProgressBar currentStep={step} totalSteps={4} onStepClick={(n) => scrollToStep(n)} />
 
       {/* Step 1 */}
       <div ref={el => stepsRef.current[1] = el}>
