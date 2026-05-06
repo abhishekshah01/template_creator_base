@@ -116,6 +116,7 @@ export default function CreateTemplate({ bearerToken = "" }) {
   const [deploySteps, setDeploySteps] = usePersistedState('cT.deploySteps', []);
   const [deployUrl, setDeployUrl] = usePersistedState('cT.deployUrl', '');
   const [deployments, setDeployments] = usePersistedState('cT.deployments', []);
+  const [loadingDeployments, setLoadingDeployments] = useState(false);
   const [, setDeployTick] = useState(0); // forces re-render every 1s while deploying for live elapsed
   const [rightPanelTab, setRightPanelTab] = usePersistedState('cT.rightPanelTab', 'inspector'); // 'inspector' | 'deployments'
 
@@ -148,13 +149,15 @@ export default function CreateTemplate({ bearerToken = "" }) {
     return () => clearInterval(id);
   }, [deployStatus]);
 
-  // Fetch deploy history whenever job changes, so right panel can show "Redeploy"
-  // tab + history list for jobs that already have past deployments.
+  // Fetch deploy history whenever job changes, so the right panel button
+  // shows "Redeploy" when the job already has past deployments.
   useEffect(() => {
     if (!jobId || !bearerToken) return;
-    api.getDeployHistory(jobId, bearerToken).then(data => {
-      setDeployments(data.deployments || []);
-    }).catch(() => {});
+    setLoadingDeployments(true);
+    api.getDeployHistory(jobId, bearerToken)
+      .then(data => setDeployments(data.deployments || []))
+      .catch(() => {})
+      .finally(() => setLoadingDeployments(false));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [jobId, bearerToken]);
 
@@ -318,6 +321,11 @@ export default function CreateTemplate({ bearerToken = "" }) {
       setSelected(new Set());
       setStatusFor(1, `Found ${coll.collections.length} collection(s) in "${coll.db_name}"`, 'success');
       setInspectorStatus('ready');
+      setLoadingDeployments(true);
+      api.getDeployHistory(jobId, bearerToken)
+        .then(d => setDeployments(d.deployments || []))
+        .catch(() => {})
+        .finally(() => setLoadingDeployments(false));
       completeStep(1);
     } catch (e) {
       setStep(1);
