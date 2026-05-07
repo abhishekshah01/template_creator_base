@@ -594,8 +594,13 @@ async def deploy_history(req: JobRequest):
     except Exception:
         data = {}
 
-    deployments = data if isinstance(data, list) else (data.get("deployments") or data.get("history") or [])
-    return {"deployments": deployments}
+    if isinstance(data, list):
+        deployments = data
+        deployed_run_id = None
+    else:
+        deployments = data.get("runs") or data.get("deployments") or data.get("history") or []
+        deployed_run_id = data.get("deployed_run_id")
+    return {"deployments": deployments, "deployed_run_id": deployed_run_id}
 
 
 @app.post("/api/restart-job")
