@@ -251,21 +251,24 @@ function ManageView({ url, deployments, onRedeploy }) {
             <div className="text-[12px] text-[#8b949e]">All deployed versions of your app</div>
           </div>
           <div className="space-y-3">
-            {deployments.slice(0, 10).map((d, i) => (
-              <div key={d.id || d.run_id || i} className="flex items-start gap-3 text-[13px]">
-                <div className="flex flex-col items-center pt-1 shrink-0">
-                  <div className={`w-2.5 h-2.5 rounded-full ${i === 0 ? 'bg-[#3fb950]' : 'bg-[#484f58]'}`} />
-                  {i < deployments.slice(0, 10).length - 1 && <div className="w-px flex-1 bg-[#30363d] mt-1 min-h-[20px]" />}
-                </div>
-                <div className="flex-1 min-w-0 pb-2">
-                  <div className="text-[#e6edf3] font-medium">Deployment {deployments.length - i}</div>
-                  <div className="text-[11px] text-[#8b949e] mt-0.5">
-                    {d.created_at ? timeAgo(d.created_at, now) : 'unknown time'}
-                    {d.run_id && <span className="font-mono ml-2">{String(d.run_id).slice(0, 8)}</span>}
+            {deployments.slice(0, 10).map((d, i) => {
+              const runId = d.id || d.run_id;
+              return (
+                <div key={runId || i} className="flex items-start gap-3 text-[13px]">
+                  <div className="flex flex-col items-center pt-1 shrink-0">
+                    <div className={`w-2.5 h-2.5 rounded-full ${i === 0 ? 'bg-[#3fb950]' : 'bg-[#484f58]'}`} />
+                    {i < deployments.slice(0, 10).length - 1 && <div className="w-px flex-1 bg-[#30363d] mt-1 min-h-[20px]" />}
+                  </div>
+                  <div className="flex-1 min-w-0 pb-2">
+                    <div className="text-[#e6edf3] font-medium">Deployment {deployments.length - i}</div>
+                    <div className="text-[11px] text-[#8b949e] mt-0.5">
+                      {d.created_at ? timeAgo(d.created_at, now) : 'unknown time'}
+                      {runId && <span className="font-mono ml-2">{String(runId).slice(0, 8)}</span>}
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       )}

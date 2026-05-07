@@ -149,15 +149,18 @@ export default function CreateTemplate({ bearerToken = "" }) {
     return () => clearInterval(id);
   }, [deployStatus]);
 
-  // Fetch deploy history whenever job changes, so the right panel button
-  // shows "Redeploy" when the job already has past deployments.
+  // Fetch deploy history + current live URL whenever job changes, so the right
+  // panel button shows "Redeploy" + the manage view shows the live URL when the
+  // job already has past deployments.
   useEffect(() => {
     if (!jobId || !bearerToken) return;
     setLoadingDeployments(true);
-    api.getDeployHistory(jobId, bearerToken)
-      .then(data => setDeployments(data.deployments || []))
-      .catch(() => {})
-      .finally(() => setLoadingDeployments(false));
+    Promise.all([
+      api.getDeployHistory(jobId, bearerToken).then(d => setDeployments(d.deployments || [])).catch(() => {}),
+      api.getDeployStatus(jobId, bearerToken).then(d => {
+        if (d.deploy_url) setDeployUrl(d.deploy_url);
+      }).catch(() => {}),
+    ]).finally(() => setLoadingDeployments(false));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [jobId, bearerToken]);
 
@@ -322,10 +325,12 @@ export default function CreateTemplate({ bearerToken = "" }) {
       setStatusFor(1, `Found ${coll.collections.length} collection(s) in "${coll.db_name}"`, 'success');
       setInspectorStatus('ready');
       setLoadingDeployments(true);
-      api.getDeployHistory(jobId, bearerToken)
-        .then(d => setDeployments(d.deployments || []))
-        .catch(() => {})
-        .finally(() => setLoadingDeployments(false));
+      Promise.all([
+        api.getDeployHistory(jobId, bearerToken).then(d => setDeployments(d.deployments || [])).catch(() => {}),
+        api.getDeployStatus(jobId, bearerToken).then(d => {
+          if (d.deploy_url) setDeployUrl(d.deploy_url);
+        }).catch(() => {}),
+      ]).finally(() => setLoadingDeployments(false));
       completeStep(1);
     } catch (e) {
       setStep(1);
