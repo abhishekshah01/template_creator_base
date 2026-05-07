@@ -1,7 +1,22 @@
+# Python
 venv/
 __pycache__/
 *.pyc
-.env
+
+# Node / build
+node_modules/
+dist/
+
+# Secrets & keys
+*.pem
+*.key
+credentials.json
+.credentials
+sa-key.json
 template-bot-key
 template-bot-key.pub
-*.pem
+
+# Env files — .env.example is tracked as the template
+.env
+.env.local
+.env.*.local
