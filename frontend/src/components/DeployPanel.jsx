@@ -205,7 +205,7 @@ function ManageView({ url, deployments, onRedeploy }) {
       {/* Top section: preview + URL/actions */}
       {url && (
         <div className="flex gap-3 mb-4">
-          <div className="relative w-[160px] h-[110px] rounded-lg overflow-hidden border border-[#30363d] bg-[#0d1117] shrink-0">
+          <div className="relative w-[160px] h-[110px] rounded-lg overflow-hidden border border-[#30363d] bg-[#010409] shrink-0">
             <iframe src={url} title="App preview"
               width="1280" height="880"
               className="border-0 absolute top-0 left-0 pointer-events-none"
