@@ -373,6 +373,7 @@ export default function CreateTemplate({ bearerToken = "" }) {
       setSelected(new Set());
       setStatusFor(1, `Found ${coll.collections.length} collection(s) in "${coll.db_name}"`, 'success');
       setInspectorStatus('ready');
+      runAiClassification(jobId, coll.db_name);
       setLoadingDeployments(true);
       Promise.all([
         api.getDeployHistory(jobId, bearerToken).then(d => setDeployments(d.deployments || [])).catch(() => {}),
@@ -453,6 +454,66 @@ export default function CreateTemplate({ bearerToken = "" }) {
     resetCreateStep();
     setStatusFor(3, 'Skipped collection cleanup', 'info');
     completeStep(3);
+  }
+
+  async function runAiClassification(jobIdArg, dbNameArg) {
+    setAiStatus('loading');
+    setAiError('');
+    setAiApplied(false);
+    setAiUndoSnapshot(null);
+    try {
+      const data = await api.classifyCollections(jobIdArg, dbNameArg);
+      if (data.status === 'degraded' || !data.results || Object.keys(data.results).length === 0) {
+        setAiStatus('error');
+        setAiError(data.reason || 'AI review unavailable');
+        setAiResults({});
+        setAiAppType('');
+        return;
+      }
+      setAiResults(data.results);
+      setAiAppType(data.app_type || '');
+      setAiStatus('ready');
+    } catch (e) {
+      setAiStatus('error');
+      setAiError(e.message || 'AI review failed');
+      setAiResults({});
+    }
+  }
+
+  function applyAiRecommendations() {
+    setAiUndoSnapshot(new Set(selected));
+    const next = new Set();
+    for (const c of collections) {
+      const v = aiResults[c.name];
+      if (
+        v &&
+        v.verdict === 'safe_to_delete' &&
+        typeof v.confidence === 'number' &&
+        v.confidence >= AI_CONFIDENCE_APPLY_THRESHOLD
+      ) {
+        next.add(c.name);
+      }
+    }
+    setSelected(next);
+    setAiApplied(true);
+  }
+
+  function undoAiApply() {
+    if (aiUndoSnapshot) setSelected(new Set(aiUndoSnapshot));
+    setAiApplied(false);
+    setAiUndoSnapshot(null);
+  }
+
+  function aiSuggestedCounts() {
+    let toDelete = 0, toKeep = 0, toReview = 0;
+    for (const c of collections) {
+      const v = aiResults[c.name];
+      if (!v) continue;
+      if (v.verdict === 'safe_to_delete' && v.confidence >= AI_CONFIDENCE_APPLY_THRESHOLD) toDelete++;
+      else if (v.verdict === 'keep') toKeep++;
+      else toReview++;
+    }
+    return { toDelete, toKeep, toReview };
   }
 
   function toggleCollection(name) {
