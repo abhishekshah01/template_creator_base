@@ -187,10 +187,13 @@ function ProgressView({ steps, isFailed, onRetry, onSkip }) {
 function ManageView({ url, deployments, onRedeploy }) {
   const [now, setNow] = useState(() => Date.now());
   const [copied, setCopied] = useState(false);
+  const [previewLoaded, setPreviewLoaded] = useState(false);
   useEffect(() => {
     const id = setInterval(() => setNow(Date.now()), 30_000);
     return () => clearInterval(id);
   }, []);
+  // Reset the loaded state when the URL changes (e.g. after a redeploy).
+  useEffect(() => { setPreviewLoaded(false); }, [url]);
 
   function copyUrl() {
     if (!url) return;
@@ -208,9 +211,15 @@ function ManageView({ url, deployments, onRedeploy }) {
           <div className="relative w-[160px] h-[110px] rounded-lg overflow-hidden border border-[#30363d] bg-[#010409] shrink-0">
             <iframe src={url} title="App preview"
               width="1280" height="880"
-              className="border-0 absolute top-0 left-0 pointer-events-none"
+              onLoad={() => setPreviewLoaded(true)}
+              className={`border-0 absolute top-0 left-0 pointer-events-none transition-opacity duration-200 ${previewLoaded ? 'opacity-100' : 'opacity-0'}`}
               style={{ transform: 'scale(0.125)', transformOrigin: 'top left' }}
               sandbox="allow-scripts allow-same-origin allow-forms" />
+            {!previewLoaded && (
+              <div className="absolute inset-0 flex items-center justify-center bg-[#010409]">
+                <div className="w-4 h-4 border-2 border-[#30363d] border-t-[#58a6ff] rounded-full animate-spin" />
+              </div>
+            )}
           </div>
           <div className="flex-1 min-w-0">
             <span className="inline-flex items-center gap-1.5 text-[12px] px-2 py-[2px] rounded-full font-medium mb-2"
