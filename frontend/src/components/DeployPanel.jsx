@@ -266,11 +266,12 @@ function ManageView({ url, deployments, onRedeploy }) {
             <div className="text-[14px] font-semibold text-[#e6edf3]">Deployments</div>
             <div className="text-[12px] text-[#8b949e]">All deployed versions of your app</div>
           </div>
-          <div className="space-y-3">
+          <div className="-mx-2">
             {deployments.slice(0, 10).map((d, i) => {
               const runId = d.id || d.run_id;
               return (
-                <div key={runId || i} className="flex items-start gap-3 text-[13px]">
+                <div key={runId || i}
+                  className="flex items-start gap-3 text-[13px] px-2 py-1.5 rounded-md hover:bg-[#161b22] transition-colors">
                   <div className="flex flex-col items-center pt-1 shrink-0">
                     <div className={`w-2.5 h-2.5 rounded-full ${i === 0 ? 'bg-[#3fb950]' : 'bg-[#484f58]'}`} />
                     {i < deployments.slice(0, 10).length - 1 && <div className="w-px flex-1 bg-[#30363d] mt-1 min-h-[20px]" />}
