@@ -210,12 +210,12 @@ function ManageView({ url, deployments, onRedeploy }) {
         <div className="flex gap-3 mb-4">
           <a href={url} target="_blank" rel="noopener noreferrer"
             title="Open in new tab"
-            className="relative group block w-[160px] h-[110px] rounded-lg overflow-hidden border border-[#30363d] bg-[#010409] shrink-0">
+            className="relative group block w-[180px] h-[120px] rounded-lg overflow-hidden border border-[#30363d] bg-[#010409] shrink-0">
             <iframe src={url} title="App preview"
               width="1280" height="880"
               onLoad={() => setPreviewLoaded(true)}
               className={`border-0 absolute top-0 left-0 pointer-events-none transition-opacity duration-200 ${previewLoaded ? 'opacity-100' : 'opacity-0'}`}
-              style={{ transform: 'scale(0.125)', transformOrigin: 'top left' }}
+              style={{ transform: 'scale(0.140625)', transformOrigin: 'top left' }}
               sandbox="allow-scripts allow-same-origin allow-forms" />
             {!previewLoaded && (
               <div className="absolute inset-0 flex items-center justify-center bg-[#010409]">
