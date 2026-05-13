@@ -20,7 +20,7 @@ from typing import Any
 
 from emergentintegrations.llm.chat import LlmChat, UserMessage
 
-from prompts_template_aware import CLASSIFY_COLLECTIONS_TEMPLATE_AWARE_SYSTEM_PROMPT
+from prompts_v1 import CLASSIFY_COLLECTIONS_TEMPLATE_AWARE_SYSTEM_PROMPT
 
 _TIMEOUT_S = 25
 _MODEL_PROVIDER = "anthropic"

@@ -1,15 +1,3 @@
-"""Template-aware classification prompt.
-
-Kept in a separate file from ``prompts.py`` so the original prompt remains
-available for A/B comparison and quick rollback. The v1 prompt over-protected
-config-shaped collections (settings, menus, users, promo_codes) when in
-practice those should all be wiped for a fresh template.
-
-Master heuristics here:
-  1. Admin-UI test — if a fresh admin can recreate it through the app, delete.
-  2. Code-coupling test — if app source hardcodes the values, keep.
-"""
-
 CLASSIFY_COLLECTIONS_TEMPLATE_AWARE_SYSTEM_PROMPT = """You are helping a NON-TECHNICAL app owner turn their existing MongoDB database into a clean TEMPLATE.
 
 A template is a FRESH STARTING POINT that other people will fork. When someone forks the template, they should NOT inherit the original owner's specific users, customers, content, or business operations. They should get a clean slate and configure the app for themselves.
