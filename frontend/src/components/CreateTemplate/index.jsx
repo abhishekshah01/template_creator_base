@@ -81,6 +81,127 @@ const STATUSES_OPTS = {
   },
 };
 
+function VerdictPopover({ name, display }) {
+  // Compact card shown on info-icon hover. Evidence-first when verdict is from AI,
+  // otherwise falls back to the legacy keyword caution message.
+  const tone = TONE_STYLES[display.tone] || TONE_STYLES.neutral;
+  if (display.source !== 'ai') {
+    return (
+      <div className="absolute right-0 top-[calc(100%+4px)] w-[280px] z-20 invisible group-hover/info:visible bg-[#161b22] border border-[#30363d] rounded-md px-3 py-2 text-[12px] leading-[1.5] text-[#c9d1d9] shadow-lg pointer-events-none">
+        {display.message}
+      </div>
+    );
+  }
+  const evidence = Array.isArray(display.evidence) ? display.evidence.slice(0, 4) : [];
+  const confidencePct = Math.round((display.confidence || 0) * 100);
+  return (
+    <div className="absolute right-0 top-[calc(100%+4px)] w-[320px] z-20 invisible group-hover/info:visible bg-[#161b22] border border-[#30363d] rounded-md p-3 text-[12px] leading-[1.5] text-[#c9d1d9] shadow-lg pointer-events-none">
+      <div className="flex items-center justify-between mb-1.5">
+        <span className="font-mono text-[#e6edf3] text-[12px] truncate">{name}</span>
+        <span
+          className="text-[10px] font-medium px-1.5 py-[1px] rounded-full uppercase tracking-wide"
+          style={{ color: tone.fg, backgroundColor: tone.bg, border: `1px solid ${tone.border}` }}
+        >
+          {display.label}
+        </span>
+      </div>
+      {display.app_impact && (
+        <div className="text-[12.5px] text-[#e6edf3] mb-2 leading-snug">{display.app_impact}</div>
+      )}
+      {display.delete_meaning && (
+        <div className="text-[11.5px] text-[#8b949e] mb-2 italic">{display.delete_meaning}</div>
+      )}
+      {evidence.length > 0 && (
+        <div className="mt-2">
+          <div className="text-[10.5px] uppercase tracking-wide text-[#8b949e] mb-1">Why AI thinks this</div>
+          <ul className="space-y-0.5">
+            {evidence.map((e, i) => (
+              <li key={i} className="text-[11.5px] text-[#c9d1d9] flex gap-1.5">
+                <span className="text-[#484f58]">•</span>
+                <span className="flex-1">{e}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+      <div className="mt-2.5 flex items-center gap-2">
+        <span className="text-[10.5px] text-[#8b949e]">Confidence</span>
+        <div className="flex-1 h-[3px] bg-[#21262d] rounded-full overflow-hidden">
+          <div className="h-full rounded-full" style={{ width: `${confidencePct}%`, backgroundColor: tone.fg }} />
+        </div>
+        <span className="text-[10.5px] text-[#8b949e] font-mono">{confidencePct}%</span>
+      </div>
+    </div>
+  );
+}
+
+function AiReviewBanner({ status, appType, error, applied, counts, onApply, onUndo, onRetry }) {
+  if (status === 'idle') return null;
+  const wrap = "mb-3 rounded-md border px-3 py-2 flex items-start gap-3";
+  if (status === 'loading') {
+    return (
+      <div className={wrap} style={{ borderColor: 'rgba(88,166,255,0.30)', background: 'rgba(88,166,255,0.06)' }}>
+        <div className="w-3.5 h-3.5 mt-0.5 border-2 border-[#30363d] border-t-[#58a6ff] rounded-full animate-spin shrink-0" />
+        <div className="flex-1 text-[12.5px] text-[#c9d1d9]">
+          <span className="text-[#58a6ff] font-medium">AI is reviewing your collections…</span>
+          <span className="text-[#8b949e]"> Takes about 5–10 seconds.</span>
+        </div>
+      </div>
+    );
+  }
+  if (status === 'error') {
+    return (
+      <div className={wrap} style={{ borderColor: 'rgba(210,153,34,0.30)', background: 'rgba(210,153,34,0.06)' }}>
+        <svg className="w-3.5 h-3.5 mt-0.5 shrink-0" viewBox="0 0 16 16" fill="#d29922">
+          <path d="M8 1.5a6.5 6.5 0 1 1 0 13 6.5 6.5 0 0 1 0-13ZM8 4a.75.75 0 0 0-.75.75v3.5a.75.75 0 0 0 1.5 0v-3.5A.75.75 0 0 0 8 4Zm0 6a.875.875 0 1 0 0 1.75A.875.875 0 0 0 8 10Z" />
+        </svg>
+        <div className="flex-1 text-[12.5px] text-[#c9d1d9]">
+          <span className="text-[#d29922] font-medium">AI review unavailable — using basic safety checks.</span>
+          <span className="text-[#8b949e]"> Preview each collection before deleting.</span>
+          {error && <div className="text-[11px] text-[#8b949e] mt-0.5 truncate" title={error}>Details: {error}</div>}
+        </div>
+        <button onClick={onRetry} className="text-[11.5px] text-[#58a6ff] hover:underline shrink-0">Retry</button>
+      </div>
+    );
+  }
+  if (applied) {
+    return (
+      <div className={wrap} style={{ borderColor: 'rgba(63,185,80,0.30)', background: 'rgba(63,185,80,0.06)' }}>
+        <svg className="w-3.5 h-3.5 mt-0.5 shrink-0" viewBox="0 0 16 16" fill="#3fb950">
+          <path d="M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0Z" />
+        </svg>
+        <div className="flex-1 text-[12.5px] text-[#c9d1d9]">
+          <span className="text-[#3fb950] font-medium">{counts.toDelete} selection{counts.toDelete === 1 ? '' : 's'} applied</span>
+          {appType && <span className="text-[#8b949e]"> · {appType}</span>}
+        </div>
+        <button onClick={onUndo} className="text-[11.5px] text-[#58a6ff] hover:underline shrink-0">Undo</button>
+      </div>
+    );
+  }
+  return (
+    <div className={wrap} style={{ borderColor: 'rgba(88,166,255,0.30)', background: 'rgba(88,166,255,0.06)' }}>
+      <svg className="w-3.5 h-3.5 mt-0.5 shrink-0" viewBox="0 0 16 16" fill="#58a6ff">
+        <path d="M8 1.5 9.6 5.9l4.4 1.6-4.4 1.6L8 13.5 6.4 9.1 2 7.5l4.4-1.6L8 1.5Z" />
+      </svg>
+      <div className="flex-1 text-[12.5px] text-[#c9d1d9]">
+        {appType && <div className="text-[#c9d1d9] mb-0.5">Detected: <span className="text-[#e6edf3]">{appType}</span></div>}
+        <div>
+          <span className="text-[#58a6ff] font-medium">AI suggests</span>
+          <span className="text-[#c9d1d9]"> deleting {counts.toDelete}, keeping {counts.toKeep}</span>
+          {counts.toReview > 0 && <span className="text-[#8b949e]"> · {counts.toReview} need review</span>}
+        </div>
+      </div>
+      <button
+        onClick={onApply}
+        className="text-[12px] font-medium px-2.5 py-[3px] rounded-md shrink-0"
+        style={{ color: '#fff', backgroundColor: '#1f6feb' }}
+      >
+        Apply Recommendations
+      </button>
+    </div>
+  );
+}
+
 function SubStepRow({ label, sub }) {
   const { status, message, time } = sub;
   const labelColor = status === 'idle' ? '#8b949e' : '#e6edf3';
