@@ -33,32 +33,34 @@ function collectionInfo(name) {
 }
 
 // AI verdict → display metadata. Falls back to keyword caution when no verdict.
+// Labels stay lowercase to match the GitHub PR-label aesthetic the rest of the app uses.
 function verdictDisplay(name, verdict) {
   if (!verdict) {
     const keyword = collectionInfo(name);
     return {
-      label: keyword.caution ? 'Caution' : null,
+      label: keyword.caution ? 'caution' : null,
       tone: keyword.caution ? 'amber' : 'neutral',
       message: keyword.message,
       source: 'keyword',
     };
   }
   if (verdict.verdict === 'keep') {
-    return { label: 'Critical', tone: 'red', source: 'ai', ...verdict };
+    return { label: 'critical', tone: 'red', source: 'ai', ...verdict };
   }
   if (verdict.verdict === 'needs_review') {
-    return { label: 'Needs review', tone: 'amber', source: 'ai', ...verdict };
+    return { label: 'review', tone: 'amber', source: 'ai', ...verdict };
   }
   if (verdict.verdict === 'safe_to_delete') {
-    return { label: 'Recommended for deletion', tone: 'green', source: 'ai', ...verdict };
+    return { label: 'safe to delete', tone: 'green', source: 'ai', ...verdict };
   }
   return { label: null, tone: 'neutral', source: 'ai', ...verdict };
 }
 
+// GitHub Primer label tones — saturated fg over semi-transparent bg + matching border.
 const TONE_STYLES = {
-  red:     { fg: '#f85149', bg: 'rgba(248,81,73,0.10)',  border: 'rgba(248,81,73,0.30)' },
-  amber:   { fg: '#d29922', bg: 'rgba(210,153,34,0.10)', border: 'rgba(210,153,34,0.30)' },
-  green:   { fg: '#3fb950', bg: 'rgba(63,185,80,0.10)',  border: 'rgba(63,185,80,0.30)' },
+  red:     { fg: '#ff7b72', bg: 'rgba(248,81,73,0.15)',  border: 'rgba(248,81,73,0.40)' },
+  amber:   { fg: '#d29922', bg: 'rgba(187,128,9,0.15)',  border: 'rgba(187,128,9,0.40)' },
+  green:   { fg: '#3fb950', bg: 'rgba(46,160,67,0.15)',  border: 'rgba(46,160,67,0.40)' },
   neutral: { fg: '#8b949e', bg: 'rgba(139,148,158,0.08)',border: 'rgba(139,148,158,0.25)' },
 };
 
@@ -99,7 +101,7 @@ function VerdictPopover({ name, display }) {
       <div className="flex items-center justify-between mb-1.5">
         <span className="font-mono text-[#e6edf3] text-[12px] truncate">{name}</span>
         <span
-          className="text-[10px] font-medium px-1.5 py-[1px] rounded-full uppercase tracking-wide"
+          className="text-[11px] font-medium px-2 py-[1px] rounded-full"
           style={{ color: tone.fg, backgroundColor: tone.bg, border: `1px solid ${tone.border}` }}
         >
           {display.label}
@@ -135,70 +137,55 @@ function VerdictPopover({ name, display }) {
   );
 }
 
-function AiReviewBanner({ status, appType, error, applied, counts, onApply, onUndo, onRetry }) {
+function AiReviewBanner({ status, appType, error, applied, counts, onApply, onUndo, onRetry, btnDefault }) {
   if (status === 'idle') return null;
-  const wrap = "mb-3 rounded-md border px-3 py-2 flex items-start gap-3";
+
   if (status === 'loading') {
     return (
-      <div className={wrap} style={{ borderColor: 'rgba(88,166,255,0.30)', background: 'rgba(88,166,255,0.06)' }}>
-        <div className="w-3.5 h-3.5 mt-0.5 border-2 border-[#30363d] border-t-[#58a6ff] rounded-full animate-spin shrink-0" />
-        <div className="flex-1 text-[12.5px] text-[#c9d1d9]">
-          <span className="text-[#58a6ff] font-medium">AI is reviewing your collections…</span>
-          <span className="text-[#8b949e]"> Takes about 5–10 seconds.</span>
-        </div>
-      </div>
+      <Banner variant="info" className="mb-3">
+        AI is reviewing your collections… Takes about 5–10 seconds.
+      </Banner>
     );
   }
+
   if (status === 'error') {
     return (
-      <div className={wrap} style={{ borderColor: 'rgba(210,153,34,0.30)', background: 'rgba(210,153,34,0.06)' }}>
-        <svg className="w-3.5 h-3.5 mt-0.5 shrink-0" viewBox="0 0 16 16" fill="#d29922">
-          <path d="M8 1.5a6.5 6.5 0 1 1 0 13 6.5 6.5 0 0 1 0-13ZM8 4a.75.75 0 0 0-.75.75v3.5a.75.75 0 0 0 1.5 0v-3.5A.75.75 0 0 0 8 4Zm0 6a.875.875 0 1 0 0 1.75A.875.875 0 0 0 8 10Z" />
-        </svg>
-        <div className="flex-1 text-[12.5px] text-[#c9d1d9]">
-          <span className="text-[#d29922] font-medium">AI review unavailable — using basic safety checks.</span>
-          <span className="text-[#8b949e]"> Preview each collection before deleting.</span>
-          {error && <div className="text-[11px] text-[#8b949e] mt-0.5 truncate" title={error}>Details: {error}</div>}
-        </div>
-        <button onClick={onRetry} className="text-[11.5px] text-[#58a6ff] hover:underline shrink-0">Retry</button>
-      </div>
+      <Banner
+        variant="warning"
+        className="mb-3"
+        action={<button onClick={onRetry} className={btnDefault}>Retry</button>}
+      >
+        AI review unavailable — using basic safety checks. Preview each collection before deleting.
+        {error && <span className="text-[#8b949e] block text-[12px] mt-0.5 truncate" title={error}>Details: {error}</span>}
+      </Banner>
     );
   }
+
   if (applied) {
     return (
-      <div className={wrap} style={{ borderColor: 'rgba(63,185,80,0.30)', background: 'rgba(63,185,80,0.06)' }}>
-        <svg className="w-3.5 h-3.5 mt-0.5 shrink-0" viewBox="0 0 16 16" fill="#3fb950">
-          <path d="M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0Z" />
-        </svg>
-        <div className="flex-1 text-[12.5px] text-[#c9d1d9]">
-          <span className="text-[#3fb950] font-medium">{counts.toDelete} selection{counts.toDelete === 1 ? '' : 's'} applied</span>
-          {appType && <span className="text-[#8b949e]"> · {appType}</span>}
-        </div>
-        <button onClick={onUndo} className="text-[11.5px] text-[#58a6ff] hover:underline shrink-0">Undo</button>
-      </div>
+      <Banner
+        variant="success"
+        className="mb-3"
+        action={<button onClick={onUndo} className={btnDefault}>Undo</button>}
+      >
+        {counts.toDelete} selection{counts.toDelete === 1 ? '' : 's'} applied
+        {appType && <span className="text-[#8b949e]"> · {appType}</span>}
+      </Banner>
     );
   }
+
   return (
-    <div className={wrap} style={{ borderColor: 'rgba(88,166,255,0.30)', background: 'rgba(88,166,255,0.06)' }}>
-      <svg className="w-3.5 h-3.5 mt-0.5 shrink-0" viewBox="0 0 16 16" fill="#58a6ff">
-        <path d="M8 1.5 9.6 5.9l4.4 1.6-4.4 1.6L8 13.5 6.4 9.1 2 7.5l4.4-1.6L8 1.5Z" />
-      </svg>
-      <div className="flex-1 text-[12.5px] text-[#c9d1d9]">
-        {appType && <div className="text-[#c9d1d9] mb-0.5">Detected: <span className="text-[#e6edf3]">{appType}</span></div>}
-        <div>
-          <span className="text-[#58a6ff] font-medium">AI suggests</span>
-          <span className="text-[#c9d1d9]"> deleting {counts.toDelete}, keeping {counts.toKeep}</span>
-          {counts.toReview > 0 && <span className="text-[#8b949e]"> · {counts.toReview} need review</span>}
-        </div>
-      </div>
-      <button
-        onClick={onApply}
-        className="text-[12px] font-medium px-2.5 py-[3px] rounded-md shrink-0"
-        style={{ color: '#fff', backgroundColor: '#1f6feb' }}
-      >
-        Apply Recommendations
-      </button>
-    </div>
+    <Banner
+      variant="info"
+      className="mb-3"
+      action={<button onClick={onApply} className={btnDefault}>Apply recommendations</button>}
+    >
+      {appType && <span className="text-[#8b949e]">Detected: </span>}
+      {appType && <span className="text-[#e6edf3]">{appType}</span>}
+      {appType && <span className="text-[#8b949e]"> — </span>}
+      <span className="text-[#e6edf3]">AI suggests {counts.toDelete} to delete, {counts.toKeep} to keep</span>
+      {counts.toReview > 0 && <span className="text-[#8b949e]"> · {counts.toReview} to review</span>}
+    </Banner>
   );
 }
 
@@ -1041,6 +1028,7 @@ export default function CreateTemplate({ bearerToken = "" }) {
               onApply={applyAiRecommendations}
               onUndo={undoAiApply}
               onRetry={() => runAiClassification(jobId, dbName)}
+              btnDefault={btnDefault}
             />
           )}
           <div className="flex items-center gap-3 mb-2">
@@ -1081,7 +1069,7 @@ export default function CreateTemplate({ bearerToken = "" }) {
                       <span className={`font-mono text-[12px] flex-1 ${checked ? 'text-[#f85149]' : 'text-[#e6edf3]'}`}>{c.name}</span>
                       {display.label && (
                         <span
-                          className="text-[10.5px] font-medium px-1.5 py-[1px] rounded-full uppercase tracking-wide shrink-0"
+                          className="text-[11.5px] font-medium px-2 py-[1px] rounded-full shrink-0"
                           style={{ color: tone.fg, backgroundColor: tone.bg, border: `1px solid ${tone.border}` }}
                         >
                           {display.label}
