@@ -32,6 +32,38 @@ function collectionInfo(name) {
   return { caution, message };
 }
 
+// AI verdict → display metadata. Falls back to keyword caution when no verdict.
+function verdictDisplay(name, verdict) {
+  if (!verdict) {
+    const keyword = collectionInfo(name);
+    return {
+      label: keyword.caution ? 'Caution' : null,
+      tone: keyword.caution ? 'amber' : 'neutral',
+      message: keyword.message,
+      source: 'keyword',
+    };
+  }
+  if (verdict.verdict === 'keep') {
+    return { label: 'Critical', tone: 'red', source: 'ai', ...verdict };
+  }
+  if (verdict.verdict === 'needs_review') {
+    return { label: 'Needs review', tone: 'amber', source: 'ai', ...verdict };
+  }
+  if (verdict.verdict === 'safe_to_delete') {
+    return { label: 'Recommended for deletion', tone: 'green', source: 'ai', ...verdict };
+  }
+  return { label: null, tone: 'neutral', source: 'ai', ...verdict };
+}
+
+const TONE_STYLES = {
+  red:     { fg: '#f85149', bg: 'rgba(248,81,73,0.10)',  border: 'rgba(248,81,73,0.30)' },
+  amber:   { fg: '#d29922', bg: 'rgba(210,153,34,0.10)', border: 'rgba(210,153,34,0.30)' },
+  green:   { fg: '#3fb950', bg: 'rgba(63,185,80,0.10)',  border: 'rgba(63,185,80,0.30)' },
+  neutral: { fg: '#8b949e', bg: 'rgba(139,148,158,0.08)',border: 'rgba(139,148,158,0.25)' },
+};
+
+const AI_CONFIDENCE_APPLY_THRESHOLD = 0.85;
+
 const INITIAL_SUB = { status: 'idle', message: '', time: '' };
 
 const SUB_OPTS = {
