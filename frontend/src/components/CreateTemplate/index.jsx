@@ -1031,6 +1031,18 @@ export default function CreateTemplate({ bearerToken = "" }) {
               Not sure what a table contains? Click its name in the Inspector → to preview the data.
             </Banner>
           )}
+          {collections.length > 0 && (
+            <AiReviewBanner
+              status={aiStatus}
+              appType={aiAppType}
+              error={aiError}
+              applied={aiApplied}
+              counts={aiSuggestedCounts()}
+              onApply={applyAiRecommendations}
+              onUndo={undoAiApply}
+              onRetry={() => runAiClassification(jobId, dbName)}
+            />
+          )}
           <div className="flex items-center gap-3 mb-2">
             <button onClick={() => selectAll(true)}
               className="text-[13px] text-[#58a6ff] hover:underline">
@@ -1047,7 +1059,9 @@ export default function CreateTemplate({ bearerToken = "" }) {
               ? <p className="text-[12px] text-[#484f58] p-4 text-center">No collections found.</p>
               : collections.map(c => {
                   const checked = selected.has(c.name);
-                  const info = collectionInfo(c.name);
+                  const verdict = aiResults[c.name];
+                  const display = verdictDisplay(c.name, verdict);
+                  const tone = TONE_STYLES[display.tone] || TONE_STYLES.neutral;
                   return (
                     <div key={c.name} onClick={() => toggleCollection(c.name)}
                       className={`flex items-center gap-2.5 px-3 py-[7px] text-[13px] border-b border-[#21262d] last:border-b-0 cursor-pointer transition-colors group ${
@@ -1065,14 +1079,23 @@ export default function CreateTemplate({ bearerToken = "" }) {
                         )}
                       </div>
                       <span className={`font-mono text-[12px] flex-1 ${checked ? 'text-[#f85149]' : 'text-[#e6edf3]'}`}>{c.name}</span>
+                      {display.label && (
+                        <span
+                          className="text-[10.5px] font-medium px-1.5 py-[1px] rounded-full uppercase tracking-wide shrink-0"
+                          style={{ color: tone.fg, backgroundColor: tone.bg, border: `1px solid ${tone.border}` }}
+                        >
+                          {display.label}
+                        </span>
+                      )}
                       <div className="relative shrink-0 group/info" onClick={e => e.stopPropagation()}>
-                        <svg className={`w-3.5 h-3.5 cursor-help ${info.caution ? 'text-[#aa7109]' : 'text-[#484f58] hover:text-[#8b949e]'}`}
-                          viewBox="0 0 16 16" fill="currentColor">
+                        <svg
+                          className="w-3.5 h-3.5 cursor-help"
+                          style={{ color: tone.fg, opacity: display.label ? 1 : 0.6 }}
+                          viewBox="0 0 16 16" fill="currentColor"
+                        >
                           <path d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8Zm8-6.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13ZM6.5 7.75A.75.75 0 0 1 7.25 7h1a.75.75 0 0 1 .75.75v2.75h.25a.75.75 0 0 1 0 1.5h-2a.75.75 0 0 1 0-1.5h.25v-2h-.25a.75.75 0 0 1-.75-.75ZM8 6a1 1 0 1 1 0-2 1 1 0 0 1 0 2Z" />
                         </svg>
-                        <div className="absolute right-0 top-[calc(100%+4px)] w-[260px] z-20 invisible group-hover/info:visible bg-[#161b22] border border-[#30363d] rounded-md px-3 py-2 text-[12px] leading-[1.5] text-[#c9d1d9] shadow-lg pointer-events-none">
-                          {info.message}
-                        </div>
+                        <VerdictPopover name={c.name} display={display} />
                       </div>
                       <button onClick={e => { e.stopPropagation(); inspectCollectionFromEye(c.name); }}
                         className="p-1 rounded hover:bg-[#30363d] text-[#484f58] hover:text-[#e6edf3] transition-colors opacity-0 group-hover:opacity-100"
@@ -1177,6 +1200,7 @@ export default function CreateTemplate({ bearerToken = "" }) {
             onInspected={() => setInspectCollection('')}
             status={inspectorStatus}
             errorReason={inspectorReason}
+            aiResults={aiResults}
           />
         )}
       </div>
