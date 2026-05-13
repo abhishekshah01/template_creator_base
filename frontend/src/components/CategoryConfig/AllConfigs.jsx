@@ -402,15 +402,19 @@ export default function AllConfigs({ onNavigate, bearerToken, onTokenExpired, ca
           </button>
         </div>
 
-        {/* Loading state — skeleton rows match real layout so transition is seamless */}
-        {(loading || envSwitching) && configs.length === 0 && (
+        {/* Loading state — skeleton rows match real layout so transition is seamless.
+            Shown for both initial load AND refresh-click (regardless of cached data),
+            and stays visible until `loading` flips to false — prevents the brief blank
+            gap where parent had updated cachedConfigs but our own `loading` wasn't
+            cleared yet. */}
+        {(loading || envSwitching) && (
           <>
             {SKELETON_ROWS.map((widths, i) => <SkeletonRow key={i} widths={widths} />)}
           </>
         )}
 
         {/* Config rows — GitHub issue row style */}
-        {!loading && paginated.map(config => {
+        {!loading && !envSwitching && paginated.map(config => {
           const envVarCount = Object.keys(config.default_env_config || {}).length;
           const preview = extractSummaryPreview(config.config);
           const hasSummary = !!config.config?.app_summary;
@@ -454,7 +458,7 @@ export default function AllConfigs({ onNavigate, bearerToken, onTokenExpired, ca
         })}
 
         {/* Empty states */}
-        {!loading && configs.length > 0 && filtered.length === 0 && (
+        {!loading && !envSwitching && configs.length > 0 && filtered.length === 0 && (
           <div className="text-center py-16">
             <SearchIcon className="w-6 h-6 text-[#484f58] mx-auto mb-3" />
             <div className="text-[20px] font-semibold text-[#e6edf3] mb-1">No results matched your search.</div>
@@ -462,7 +466,7 @@ export default function AllConfigs({ onNavigate, bearerToken, onTokenExpired, ca
           </div>
         )}
 
-        {!loading && configs.length === 0 && !error && bearerToken && (
+        {!loading && !envSwitching && configs.length === 0 && !error && bearerToken && (
           <div className="text-center py-16">
             <DatabaseIcon className="w-6 h-6 text-[#484f58] mx-auto mb-3" />
             <div className="text-[20px] font-semibold text-[#e6edf3] mb-1">No configs yet.</div>
