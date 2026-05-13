@@ -20,11 +20,11 @@ from typing import Any
 
 from emergentintegrations.llm.chat import LlmChat, UserMessage
 
-from prompts import CLASSIFY_COLLECTIONS_SYSTEM_PROMPT
+from prompts_template_aware import CLASSIFY_COLLECTIONS_TEMPLATE_AWARE_SYSTEM_PROMPT
 
 _TIMEOUT_S = 25
-_MODEL_PROVIDER = "openai"
-_MODEL_NAME = "gpt-4o-mini"
+_MODEL_PROVIDER = "anthropic"
+_MODEL_NAME = "claude-sonnet-4-6"
 _PAYLOAD_CHAR_LIMIT = 80_000
 
 
@@ -45,7 +45,7 @@ async def _one_shot(prompt: str) -> str:
         LlmChat(
             api_key=api_key,
             session_id=f"template-classify-{uuid.uuid4().hex[:8]}",
-            system_message=CLASSIFY_COLLECTIONS_SYSTEM_PROMPT,
+            system_message=CLASSIFY_COLLECTIONS_TEMPLATE_AWARE_SYSTEM_PROMPT,
         )
         .with_model(_MODEL_PROVIDER, _MODEL_NAME)
         .with_params(temperature=0.1, response_format={"type": "json_object"})
