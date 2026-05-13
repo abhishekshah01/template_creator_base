@@ -208,7 +208,9 @@ function ManageView({ url, deployments, onRedeploy }) {
       {/* Top section: preview + URL/actions */}
       {url && (
         <div className="flex gap-3 mb-4">
-          <div className="relative w-[160px] h-[110px] rounded-lg overflow-hidden border border-[#30363d] bg-[#010409] shrink-0">
+          <a href={url} target="_blank" rel="noopener noreferrer"
+            title="Open in new tab"
+            className="relative group block w-[160px] h-[110px] rounded-lg overflow-hidden border border-[#30363d] bg-[#010409] shrink-0">
             <iframe src={url} title="App preview"
               width="1280" height="880"
               onLoad={() => setPreviewLoaded(true)}
@@ -220,7 +222,12 @@ function ManageView({ url, deployments, onRedeploy }) {
                 <div className="w-4 h-4 border-2 border-[#30363d] border-t-[#58a6ff] rounded-full animate-spin" />
               </div>
             )}
-          </div>
+            <div className="absolute inset-0 flex items-center justify-center bg-black/55 opacity-0 group-hover:opacity-100 transition-opacity duration-150">
+              <svg className="w-5 h-5 text-[#e6edf3]" viewBox="0 0 16 16" fill="currentColor">
+                <path d="M3.75 2h3.5a.75.75 0 0 1 0 1.5h-3.5a.25.25 0 0 0-.25.25v8.5c0 .138.112.25.25.25h8.5a.25.25 0 0 0 .25-.25v-3.5a.75.75 0 0 1 1.5 0v3.5A1.75 1.75 0 0 1 12.25 14h-8.5A1.75 1.75 0 0 1 2 12.25v-8.5C2 2.784 2.784 2 3.75 2Zm6.854-1h4.146a.25.25 0 0 1 .25.25v4.146a.25.25 0 0 1-.427.177L13.03 4.03 9.28 7.78a.751.751 0 0 1-1.042-.018.751.751 0 0 1-.018-1.042l3.75-3.75-1.543-1.543A.25.25 0 0 1 10.604 1Z" />
+              </svg>
+            </div>
+          </a>
           <div className="flex-1 min-w-0">
             <span className="inline-flex items-center gap-1.5 text-[12px] px-2 py-[2px] rounded-full font-medium mb-2"
               style={{ backgroundColor: 'rgba(35,134,54,0.15)', color: '#3fb950', border: '1px solid rgba(35,134,54,0.3)' }}>
