@@ -39,7 +39,7 @@ export default function DeployPanel({
     : 'Deploy';
 
   return (
-    <div className="h-full flex flex-col bg-[#0c1117] border border-[#30363d] rounded-md overflow-hidden">
+    <div className="h-full flex flex-col bg-black border border-[#30363d] rounded-md overflow-hidden">
       <div className="flex items-center justify-between px-4 py-3 border-b border-[#30363d] bg-[#161b22] shrink-0">
         <div className="flex items-center gap-2">
           <CloudIcon className="w-4 h-4 text-[#8b949e]" />
