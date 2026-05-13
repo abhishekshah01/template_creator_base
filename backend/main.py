@@ -16,6 +16,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
 import config
+from llm_client import LLMClassificationError, classify_collections
 
 # Async HTTP client — does NOT block the event loop
 _client = httpx.AsyncClient(follow_redirects=True)
@@ -95,6 +96,11 @@ class UpdateCategoryConfigRequest(BaseModel):
 
 class SwitchEnvironmentRequest(BaseModel):
     env_name: str
+
+
+class ClassifyCollectionsRequest(BaseModel):
+    job_id: str
+    db_name: str
 
 
 # ---------------------------------------------------------------------------
@@ -449,6 +455,134 @@ async def get_collection_data(req: CollectionDataRequest):
         "count": doc_count,
         "limit": limit,
         "documents": documents,
+    }
+
+
+# ---------------------------------------------------------------------------
+# AI-driven collection classification (overlay on top of keyword heuristic)
+# ---------------------------------------------------------------------------
+
+CLASSIFY_MAX_COLLECTIONS = 30
+CLASSIFY_SAMPLE_DOCS = 4
+CLASSIFY_FIELD_CAP = 40
+
+
+def _shape_collection_for_llm(name: str, docs: list, doc_count: int) -> dict:
+    """Trim per-collection data before sending to the LLM."""
+    field_names: list[str] = []
+    seen: set[str] = set()
+    for d in docs:
+        if isinstance(d, dict):
+            for k in d.keys():
+                if k not in seen:
+                    seen.add(k)
+                    field_names.append(k)
+        if len(field_names) >= CLASSIFY_FIELD_CAP:
+            break
+
+    samples = []
+    for d in docs[:CLASSIFY_SAMPLE_DOCS]:
+        try:
+            s = json.dumps(d, default=str)
+        except Exception:
+            s = str(d)
+        samples.append(s[:400])
+
+    return {
+        "name": name,
+        "field_names": field_names[:CLASSIFY_FIELD_CAP],
+        "doc_count": doc_count,
+        "sample_docs": samples,
+    }
+
+
+@app.post("/api/v2/collections/classify")
+async def classify_collections_endpoint(req: ClassifyCollectionsRequest):
+    """Run AI classification across every collection in the job's database.
+
+    One mongosh pass pulls samples + counts for all collections, then a single
+    batched LLM call returns a verdict per collection. Failures return a
+    degraded response so the frontend can fall back to keyword heuristics.
+    """
+    env_id = await _get_env_id(req.job_id)
+    if not env_id:
+        env_label = config.get_env_config(config.ENV).get("label", config.ENV)
+        raise HTTPException(404, f"Job {req.job_id} was not found in the '{env_label}' environment.")
+
+    db_name_safe = re.sub(r"[^a-zA-Z0-9_-]", "", req.db_name)
+    if not db_name_safe or db_name_safe != req.db_name:
+        raise HTTPException(400, "Invalid db_name")
+
+    js = (
+        f'var db_ = db.getSiblingDB("{db_name_safe}");'
+        f"var names = db_.getCollectionNames();"
+        f"var out = [];"
+        f"for (var i = 0; i < names.length && i < {CLASSIFY_MAX_COLLECTIONS}; i++) {{"
+        f"  var n = names[i];"
+        f"  var c = db_.getCollection(n);"
+        f"  var docs = c.find().limit({CLASSIFY_SAMPLE_DOCS}).toArray();"
+        f"  var count = c.estimatedDocumentCount();"
+        f"  out.push({{name: n, docs: docs, count: count}});"
+        f"}}"
+        f"print(JSON.stringify(out));"
+    )
+    cmd = f"mongosh --quiet --eval '{js}'"
+
+    result = await _pod_exec(env_id, cmd, timeout=45)
+    stdout = result.get("stdout", "").strip()
+
+    raw_collections: list[dict] = []
+    for line in stdout.split("\n"):
+        line = line.strip()
+        if line.startswith("["):
+            try:
+                raw_collections = json.loads(line)
+                break
+            except json.JSONDecodeError:
+                continue
+
+    if not raw_collections:
+        return {
+            "status": "degraded",
+            "reason": "Could not read collections from the pod",
+            "app_type": "",
+            "results": {},
+        }
+
+    shaped = [
+        _shape_collection_for_llm(
+            entry.get("name", ""),
+            entry.get("docs") or [],
+            int(entry.get("count") or 0),
+        )
+        for entry in raw_collections
+        if entry.get("name")
+    ]
+
+    truncated = len(raw_collections) >= CLASSIFY_MAX_COLLECTIONS
+
+    try:
+        llm_response = await classify_collections(shaped)
+    except LLMClassificationError as e:
+        return {
+            "status": "degraded",
+            "reason": str(e),
+            "app_type": "",
+            "results": {},
+            "truncated": truncated,
+        }
+
+    app_type = llm_response.get("app_type", "") if isinstance(llm_response, dict) else ""
+    results = llm_response.get("collections", {}) if isinstance(llm_response, dict) else {}
+    if not isinstance(results, dict):
+        results = {}
+
+    return {
+        "status": "ok",
+        "app_type": app_type,
+        "results": results,
+        "truncated": truncated,
+        "classified_count": len(shaped),
     }
 
 
