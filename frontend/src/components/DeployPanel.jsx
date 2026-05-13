@@ -264,7 +264,7 @@ function ManageView({ url, deployments, onRedeploy }) {
 
       {/* Deployments timeline */}
       {(deployments || []).length > 0 && (
-        <div className="mt-5 border border-[#21262d] rounded-md p-4 bg-[#0a1428]">
+        <div className="mt-5 border border-[#21262d] rounded-md p-4 bg-[#0c1117]">
           <div className="mb-3">
             <div className="text-[15px] font-semibold text-[#e6edf3]">Deployments</div>
             <div className="text-[12.5px] text-[#8b949e] mt-0.5">All deployed versions of your app</div>
