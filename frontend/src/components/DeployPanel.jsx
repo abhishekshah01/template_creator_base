@@ -229,14 +229,14 @@ function ManageView({ url, deployments, onRedeploy }) {
             </div>
           </a>
           <div className="flex-1 min-w-0">
-            <span className="inline-flex items-center gap-1.5 text-[12px] px-2 py-[2px] rounded-full font-medium mb-2"
+            <span className="inline-flex items-center gap-1.5 text-[12.5px] px-2.5 py-[3px] rounded-full font-medium mb-2"
               style={{ backgroundColor: 'rgba(35,134,54,0.15)', color: '#3fb950', border: '1px solid rgba(35,134,54,0.3)' }}>
-              <span className="w-1.5 h-1.5 rounded-full bg-[#3fb950]" />
+              <span className="w-2 h-2 rounded-full bg-[#3fb950]" />
               Live
             </span>
             <div className="flex items-start gap-1.5 mb-2">
               <a href={url} target="_blank" rel="noopener noreferrer"
-                className="flex-1 font-mono text-[12px] text-[#58a6ff] hover:underline break-all leading-snug">
+                className="flex-1 font-mono text-[13px] text-[#58a6ff] hover:underline break-all leading-snug">
                 {url}
               </a>
               <button onClick={copyUrl} title={copied ? 'Copied!' : 'Copy URL'}
