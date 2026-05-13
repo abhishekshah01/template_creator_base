@@ -126,6 +126,12 @@ export default function CreateTemplate({ bearerToken = "" }) {
   const [dbName, setDbName] = usePersistedState('cT.dbName', '');
   const [collections, setCollections] = usePersistedState('cT.collections', []);
   const [selected, setSelected] = usePersistedState('cT.selected', new Set(), SET_OPTS);
+  const [aiStatus, setAiStatus] = useState('idle'); // 'idle' | 'loading' | 'ready' | 'error'
+  const [aiAppType, setAiAppType] = useState('');
+  const [aiResults, setAiResults] = useState({}); // { name: {verdict, confidence, recommendation, app_impact, delete_meaning, evidence} }
+  const [aiError, setAiError] = useState('');
+  const [aiApplied, setAiApplied] = useState(false);
+  const [aiUndoSnapshot, setAiUndoSnapshot] = useState(null); // selected Set snapshot prior to apply
   const [times, setTimes] = usePersistedState('cT.times', {});
   const [statuses, setStatuses] = usePersistedState('cT.statuses', {}, STATUSES_OPTS);
   const [gcsPath, setGcsPath] = usePersistedState('cT.gcsPath', '');
@@ -273,6 +279,7 @@ export default function CreateTemplate({ bearerToken = "" }) {
     setResumeState('idle'); setResumeError(''); setResumeElapsed(0);
     setDeployStatus('idle'); setDeploySteps([]); setDeployUrl(''); setDeployments([]);
     setRightPanelTab('inspector');
+    resetAiClassification();
   }
 
   function stepStatus(n) {
@@ -303,11 +310,21 @@ export default function CreateTemplate({ bearerToken = "" }) {
     setTimes(prev => { const { 2: _2, ...rest } = prev; return rest; });
   }
 
+  function resetAiClassification() {
+    setAiStatus('idle');
+    setAiAppType('');
+    setAiResults({});
+    setAiError('');
+    setAiApplied(false);
+    setAiUndoSnapshot(null);
+  }
+
   function resetDownstream() {
     setCollections([]);
     setSelected(new Set());
     setDbName('');
     setInspectCollection('');
+    resetAiClassification();
     resetDeployStep();
     resetClearStep();
     resetCreateStep();
