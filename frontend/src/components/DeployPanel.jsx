@@ -39,8 +39,8 @@ export default function DeployPanel({
     : 'Deploy';
 
   return (
-    <div className="h-full flex flex-col bg-[#0d1117] border border-[#30363d] rounded-md overflow-hidden">
-      <div className="flex items-center justify-between px-4 py-3 border-b border-[#30363d] bg-[#161b22] shrink-0">
+    <div className="h-full flex flex-col bg-black border border-[#30363d] rounded-md overflow-hidden">
+      <div className="flex items-center justify-between px-4 py-3 border-b border-[#30363d] bg-black shrink-0">
         <div className="flex items-center gap-2">
           <CloudIcon className="w-4 h-4 text-[#8b949e]" />
           <span className="text-[14px] font-semibold text-[#e6edf3]">{title}</span>
@@ -263,7 +263,7 @@ function ManageView({ url, deployments, onRedeploy }) {
 
       {/* Deployments timeline */}
       {(deployments || []).length > 0 && (
-        <div className="mt-5 border border-[#21262d] rounded-md p-4 bg-[#0d1117]">
+        <div className="mt-5 border border-[#21262d] rounded-md p-4 bg-black">
           <div className="mb-3">
             <div className="text-[15px] font-semibold text-[#e6edf3]">Deployments</div>
             <div className="text-[12.5px] text-[#8b949e] mt-0.5">All deployed versions of your app</div>
