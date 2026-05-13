@@ -264,7 +264,7 @@ function ManageView({ url, deployments, onRedeploy }) {
 
       {/* Deployments timeline */}
       {(deployments || []).length > 0 && (
-        <div className="mt-5 border border-[#21262d] rounded-md p-4 bg-black">
+        <div className="mt-5 border border-[#21262d] rounded-md p-4 bg-[#0a1428]">
           <div className="mb-3">
             <div className="text-[15px] font-semibold text-[#e6edf3]">Deployments</div>
             <div className="text-[12.5px] text-[#8b949e] mt-0.5">All deployed versions of your app</div>
@@ -275,7 +275,7 @@ function ManageView({ url, deployments, onRedeploy }) {
               return (
                 <div key={runId || i}
                   className={`flex items-start gap-3 text-[13.5px] px-2 py-2 rounded-md transition-colors ${
-                    i === 0 ? 'bg-[rgba(46,160,67,0.05)] hover:bg-[rgba(46,160,67,0.08)]' : 'hover:bg-[#161b22]'
+                    i === 0 ? 'bg-[rgba(46,160,67,0.10)] hover:bg-[rgba(46,160,67,0.14)]' : 'hover:bg-[rgba(255,255,255,0.04)]'
                   }`}>
                   <div className="flex flex-col items-center pt-1 shrink-0">
                     <div className={`w-2.5 h-2.5 rounded-full ${i === 0 ? 'bg-[#3fb950]' : 'bg-[#484f58]'}`} />
