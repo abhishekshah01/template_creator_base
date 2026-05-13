@@ -231,9 +231,9 @@ function ManageView({ url, deployments, onRedeploy }) {
             </div>
           </a>
           <div className="flex-1 min-w-0">
-            <span className="inline-flex items-center gap-1.5 text-[12.5px] px-2.5 py-[3px] rounded-full font-medium mb-2"
-              style={{ backgroundColor: 'rgba(35,134,54,0.15)', color: '#3fb950', border: '1px solid rgba(35,134,54,0.3)' }}>
-              <span className="w-2 h-2 rounded-full bg-[#3fb950]" />
+            <span className="inline-flex items-center gap-2 text-[14px] px-3 py-1 rounded-full font-medium mb-2.5"
+              style={{ color: '#3fb950', border: '1px solid rgba(63,185,80,0.55)' }}>
+              <span className="w-2 h-2 rounded-full bg-[#3fb950] shadow-[0_0_6px_rgba(63,185,80,0.7)]" />
               Live
             </span>
             <div className="flex items-start gap-1.5 mb-2">
