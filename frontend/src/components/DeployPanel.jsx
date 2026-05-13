@@ -263,15 +263,15 @@ function ManageView({ url, deployments, onRedeploy }) {
       {(deployments || []).length > 0 && (
         <div className="mt-5 border border-[#21262d] rounded-md p-4 bg-[#0d1117]">
           <div className="mb-3">
-            <div className="text-[14px] font-semibold text-[#e6edf3]">Deployments</div>
-            <div className="text-[12px] text-[#8b949e]">All deployed versions of your app</div>
+            <div className="text-[15px] font-semibold text-[#e6edf3]">Deployments</div>
+            <div className="text-[12.5px] text-[#8b949e] mt-0.5">All deployed versions of your app</div>
           </div>
           <div className="-mx-2">
             {deployments.slice(0, 10).map((d, i) => {
               const runId = d.id || d.run_id;
               return (
                 <div key={runId || i}
-                  className={`flex items-start gap-3 text-[13px] px-2 py-1.5 rounded-md transition-colors ${
+                  className={`flex items-start gap-3 text-[13.5px] px-2 py-2 rounded-md transition-colors ${
                     i === 0 ? 'bg-[rgba(46,160,67,0.05)] hover:bg-[rgba(46,160,67,0.08)]' : 'hover:bg-[#161b22]'
                   }`}>
                   <div className="flex flex-col items-center pt-1 shrink-0">
@@ -280,7 +280,7 @@ function ManageView({ url, deployments, onRedeploy }) {
                   </div>
                   <div className="flex-1 min-w-0 pb-2">
                     <div className="text-[#e6edf3] font-medium">Deployment {deployments.length - i}</div>
-                    <div className="text-[11px] text-[#8b949e] mt-0.5">
+                    <div className="text-[11.5px] text-[#8b949e] mt-0.5">
                       {d.created_at ? timeAgo(d.created_at, now) : 'unknown time'}
                       {runId && <span className="font-mono ml-2">{String(runId).slice(0, 8)}</span>}
                     </div>
