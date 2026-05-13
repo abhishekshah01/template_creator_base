@@ -43,6 +43,8 @@ export { AuthError };
 export const api = {
   getJobInfo: (jobId, bearerToken) => request('/job-info', { job_id: jobId, bearer_token: bearerToken || '' }),
   getCollections: (jobId) => request('/collections', { job_id: jobId }),
+  classifyCollections: (jobId, dbName) =>
+    request('/v2/collections/classify', { job_id: jobId, db_name: dbName }),
   deleteCollections: (jobId, dbName, collections) =>
     request('/delete-collections', { job_id: jobId, db_name: dbName, collections }),
   pauseJob: (jobId) => request('/pause-job', { job_id: jobId }),
