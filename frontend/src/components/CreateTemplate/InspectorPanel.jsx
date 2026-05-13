@@ -58,7 +58,62 @@ const TERMINAL_MESSAGES = {
   other:       'Connection failed. See error details on the left.',
 };
 
-export default function InspectorPanel({ jobId, dbName, collections, inspectCollection, onInspected, status = 'idle', errorReason = '' }) {
+const AI_TONE_BY_VERDICT = {
+  keep:           { label: 'Critical',                  fg: '#f85149', bg: 'rgba(248,81,73,0.10)', border: 'rgba(248,81,73,0.30)' },
+  needs_review:   { label: 'Needs review',              fg: '#d29922', bg: 'rgba(210,153,34,0.10)', border: 'rgba(210,153,34,0.30)' },
+  safe_to_delete: { label: 'Recommended for deletion',  fg: '#3fb950', bg: 'rgba(63,185,80,0.10)',  border: 'rgba(63,185,80,0.30)' },
+};
+
+function AiReasoningHeader({ verdict }) {
+  if (!verdict || !AI_TONE_BY_VERDICT[verdict.verdict]) return null;
+  const tone = AI_TONE_BY_VERDICT[verdict.verdict];
+  const evidence = Array.isArray(verdict.evidence) ? verdict.evidence.slice(0, 4) : [];
+  const confidencePct = Math.round((verdict.confidence || 0) * 100);
+  return (
+    <div
+      className="mx-3 mt-3 mb-1 rounded-md border p-3 text-[12px] leading-[1.5]"
+      style={{ borderColor: tone.border, background: tone.bg }}
+    >
+      <div className="flex items-center gap-2 mb-1.5">
+        <svg className="w-3.5 h-3.5" viewBox="0 0 16 16" fill={tone.fg}>
+          <path d="M8 1.5 9.6 5.9l4.4 1.6-4.4 1.6L8 13.5 6.4 9.1 2 7.5l4.4-1.6L8 1.5Z" />
+        </svg>
+        <span className="text-[10.5px] uppercase tracking-wide font-medium" style={{ color: tone.fg }}>AI reasoning</span>
+        <span
+          className="ml-auto text-[10px] font-medium px-1.5 py-[1px] rounded-full uppercase tracking-wide"
+          style={{ color: tone.fg, border: `1px solid ${tone.border}`, backgroundColor: 'rgba(0,0,0,0.20)' }}
+        >
+          {tone.label}
+        </span>
+      </div>
+      {verdict.app_impact && (
+        <div className="text-[12.5px] text-[#e6edf3] mb-1.5 leading-snug">{verdict.app_impact}</div>
+      )}
+      {verdict.delete_meaning && (
+        <div className="text-[11.5px] text-[#8b949e] italic mb-2">{verdict.delete_meaning}</div>
+      )}
+      {evidence.length > 0 && (
+        <ul className="space-y-0.5 mt-1">
+          {evidence.map((e, i) => (
+            <li key={i} className="text-[11.5px] text-[#c9d1d9] flex gap-1.5">
+              <span className="text-[#484f58]">•</span>
+              <span className="flex-1">{e}</span>
+            </li>
+          ))}
+        </ul>
+      )}
+      <div className="mt-2 flex items-center gap-2">
+        <span className="text-[10.5px] text-[#8b949e]">Confidence</span>
+        <div className="flex-1 h-[3px] bg-[#21262d] rounded-full overflow-hidden">
+          <div className="h-full rounded-full" style={{ width: `${confidencePct}%`, backgroundColor: tone.fg }} />
+        </div>
+        <span className="text-[10.5px] text-[#8b949e] font-mono">{confidencePct}%</span>
+      </div>
+    </div>
+  );
+}
+
+export default function InspectorPanel({ jobId, dbName, collections, inspectCollection, onInspected, status = 'idle', errorReason = '', aiResults = {} }) {
   const isReady = status === 'ready';
 
   // Document viewer state
@@ -262,6 +317,10 @@ export default function InspectorPanel({ jobId, dbName, collections, inspectColl
                 <div className="p-3 m-3 rounded-md text-[12px] bg-[#da3633]/10 text-[#f85149] border border-[#da3633]/30">
                   {viewerError}
                 </div>
+              )}
+
+              {activeCollection && aiResults[activeCollection] && (
+                <AiReasoningHeader verdict={aiResults[activeCollection]} />
               )}
 
               {viewerData && !viewerLoading && (
