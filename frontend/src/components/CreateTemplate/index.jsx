@@ -839,8 +839,10 @@ export default function CreateTemplate({ bearerToken = "" }) {
                           viewBox="0 0 16 16" fill="currentColor">
                           <path d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8Zm8-6.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13ZM6.5 7.75A.75.75 0 0 1 7.25 7h1a.75.75 0 0 1 .75.75v2.75h.25a.75.75 0 0 1 0 1.5h-2a.75.75 0 0 1 0-1.5h.25v-2h-.25a.75.75 0 0 1-.75-.75ZM8 6a1 1 0 1 1 0-2 1 1 0 0 1 0 2Z" />
                         </svg>
-                        <div className="absolute right-0 top-[calc(100%+4px)] w-[260px] z-20 invisible group-hover/info:visible bg-[#161b22] border border-[#30363d] rounded-md px-3 py-2 text-[12px] leading-[1.5] text-[#c9d1d9] shadow-lg pointer-events-none">
-                          {info.message}
+                        <div className="absolute right-0 top-full pt-1 w-[260px] z-20 invisible group-hover/info:visible">
+                          <div className="bg-[#161b22] border border-[#30363d] rounded-md px-3 py-2 text-[12px] leading-[1.5] text-[#c9d1d9] shadow-lg">
+                            {info.message}
+                          </div>
                         </div>
                       </div>
                       <button onClick={e => { e.stopPropagation(); inspectCollectionFromEye(c.name); }}
