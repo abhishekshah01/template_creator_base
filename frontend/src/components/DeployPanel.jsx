@@ -271,7 +271,9 @@ function ManageView({ url, deployments, onRedeploy }) {
               const runId = d.id || d.run_id;
               return (
                 <div key={runId || i}
-                  className="flex items-start gap-3 text-[13px] px-2 py-1.5 rounded-md hover:bg-[#161b22] transition-colors">
+                  className={`flex items-start gap-3 text-[13px] px-2 py-1.5 rounded-md transition-colors ${
+                    i === 0 ? 'bg-[rgba(46,160,67,0.05)] hover:bg-[rgba(46,160,67,0.08)]' : 'hover:bg-[#161b22]'
+                  }`}>
                   <div className="flex flex-col items-center pt-1 shrink-0">
                     <div className={`w-2.5 h-2.5 rounded-full ${i === 0 ? 'bg-[#3fb950]' : 'bg-[#484f58]'}`} />
                     {i < deployments.slice(0, 10).length - 1 && <div className="w-px flex-1 bg-[#30363d] mt-1 min-h-[20px]" />}
