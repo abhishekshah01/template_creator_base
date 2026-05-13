@@ -236,9 +236,10 @@ function ManageView({ url, deployments, onRedeploy }) {
               <span className="w-2 h-2 rounded-full bg-[#3fb950] shadow-[0_0_6px_rgba(63,185,80,0.7)]" />
               Live
             </span>
-            <div className="flex items-start gap-1.5 mb-2">
+            <div className="flex items-center gap-1.5 mb-2 min-w-0">
               <a href={url} target="_blank" rel="noopener noreferrer"
-                className="flex-1 font-mono text-[13px] text-[#58a6ff] hover:underline break-all leading-snug">
+                title={url}
+                className="flex-1 min-w-0 truncate text-[15px] text-[#c9d1d9] underline decoration-[#30363d] underline-offset-[3px] hover:decoration-[#8b949e]">
                 {url}
               </a>
               <button onClick={copyUrl} title={copied ? 'Copied!' : 'Copy URL'}
