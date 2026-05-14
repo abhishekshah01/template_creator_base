@@ -118,7 +118,7 @@ function FreshFetchView() {
   );
 }
 
-function IdleView({ onStart, onSkip }) {
+function IdleView({ onStart }) {
   return (
     <div className="text-center py-10">
       <div className="text-[18px] font-semibold text-[#e6edf3] mb-2">Take your app live</div>
@@ -126,13 +126,9 @@ function IdleView({ onStart, onSkip }) {
         Deploy to a hosted production-ready environment and get a live URL for your app.
       </p>
       <button onClick={onStart}
-        className="w-full max-w-[260px] mx-auto px-4 py-2 bg-[#238636] text-white text-[14px] font-medium rounded-md hover:bg-[#2ea043] border border-[#2ea043]/60 transition-colors flex items-center justify-center gap-2 mb-2">
+        className="w-full max-w-[260px] mx-auto px-4 py-2 bg-[#238636] text-white text-[14px] font-medium rounded-md hover:bg-[#2ea043] border border-[#2ea043]/60 transition-colors flex items-center justify-center gap-2">
         <CloudUploadIcon className="w-4 h-4" />
         Start Deployment
-      </button>
-      <button onClick={onSkip}
-        className="text-[13px] text-[#8b949e] hover:text-[#e6edf3] transition-colors">
-        Skip (already deployed)
       </button>
     </div>
   );
