@@ -9,6 +9,20 @@ function formatElapsed(seconds) {
   return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
 }
 
+// Status fields can vary across API shapes — treat anything not explicitly
+// failed/errored as a successful run when picking the URL for the preview.
+function isFailedRun(d) {
+  const s = (d.status || d.run_status || d.state || '').toLowerCase();
+  return s === 'failed' || s === 'error';
+}
+function latestSuccessfulUrl(deployments) {
+  for (const d of deployments || []) {
+    const u = d.deploy_url || d.url;
+    if (u && !isFailedRun(d)) return u;
+  }
+  return '';
+}
+
 function timeAgo(dateStr, nowMs) {
   if (!dateStr) return '';
   const seconds = Math.floor(((nowMs ?? 0) - new Date(dateStr).getTime()) / 1000);
@@ -67,7 +81,7 @@ export default function DeployPanel({
               <IdleView onStart={onStartDeploy} onSkip={onSkipDeploy} />
             )}
             {isIdle && hasDeployments && (
-              <ManageView url={deployUrl || deployments[0]?.deploy_url} deployments={deployments} refreshing={refreshing} onRedeploy={onStartDeploy} />
+              <ManageView url={deployUrl || latestSuccessfulUrl(deployments)} deployments={deployments} refreshing={refreshing} onRedeploy={onStartDeploy} />
             )}
             {isDeploying && (
               <ProgressView steps={deploySteps} isFailed={false} onRetry={onStartDeploy} onSkip={onSkipDeploy} />
@@ -76,7 +90,7 @@ export default function DeployPanel({
               <ProgressView steps={deploySteps} isFailed={true} onRetry={onStartDeploy} onSkip={onSkipDeploy} />
             )}
             {isFailed && hasDeployments && (
-              <ManageView url={deployUrl || deployments.find(d => d.deploy_url)?.deploy_url} deployments={deployments} refreshing={refreshing} latestRunFailed={true} onRedeploy={onStartDeploy} />
+              <ManageView url={deployUrl || latestSuccessfulUrl(deployments)} deployments={deployments} refreshing={refreshing} latestRunFailed={true} onRedeploy={onStartDeploy} />
             )}
             {isSuccess && (
               <ManageView url={deployUrl} deployments={deployments} onRedeploy={onStartDeploy} />
