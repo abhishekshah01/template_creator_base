@@ -37,8 +37,8 @@ export default function DeployPanel({
 
   const title = isDeploying ? 'Deploying...'
     : isFailed ? 'Deployment failed'
-    : (isSuccess || hasDeployments) ? 'Manage Deployments'
-    : 'Deploy';
+      : (isSuccess || hasDeployments) ? 'Manage Deployments'
+        : 'Deploy';
 
   return (
     <div className="h-full flex flex-col bg-black border border-[#30363d] rounded-md overflow-hidden">
@@ -145,7 +145,7 @@ function IdleView({ onStart }) {
         <span className="text-[13.5px] font-medium text-[#F3CA5F]">50 credits / month</span>
       </div>
       <button onClick={onStart}
-        className="px-6 py-2.5 bg-[#6e40c9] text-white text-[14px] font-semibold rounded-md hover:bg-[#8957e5] hover:shadow-[0_0_20px_rgba(137,87,229,0.30)] transition-all flex items-center justify-center gap-2">
+        className="px-6 py-2.5 bg-[#37007a] text-white text-[14px] font-semibold rounded-md hover:bg-[#6e40c9] hover:shadow-[0_0_20px_rgba(137,87,229,0.30)] transition-all flex items-center justify-center gap-2">
         <CloudUploadIcon className="w-4 h-4" />
         Start Deployment
       </button>
@@ -191,9 +191,8 @@ function ProgressView({ steps, isFailed, onRetry, onSkip }) {
           }
           return (
             <div key={name}
-              className={`flex items-center gap-3 px-4 py-3 ${i > 0 ? 'border-t border-[#21262d]' : ''} ${
-                isActive ? 'bg-gradient-to-r from-[#1f6feb]/10 to-transparent' : ''
-              }`}>
+              className={`flex items-center gap-3 px-4 py-3 ${i > 0 ? 'border-t border-[#21262d]' : ''} ${isActive ? 'bg-gradient-to-r from-[#1f6feb]/10 to-transparent' : ''
+                }`}>
               <div className="w-4 h-4 flex items-center justify-center shrink-0">
                 {isActive && <DotsLoader size={14} dotSize={2} className="text-[#58a6ff]" />}
                 {isDone && (
@@ -208,12 +207,11 @@ function ProgressView({ steps, isFailed, onRetry, onSkip }) {
                 )}
                 {status === 'pending' && <div className="w-3 h-3 rounded-full border border-[#484f58]" />}
               </div>
-              <span className={`flex-1 font-mono text-[13px] ${
-                isActive ? 'text-[#58a6ff] font-medium'
-                : isDone ? 'text-[#c9d1d9]'
-                : isFailedRow ? 'text-[#f85149]'
-                : 'text-[#8b949e]'
-              }`}>
+              <span className={`flex-1 font-mono text-[13px] ${isActive ? 'text-[#58a6ff] font-medium'
+                  : isDone ? 'text-[#c9d1d9]'
+                    : isFailedRow ? 'text-[#f85149]'
+                      : 'text-[#8b949e]'
+                }`}>
                 {DEPLOY_PHASE_LABELS[name] || name}{isActive ? '...' : ''}
               </span>
               {elapsed && (
@@ -255,7 +253,7 @@ function ManageView({ url, deployments, refreshing = false, onRedeploy }) {
     navigator.clipboard.writeText(url).then(() => {
       setCopied(true);
       setTimeout(() => setCopied(false), 1500);
-    }).catch(() => {});
+    }).catch(() => { });
   }
 
   return (
@@ -335,9 +333,8 @@ function ManageView({ url, deployments, refreshing = false, onRedeploy }) {
               const runId = d.id || d.run_id;
               return (
                 <div key={runId || i}
-                  className={`flex items-start gap-3 text-[13.5px] px-2 py-2 rounded-md transition-colors ${
-                    i === 0 ? 'bg-[rgba(46,160,67,0.10)] hover:bg-[rgba(46,160,67,0.14)]' : 'hover:bg-[rgba(255,255,255,0.04)]'
-                  }`}>
+                  className={`flex items-start gap-3 text-[13.5px] px-2 py-2 rounded-md transition-colors ${i === 0 ? 'bg-[rgba(46,160,67,0.10)] hover:bg-[rgba(46,160,67,0.14)]' : 'hover:bg-[rgba(255,255,255,0.04)]'
+                    }`}>
                   <div className="flex flex-col items-center pt-1 shrink-0">
                     <div className={`w-2.5 h-2.5 rounded-full ${i === 0 ? 'bg-[#3fb950]' : 'bg-[#484f58]'}`} />
                     {i < deployments.slice(0, 10).length - 1 && <div className="w-px flex-1 bg-[#30363d] mt-1 min-h-[20px]" />}
