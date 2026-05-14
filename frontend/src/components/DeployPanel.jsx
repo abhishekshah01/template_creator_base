@@ -120,7 +120,7 @@ function FreshFetchView() {
 
 function IdleView({ onStart }) {
   return (
-    <div className="border border-[#21262d] rounded-2xl bg-[#0c1117] p-8 flex flex-col items-center justify-center text-center min-h-[400px]">
+    <div className="border border-dashed border-[#30363d] rounded-2xl bg-[#0c1117] p-8 flex flex-col items-center justify-center text-center min-h-[400px]">
       <div className="text-[20px] font-bold text-[#e6edf3] mb-3">Take your app live!</div>
       <p className="text-[14px] text-[#8b949e] leading-relaxed max-w-[280px] mb-8">
         Deploy to a hosted production-ready environment and get a live URL for your app.
