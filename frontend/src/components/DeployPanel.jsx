@@ -190,8 +190,8 @@ function ProgressView({ steps, isFailed, onRetry, onSkip }) {
     <>
       {!isFailed && (
         <div className="text-center mb-4">
-          <div className="text-[18px] font-semibold text-[#e6edf3]">Your app will be live soon</div>
-          <div className="text-[14px] text-[#8b949e] mt-1">Usually 5–7 minutes.</div>
+          <div className="text-[16px] font-semibold text-[#e6edf3]">Your app will be live soon</div>
+          <div className="text-[12px] text-[#8b949e] mt-0.5">Usually 5–7 minutes.</div>
         </div>
       )}
       <div className="border border-[#242424] rounded-md overflow-hidden bg-[#0c1117]">
@@ -214,17 +214,17 @@ function ProgressView({ steps, isFailed, onRetry, onSkip }) {
           if (isActive) {
             return (
               <div key={name} className={`p-1 ${!isLast ? 'border-b border-[#242424]' : ''}`}>
-                <div className="flex items-center justify-between px-4 py-3 rounded-md"
+                <div className="flex items-center justify-between px-3 py-2 rounded-md"
                   style={{ background: 'linear-gradient(211.6deg, rgba(188,140,255,0.10) 3.37%, rgba(110,64,201,0.10) 102.77%)' }}>
                   <div className="flex items-center gap-3">
-                    <DotsLoader size={16} className="text-[#bc8cff]" />
-                    <span className="text-[15px] font-mono"
+                    <DotsLoader size={14} className="text-[#bc8cff]" />
+                    <span className="text-[13px] font-mono"
                       style={{ background: 'linear-gradient(234.4deg, #bc8cff 3.37%, #6e40c9 102.77%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>
                       {DEPLOY_PHASE_LABELS[name] || name}…
                     </span>
                   </div>
                   {elapsed && (
-                    <span className="text-[13px] font-mono text-[#e6edf3] tabular-nums">{elapsed}</span>
+                    <span className="text-[12px] font-mono text-[#e6edf3] tabular-nums">{elapsed}</span>
                   )}
                 </div>
               </div>
@@ -238,21 +238,21 @@ function ProgressView({ steps, isFailed, onRetry, onSkip }) {
           return (
             <div key={name}
               style={doneBg}
-              className={`flex items-center gap-3 px-5 py-4 ${!isLast ? 'border-b border-[#242424]' : ''}`}>
-              <div className="w-5 h-5 flex items-center justify-center shrink-0">
+              className={`flex items-center gap-3 px-4 py-3 ${!isLast ? 'border-b border-[#242424]' : ''}`}>
+              <div className="w-4 h-4 flex items-center justify-center shrink-0">
                 {isDone && (
-                  <svg className="w-5 h-5" viewBox="0 0 16 16" fill="#3fb950">
+                  <svg className="w-4 h-4" viewBox="0 0 16 16" fill="#3fb950">
                     <path d="M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0Z" />
                   </svg>
                 )}
                 {isFailedRow && (
-                  <svg className="w-5 h-5" viewBox="0 0 16 16" fill="#f85149">
+                  <svg className="w-4 h-4" viewBox="0 0 16 16" fill="#f85149">
                     <path d="M3.72 3.72a.75.75 0 0 1 1.06 0L8 6.94l3.22-3.22a.749.749 0 0 1 1.275.326.749.749 0 0 1-.215.734L9.06 8l3.22 3.22a.749.749 0 0 1-.326 1.275.749.749 0 0 1-.734-.215L8 9.06l-3.22 3.22a.751.751 0 0 1-1.042-.018.751.751 0 0 1-.018-1.042L6.94 8 3.72 4.78a.75.75 0 0 1 0-1.06Z" />
                   </svg>
                 )}
-                {status === 'pending' && <div className="w-3.5 h-3.5 rounded-full border-[1.5px] border-[#484f58]" />}
+                {status === 'pending' && <div className="w-3 h-3 rounded-full border border-[#484f58]" />}
               </div>
-              <span className={`flex-1 font-mono text-[15px] ${
+              <span className={`flex-1 font-mono text-[13px] ${
                 isDone ? 'text-[#dddde6]'
                 : isFailedRow ? 'text-[#f85149]'
                 : 'text-[#737780]'
@@ -260,7 +260,7 @@ function ProgressView({ steps, isFailed, onRetry, onSkip }) {
                 {DEPLOY_PHASE_LABELS[name] || name}
               </span>
               {elapsed && (
-                <span className={`font-mono text-[13px] tabular-nums ${
+                <span className={`font-mono text-[12px] tabular-nums ${
                   isFailedRow ? 'text-[#f85149]/60' : 'text-[#737780]'
                 }`}>{elapsed}</span>
               )}
