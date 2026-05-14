@@ -217,9 +217,6 @@ export default function InspectorPanel({ jobId, dbName, collections, inspectColl
         {status === 'loading' && (
           <div className="w-3.5 h-3.5 border-2 border-[#30363d] border-t-[#58a6ff] rounded-full animate-spin" />
         )}
-        {status === 'error' && (
-          <span className="text-[12px] font-medium text-[#f85149]">Disconnected</span>
-        )}
         {isReady && (
           <span className="text-[11px] font-medium text-[#3fb950] bg-[#238636]/10 border border-[#238636]/30 rounded-full px-2 py-0.5">Connected</span>
         )}
@@ -318,9 +315,14 @@ export default function InspectorPanel({ jobId, dbName, collections, inspectColl
             )}
 
             {status === 'error' && (
-              <p className="text-[12px] text-[#484f58] italic">
-                {INSPECTOR_MESSAGES[errorReason] || INSPECTOR_MESSAGES.other}
-              </p>
+              <>
+                <svg className="w-12 h-12 text-[#f85149]/60 mb-3" viewBox="0 0 16 16" fill="currentColor">
+                  <path d="M6.457 1.047c.659-1.234 2.427-1.234 3.086 0l6.082 11.378A1.75 1.75 0 0 1 14.082 15H1.918a1.75 1.75 0 0 1-1.543-2.575Zm1.763.707a.25.25 0 0 0-.44 0L1.698 13.132a.25.25 0 0 0 .22.368h12.164a.25.25 0 0 0 .22-.368Zm.53 3.996v2.5a.75.75 0 0 1-1.5 0v-2.5a.75.75 0 0 1 1.5 0ZM9 11a1 1 0 1 1-2 0 1 1 0 0 1 2 0Z" />
+                </svg>
+                <p className="text-[13px] text-[#8b949e] text-center leading-relaxed max-w-[260px]">
+                  {INSPECTOR_MESSAGES[errorReason] || INSPECTOR_MESSAGES.other}
+                </p>
+              </>
             )}
           </div>
         )}
