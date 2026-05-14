@@ -58,11 +58,7 @@ export default function DeployPanel({
     <div className="h-full flex flex-col bg-black border border-[#30363d] rounded-md overflow-hidden">
       <div className="flex items-center justify-between px-4 py-3 border-b border-[#30363d] bg-[#161b22] shrink-0">
         <div className="flex items-center gap-2">
-          {isDeploying ? (
-            <AnimatedCloudUploadIcon className="w-[18px] h-[18px] text-white" />
-          ) : (
-            <CloudIcon className="w-4 h-4 text-[#8b949e]" />
-          )}
+          <CloudIcon className="w-4 h-4 text-[#8b949e]" />
           <span className="text-[14px] font-semibold text-[#e6edf3]">{title}</span>
         </div>
         {onClose && (
@@ -482,24 +478,3 @@ function CloudUploadIcon({ className }) {
   );
 }
 
-// Stroked cloud with an arrow chevron that rises + fades — Lottie-style upload
-// loop. Used in the panel header while a deployment is in flight; standalone
-// (no separate spinner needed).
-function AnimatedCloudUploadIcon({ className = '' }) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor"
-      strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-      {/* Cloud outline */}
-      <path d="M17 17.5h1.5a3.5 3.5 0 0 0 .25-6.98 6 6 0 0 0-11.5 1.04A4 4 0 0 0 7 19.5h0" />
-      {/* Arrow chevron + shaft — rises + fades */}
-      <g>
-        <path d="M9.5 12.5 12 10l2.5 2.5" />
-        <path d="M12 10v6" />
-        <animateTransform attributeName="transform" type="translate"
-          values="0 4; 0 0; 0 -4" keyTimes="0;0.5;1" dur="1.4s" repeatCount="indefinite" />
-        <animate attributeName="opacity"
-          values="0; 1; 1; 0" keyTimes="0;0.25;0.75;1" dur="1.4s" repeatCount="indefinite" />
-      </g>
-    </svg>
-  );
-}
