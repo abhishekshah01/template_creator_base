@@ -348,7 +348,13 @@ export default function CreateTemplate({ bearerToken = "" }) {
         api.getDeployStatus(jobId, bearerToken).then(d => {
           if (d.deploy_url) setDeployUrl(d.deploy_url);
         }).catch(() => {}),
-      ]).finally(() => setLoadingDeployments(false));
+      ]).finally(() => {
+        setLoadingDeployments(false);
+        // Hold the fresh-fetch skeleton ~500ms post-resolve so it stays
+        // perceptible even when the deploy-history endpoint returns instantly
+        // (e.g. for jobs with zero deployments).
+        if (freshJob) setTimeout(() => setIsFreshJobFetch(false), 500);
+      });
       setLastFetchedJobId(jobId.trim());
       // Only advance/scroll on fresh-job fetches — same-job refetch keeps
       // the user wherever they are in the flow.
@@ -978,7 +984,7 @@ export default function CreateTemplate({ bearerToken = "" }) {
             deployUrl={deployUrl}
             deployments={deployments}
             refreshing={loadingDeployments}
-            freshFetch={loadingDeployments && isFreshJobFetch}
+            freshFetch={isFreshJobFetch}
             onStartDeploy={runDeploy}
             onSkipDeploy={skipDeploy}
             onClose={() => setRightPanelTab('inspector')}
