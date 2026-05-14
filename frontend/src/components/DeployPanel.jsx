@@ -58,9 +58,12 @@ export default function DeployPanel({
     <div className="h-full flex flex-col bg-black border border-[#30363d] rounded-md overflow-hidden">
       <div className="flex items-center justify-between px-4 py-3 border-b border-[#30363d] bg-[#161b22] shrink-0">
         <div className="flex items-center gap-2">
-          <CloudIcon className="w-4 h-4 text-[#8b949e]" />
+          {isDeploying ? (
+            <AnimatedCloudUploadIcon className="w-4 h-4 text-[#58a6ff]" />
+          ) : (
+            <CloudIcon className="w-4 h-4 text-[#8b949e]" />
+          )}
           <span className="text-[14px] font-semibold text-[#e6edf3]">{title}</span>
-          {isDeploying && <DotsLoader size={14} dotSize={2} className="text-[#58a6ff] ml-1" />}
         </div>
         {onClose && (
           <button onClick={onClose} title="Close" className="p-1 rounded hover:bg-[#30363d] text-[#8b949e] hover:text-[#e6edf3] transition-colors">
@@ -477,6 +480,20 @@ function CloudUploadIcon({ className }) {
   return (
     <svg className={className} viewBox="0 0 24 24" fill="currentColor">
       <path d="M19.35 10.04A7.49 7.49 0 0 0 12 4C9.11 4 6.6 5.64 5.35 8.04A5.994 5.994 0 0 0 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96ZM14 13v4h-4v-4H7l5-5 5 5h-3Z" />
+    </svg>
+  );
+}
+
+// Cloud with an arrow that rises + fades inside it — used in the panel header
+// while a deployment is in flight. Standalone (no separate spinner needed).
+function AnimatedCloudUploadIcon({ className = '' }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="currentColor">
+      <path opacity="0.5" d="M19.35 10.04A7.49 7.49 0 0 0 12 4C9.11 4 6.6 5.64 5.35 8.04A5.994 5.994 0 0 0 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96Z" />
+      <path d="M14 13v4h-4v-4H7l5-5 5 5h-3Z" opacity="0">
+        <animate attributeName="opacity" values="0;1;1;0" keyTimes="0;0.25;0.75;1" dur="1.6s" repeatCount="indefinite" />
+        <animateTransform attributeName="transform" type="translate" values="0 5;0 0;0 -5" keyTimes="0;0.5;1" dur="1.6s" repeatCount="indefinite" />
+      </path>
     </svg>
   );
 }
