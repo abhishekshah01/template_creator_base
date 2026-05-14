@@ -947,6 +947,7 @@ export default function CreateTemplate({ bearerToken = "" }) {
             hasDeployments={deployments.length > 0}
             loading={loadingDeployments}
             deploying={deployStatus === 'deploying'}
+            disabled={!times[1]}
             onClick={() => setRightPanelTab('deployments')}
           />
         )}
@@ -984,8 +985,21 @@ export default function CreateTemplate({ bearerToken = "" }) {
   );
 }
 
-function DeployButton({ hasDeployments, loading, deploying, onClick }) {
+function DeployButton({ hasDeployments, loading, deploying, onClick, disabled }) {
   const baseCls = "px-3 py-[5px] text-[13px] font-medium rounded-md flex items-center gap-2 transition-colors";
+
+  if (disabled) {
+    return (
+      <button disabled
+        title="Fetch the job first"
+        className={`${baseCls} bg-[#21262d] border border-[#30363d] text-[#8b949e] opacity-50 cursor-not-allowed`}>
+        <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M19.35 10.04A7.49 7.49 0 0 0 12 4C9.11 4 6.6 5.64 5.35 8.04A5.994 5.994 0 0 0 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96Z" />
+        </svg>
+        Deploy
+      </button>
+    );
+  }
 
   if (loading) {
     return (
