@@ -741,7 +741,7 @@ export default function CreateTemplate({ bearerToken = "" }) {
                 className="mb-3"
                 action={isSuccess ? null : (
                   <button onClick={resumeJob} disabled={isResuming}
-                    className={`${isResuming ? btnDefault : isError ? btnDanger : btnPrimary} justify-center min-w-[72px] !px-5`}
+                    className={`${isResuming ? btnDefault : btnPrimary} justify-center min-w-[72px] !px-5`}
                     data-testid="resume-job-btn">
                     {isResuming && <div className="w-3.5 h-3.5 border-2 border-[#484f58] border-t-[#8b949e] rounded-full animate-spin" />}
                     {isResuming ? 'Resuming...' : isError ? 'Retry' : 'Resume Job'}
