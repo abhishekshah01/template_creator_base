@@ -15,6 +15,15 @@ function now() {
   return new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
 }
 
+function resumingMessage(elapsed) {
+  if (elapsed < 8)  return 'Starting your preview environment';
+  if (elapsed < 16) return 'Waking up the environment';
+  if (elapsed < 25) return 'Provisioning your pod';
+  if (elapsed < 30) return 'Almost ready';
+  if (elapsed < 50) return 'Taking longer than expected — hang tight';
+  return 'Almost there — just a few more seconds';
+}
+
 const CAUTION_KEYWORDS = [
   'setting', 'config', 'rule', 'permission', 'role', 'auth',
   'feature', 'flag', 'schema', 'migration', 'secret', 'credential',
@@ -639,8 +648,16 @@ export default function CreateTemplate({ bearerToken = "" }) {
             const isSuccess = resumeState === 'success';
             const isError = resumeState === 'error';
             const variant = isSuccess ? 'success' : isError ? 'critical' : isResuming ? 'upsell' : 'warning';
+            const resumingMsg = resumingMessage(resumeElapsed);
             const message = isResuming
-              ? `Resuming environment... ${resumeElapsed}s elapsed.`
+              ? (
+                  <span className="inline-flex items-center gap-2">
+                    <DotsLoader size={14} dotSize={2} className="text-[#bc8cff]" />
+                    <span key={resumingMsg} className="animate-fade-in inline-block">
+                      {resumingMsg} <span className="text-[#8b949e]">({resumeElapsed}s)</span>
+                    </span>
+                  </span>
+                )
               : isSuccess
                 ? 'Environment is ready. Continuing...'
                 : isError
