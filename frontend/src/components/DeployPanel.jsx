@@ -413,9 +413,9 @@ function ManageView({ url, deployments, refreshing = false, latestRunFailed = fa
           </div>
           {/* Index of the most recent successful deployment — that one gets the green dot. */}
           {(() => null)()}
-          <div className="-mx-2">
+          <div className="-mx-2 max-h-[280px] overflow-y-auto pr-1">
             {(() => {
-              const shown = deployments.slice(0, 10);
+              const shown = deployments.slice(0, 30);
               const latestOkIdx = shown.findIndex(d => !isFailedRun(d));
               return shown.map((d, i) => {
                 const runId = d.id || d.run_id;
@@ -439,7 +439,7 @@ function ManageView({ url, deployments, refreshing = false, latestRunFailed = fa
                       style={{ backgroundColor: dotHaloColor }}>
                       <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: dotColor }} />
                     </span>
-                    {i < deployments.slice(0, 10).length - 1 && <div className="w-px flex-1 mt-1 min-h-[20px] border-l border-dashed border-[#30363d]" />}
+                    {i < shown.length - 1 && <div className="w-px flex-1 mt-1 min-h-[20px] border-l border-dashed border-[#30363d]" />}
                   </div>
                   <div className="flex-1 min-w-0 pb-2">
                     <div className={`${isFailed ? 'text-[#f85149]' : 'text-[#e6edf3]'}`}>
