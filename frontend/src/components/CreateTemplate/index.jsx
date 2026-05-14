@@ -16,13 +16,25 @@ function now() {
 }
 
 function resumingMessage(elapsed) {
-  if (elapsed < 8)  return 'Starting your preview environment';
-  if (elapsed < 16) return 'Waking up the environment';
-  if (elapsed < 25) return 'Provisioning your pod';
-  if (elapsed < 30) return 'Almost ready';
-  if (elapsed < 50) return 'Taking longer than expected — hang tight';
-  return 'Almost there — just a few more seconds';
+  if (elapsed < 8)  return 'Starting your preview environment...';
+  if (elapsed < 16) return 'Waking up the environment...';
+  if (elapsed < 25) return 'Provisioning your pod...';
+  if (elapsed < 30) return 'Almost ready...';
+  if (elapsed < 50) return 'Taking longer than expected — hang tight...';
+  return 'Almost there — just a few more seconds...';
 }
+
+const SHINY_TEXT_STYLE = {
+  backgroundColor: '#c9d1d9',
+  backgroundImage: 'linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.95) 50%, transparent 100%)',
+  backgroundSize: '80px 100%',
+  backgroundPosition: '0 0',
+  backgroundRepeat: 'no-repeat',
+  backgroundClip: 'text',
+  WebkitBackgroundClip: 'text',
+  color: 'transparent',
+  '--shiny-width': '80px',
+};
 
 const CAUTION_KEYWORDS = [
   'setting', 'config', 'rule', 'permission', 'role', 'auth',
@@ -651,11 +663,12 @@ export default function CreateTemplate({ bearerToken = "" }) {
             const resumingMsg = resumingMessage(resumeElapsed);
             const message = isResuming
               ? (
-                  <span className="inline-flex items-center gap-2">
-                    <DotsLoader size={14} dotSize={2} className="text-[#bc8cff]" />
-                    <span key={resumingMsg} className="animate-fade-in inline-block">
-                      {resumingMsg} <span className="text-[#8b949e]">({resumeElapsed}s)</span>
-                    </span>
+                  <span
+                    key={resumingMsg}
+                    className="animate-shiny-text animate-fade-in inline-block"
+                    style={SHINY_TEXT_STYLE}
+                  >
+                    {resumingMsg}
                   </span>
                 )
               : isSuccess
@@ -668,12 +681,19 @@ export default function CreateTemplate({ bearerToken = "" }) {
                 variant={variant}
                 className="mb-3"
                 action={isSuccess ? null : (
-                  <button onClick={resumeJob} disabled={isResuming}
-                    className={isResuming ? btnDefault : btnPrimary}
-                    data-testid="resume-job-btn">
-                    {isResuming && <div className="w-3.5 h-3.5 border-2 border-[#484f58] border-t-[#8b949e] rounded-full animate-spin" />}
-                    {isResuming ? 'Resuming...' : isError ? 'Retry' : 'Resume Job'}
-                  </button>
+                  <div className="flex items-center gap-2">
+                    {isResuming && (
+                      <span className="text-[12px] text-[#8b949e] font-mono tabular-nums">
+                        {resumeElapsed}s
+                      </span>
+                    )}
+                    <button onClick={resumeJob} disabled={isResuming}
+                      className={isResuming ? btnDefault : btnPrimary}
+                      data-testid="resume-job-btn">
+                      {isResuming && <div className="w-3.5 h-3.5 border-2 border-[#484f58] border-t-[#8b949e] rounded-full animate-spin" />}
+                      {isResuming ? 'Resuming...' : isError ? 'Retry' : 'Resume Job'}
+                    </button>
+                  </div>
                 )}
               >
                 {message}
