@@ -683,9 +683,8 @@ export default function CreateTemplate({ bearerToken = "" }) {
                 action={isSuccess ? null : (
                   <div className="flex items-center gap-2">
                     {isResuming && (
-                      <span className="text-[12px] font-mono tabular-nums font-medium px-2 py-[2px] rounded-full"
-                        style={{ color: '#bc8cff', backgroundColor: 'rgba(137,87,229,0.15)', border: '1px solid rgba(137,87,229,0.35)' }}>
-                        {resumeElapsed}s
+                      <span className="text-[12px] text-[#e6edf3] font-medium tabular-nums">
+                        time elapsed — <span className="font-mono">{resumeElapsed}s</span>
                       </span>
                     )}
                     <button onClick={resumeJob} disabled={isResuming}
