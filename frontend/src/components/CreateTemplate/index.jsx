@@ -141,6 +141,7 @@ export default function CreateTemplate({ bearerToken = "" }) {
   const [lastFetchedJobId, setLastFetchedJobId] = usePersistedState('cT.lastFetchedJobId', '');
   // Captured at the start of fetchJob — true if user is fetching a different job than last time.
   const [isFreshJobFetch, setIsFreshJobFetch] = useState(false);
+  const freshHoldTimerRef = useRef(null);
   const [, setDeployTick] = useState(0); // forces re-render every 1s while deploying for live elapsed
   const [rightPanelTab, setRightPanelTab] = usePersistedState('cT.rightPanelTab', 'inspector'); // 'inspector' | 'deployments'
 
@@ -281,12 +282,20 @@ export default function CreateTemplate({ bearerToken = "" }) {
     setTimes(prev => { const { 2: _2, ...rest } = prev; return rest; });
   }
 
-  function resetDownstream() {
+  function resetDownstream({ keepDeployData = false } = {}) {
     setCollections([]);
     setSelected(new Set());
     setDbName('');
     setInspectCollection('');
-    resetDeployStep();
+    if (keepDeployData) {
+      // Partial deploy reset — keep deployUrl/deployStatus/deployments so
+      // Job A's preview/URL/list stay visible while we fetch Job B.
+      setDeploySteps([]);
+      setStatuses(prev => { const { 2: _2, ...rest } = prev; return rest; });
+      setTimes(prev => { const { 2: _2, ...rest } = prev; return rest; });
+    } else {
+      resetDeployStep();
+    }
     resetClearStep();
     resetCreateStep();
     setResumeState('idle');
@@ -299,15 +308,23 @@ export default function CreateTemplate({ bearerToken = "" }) {
     if (!/^[a-zA-Z0-9_-]+$/.test(templateName)) { setStatusFor(1, 'Template name: only letters, numbers, hyphens, underscores', 'error'); return; }
 
     const freshJob = jobId.trim() !== lastFetchedJobId;
-    setIsFreshJobFetch(freshJob);
+    // Cancel any pending fresh-hold timer from a previous fetch — otherwise
+    // an old setTimeout could fire mid-new-fetch and flip isFreshJobFetch
+    // back to false, exposing IdleView.
+    if (freshHoldTimerRef.current) {
+      clearTimeout(freshHoldTimerRef.current);
+      freshHoldTimerRef.current = null;
+    }
     setLoading('fetch');
     // For same-job refetch we want a silent refresh — don't reset step/times/
     // downstream state or the preview/URL/list will disappear briefly.
+    // For fresh-job: reset downstream BUT keep deploy data (preview/URL/list)
+    // visible until we're actually fetching the new job's deployments. This
+    // avoids the IdleView flash at t=0 since ManageView stays rendered.
     if (freshJob) {
       setStep(1);
       setTimes(prev => { const { 1: _1, ...rest } = prev; return rest; });
-      resetDownstream();
-      setDeployments([]);
+      resetDownstream({ keepDeployData: true });
     }
     setJobPaused(false);
     // Intentionally don't clear userId/envId/podName here. Letting stale chips
@@ -342,6 +359,16 @@ export default function CreateTemplate({ bearerToken = "" }) {
       setSelected(new Set());
       setStatusFor(1, `Found ${coll.collections.length} collection(s) in "${coll.db_name}"`, 'success');
       setInspectorStatus('ready');
+      // Transition point for a fresh-job fetch: NOW switch to the skeleton.
+      // Clearing deployments + flipping isFreshJobFetch in the same batch
+      // ensures DeployPanel goes ManageView(A) -> FreshFetchView directly,
+      // no intermediate IdleView render.
+      if (freshJob) {
+        setDeployments([]);
+        setDeployUrl('');
+        setDeployStatus('idle');
+        setIsFreshJobFetch(true);
+      }
       setLoadingDeployments(true);
       Promise.all([
         api.getDeployHistory(jobId, bearerToken).then(d => setDeployments(d.deployments || [])).catch(() => {}),
@@ -350,10 +377,15 @@ export default function CreateTemplate({ bearerToken = "" }) {
         }).catch(() => {}),
       ]).finally(() => {
         setLoadingDeployments(false);
-        // Hold the fresh-fetch skeleton ~500ms post-resolve so it stays
-        // perceptible even when the deploy-history endpoint returns instantly
-        // (e.g. for jobs with zero deployments).
-        if (freshJob) setTimeout(() => setIsFreshJobFetch(false), 500);
+        // Hold the fresh-fetch skeleton ~1.5s post-resolve so it's
+        // unmistakably perceptible even when the deploy-history endpoint
+        // returns instantly (e.g. for jobs with zero deployments).
+        if (freshJob) {
+          freshHoldTimerRef.current = setTimeout(() => {
+            setIsFreshJobFetch(false);
+            freshHoldTimerRef.current = null;
+          }, 1500);
+        }
       });
       setLastFetchedJobId(jobId.trim());
       // Only advance/scroll on fresh-job fetches — same-job refetch keeps
