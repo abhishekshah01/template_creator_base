@@ -417,7 +417,7 @@ function ManageView({ url, deployments, refreshing = false, latestRunFailed = fa
 
       {latestRunFailed && (
         <div className="mb-4 px-3 py-2.5 rounded-md border border-[#30363d] bg-[#161b22] flex items-center justify-between gap-3">
-          <span className="text-[14px] text-[#f85149]">Latest deployment failed</span>
+          <span className="text-[13.5px] font-light text-[#f85149]">Latest deployment failed</span>
           <button onClick={onRedeploy}
             className="inline-flex items-center gap-1.5 text-[13px] text-[#e6edf3] hover:text-white transition-colors">
             <svg className="w-3.5 h-3.5" viewBox="0 0 16 16" fill="currentColor">
@@ -465,7 +465,7 @@ function ManageView({ url, deployments, refreshing = false, latestRunFailed = fa
                     {i < deployments.slice(0, 10).length - 1 && <div className="w-px flex-1 mt-1 min-h-[20px] border-l border-dashed border-[#30363d]" />}
                   </div>
                   <div className="flex-1 min-w-0 pb-2">
-                    <div className={`font-medium ${isFailed ? 'text-[#f85149]' : 'text-[#e6edf3]'}`}>
+                    <div className={`${isFailed ? 'text-[#f85149]' : 'text-[#e6edf3]'}`}>
                       {isFailed ? 'Deployment failed' : `Deployment ${deployments.length - i}`}
                     </div>
                     <div className="text-[11.5px] text-[#8b949e] mt-0.5">
