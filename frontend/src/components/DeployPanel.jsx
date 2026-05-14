@@ -36,8 +36,8 @@ export default function DeployPanel({
   const isSkipped = deployStatus === 'skipped';
 
   const title = isDeploying ? 'Deployment in progress...'
-    : isFailed ? 'Deployment failed'
-      : (isSuccess || hasDeployments) ? 'Manage Deployments'
+    : isFailed && !hasDeployments ? 'Deployment failed'
+      : (isSuccess || hasDeployments || isFailed) ? 'Manage Deployments'
         : 'Deploy';
 
   return (
@@ -69,8 +69,14 @@ export default function DeployPanel({
             {isIdle && hasDeployments && (
               <ManageView url={deployUrl || deployments[0]?.deploy_url} deployments={deployments} refreshing={refreshing} onRedeploy={onStartDeploy} />
             )}
-            {(isDeploying || isFailed) && (
-              <ProgressView steps={deploySteps} isFailed={isFailed} onRetry={onStartDeploy} onSkip={onSkipDeploy} />
+            {isDeploying && (
+              <ProgressView steps={deploySteps} isFailed={false} onRetry={onStartDeploy} onSkip={onSkipDeploy} />
+            )}
+            {isFailed && !hasDeployments && (
+              <ProgressView steps={deploySteps} isFailed={true} onRetry={onStartDeploy} onSkip={onSkipDeploy} />
+            )}
+            {isFailed && hasDeployments && (
+              <ManageView url={deployUrl || deployments.find(d => d.deploy_url)?.deploy_url} deployments={deployments} refreshing={refreshing} latestRunFailed={true} onRedeploy={onStartDeploy} />
             )}
             {isSuccess && (
               <ManageView url={deployUrl} deployments={deployments} onRedeploy={onStartDeploy} />
@@ -285,7 +291,7 @@ function ProgressView({ steps, isFailed, onRetry, onSkip }) {
   );
 }
 
-function ManageView({ url, deployments, refreshing = false, onRedeploy }) {
+function ManageView({ url, deployments, refreshing = false, latestRunFailed = false, onRedeploy }) {
   const [now, setNow] = useState(() => Date.now());
   const [copied, setCopied] = useState(false);
   const [previewLoaded, setPreviewLoaded] = useState(false);
@@ -310,6 +316,15 @@ function ManageView({ url, deployments, refreshing = false, onRedeploy }) {
         <div className="flex items-center gap-2 mb-4 text-[13px] text-[#8b949e]">
           <div className="w-3.5 h-3.5 border-2 border-[#30363d] border-t-[#8b949e] rounded-full animate-spin" />
           Fetching latest deployments…
+        </div>
+      )}
+      {latestRunFailed && (
+        <div className="mb-4 px-3 py-2.5 rounded-md border border-[#da3633]/40 bg-[#da3633]/10 flex items-center justify-between gap-3">
+          <span className="text-[14px] font-medium text-[#f85149]">Latest deployment failed</span>
+          <button onClick={onRedeploy}
+            className="text-[12.5px] font-medium px-3 py-[5px] rounded-md bg-[#da3633]/20 text-[#f85149] border border-[#da3633]/40 hover:bg-[#da3633]/30 transition-colors">
+            Retry
+          </button>
         </div>
       )}
       {/* Top section: preview + URL/actions */}
@@ -400,16 +415,29 @@ function ManageView({ url, deployments, refreshing = false, onRedeploy }) {
           <div className="-mx-2">
             {deployments.slice(0, 10).map((d, i) => {
               const runId = d.id || d.run_id;
+              const isFirst = i === 0;
+              const isFailed = (d.status || d.run_status || '').toLowerCase() === 'failed' || (isFirst && latestRunFailed);
+              const rowBg = isFailed
+                ? 'bg-[rgba(218,54,51,0.10)] hover:bg-[rgba(218,54,51,0.14)]'
+                : isFirst
+                  ? 'bg-[rgba(46,160,67,0.10)] hover:bg-[rgba(46,160,67,0.14)]'
+                  : 'hover:bg-[rgba(255,255,255,0.04)]';
+              const dotColor = isFailed ? '#f85149' : isFirst ? '#3fb950' : '#484f58';
+              const dotHaloColor = isFailed ? 'rgba(248,81,73,0.20)' : isFirst ? 'rgba(63,185,80,0.20)' : 'rgba(72,79,88,0.20)';
               return (
                 <div key={runId || i}
-                  className={`flex items-start gap-3 text-[13.5px] px-2 py-2 rounded-md transition-colors ${i === 0 ? 'bg-[rgba(46,160,67,0.10)] hover:bg-[rgba(46,160,67,0.14)]' : 'hover:bg-[rgba(255,255,255,0.04)]'
-                    }`}>
+                  className={`flex items-start gap-3 text-[13.5px] px-2 py-2 rounded-md transition-colors ${rowBg}`}>
                   <div className="flex flex-col items-center pt-1 shrink-0">
-                    <div className={`w-2.5 h-2.5 rounded-full ${i === 0 ? 'bg-[#3fb950]' : 'bg-[#484f58]'}`} />
-                    {i < deployments.slice(0, 10).length - 1 && <div className="w-px flex-1 bg-[#30363d] mt-1 min-h-[20px]" />}
+                    <span className="inline-flex items-center justify-center w-[18px] h-[18px] rounded-full"
+                      style={{ backgroundColor: dotHaloColor }}>
+                      <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: dotColor }} />
+                    </span>
+                    {i < deployments.slice(0, 10).length - 1 && <div className="w-px flex-1 mt-1 min-h-[20px] border-l border-dashed border-[#30363d]" />}
                   </div>
                   <div className="flex-1 min-w-0 pb-2">
-                    <div className="text-[#e6edf3] font-medium">Deployment {deployments.length - i}</div>
+                    <div className={`font-medium ${isFailed ? 'text-[#f85149]' : 'text-[#e6edf3]'}`}>
+                      {isFailed ? 'Deployment failed' : `Deployment ${deployments.length - i}`}
+                    </div>
                     <div className="text-[11.5px] text-[#8b949e] mt-0.5">
                       {d.created_at ? timeAgo(d.created_at, now) : 'unknown time'}
                       {runId && <span className="font-mono ml-2">{String(runId).slice(0, 8)}</span>}
