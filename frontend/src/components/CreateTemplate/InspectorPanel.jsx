@@ -318,7 +318,7 @@ export default function InspectorPanel({ jobId, dbName, collections, inspectColl
             )}
 
             {status === 'error' && (
-              <p className="text-[12px] text-[#484f58] italic">
+              <p className="text-[14px] text-[#8b949e]">
                 {INSPECTOR_MESSAGES[errorReason] || INSPECTOR_MESSAGES.other}
               </p>
             )}
@@ -358,7 +358,7 @@ export default function InspectorPanel({ jobId, dbName, collections, inspectColl
           {termOutput.map((line, i) => (
             <div key={i} className="mb-1">
               {line.type === 'system' && (
-                <span className="text-[#484f58] italic">{line.text}</span>
+                <span className="text-[#8b949e] text-[13.5px]">{line.text}</span>
               )}
               {line.type === 'input' && (
                 <div>
