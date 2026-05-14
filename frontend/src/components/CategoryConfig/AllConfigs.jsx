@@ -47,6 +47,37 @@ function DatabaseIcon({ className }) {
   return <svg className={className} viewBox="0 0 16 16" fill="currentColor"><path d="M1 3.5c0-.626.292-1.165.7-1.59C2.105 1.496 2.747 1.2 3.45 1h9.1c.703.2 1.345.496 1.75.91.408.425.7.964.7 1.59v9c0 .626-.292 1.165-.7 1.59-.405.414-1.047.71-1.75.91h-9.1c-.703-.2-1.345-.496-1.75-.91C1.292 13.665 1 13.126 1 12.5Zm1.5 0c0 .238.148.473.36.674.213.2.526.374.89.5V5.5h8.5V4.674c.364-.126.677-.3.89-.5.212-.201.36-.436.36-.674 0-.238-.148-.473-.36-.674A2.727 2.727 0 0 0 12.25 2.5h-8.5a2.727 2.727 0 0 0-.89.326c-.212.201-.36.436-.36.674Zm0 3.5V9h9V7Zm9 3.5H2.5V12.5c0 .238.148.473.36.674.213.2.526.374.89.5h8.5c.364-.126.677-.3.89-.5.212-.201.36-.436.36-.674Z" /></svg>;
 }
 
+// Pulsing placeholder row, sized to match a real config row so loading
+// doesn't shift layout when the data arrives.
+function SkeletonRow({ widths }) {
+  // widths is destructured per-row so each skeleton looks different — uniform
+  // widths look obviously fake, varied widths feel more like real content.
+  const { title, label1, label2, label3, summary, meta } = widths;
+  return (
+    <div className="flex items-start px-4 py-2.5 border-b border-[#21262d] last:border-b-0">
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-2 mb-2">
+          <div className="h-[18px] bg-[#21262d] rounded animate-pulse" style={{ width: title }} />
+          {label1 && <div className="h-[18px] bg-[#21262d] rounded-full animate-pulse" style={{ width: label1 }} />}
+          {label2 && <div className="h-[18px] bg-[#21262d] rounded-full animate-pulse" style={{ width: label2 }} />}
+          {label3 && <div className="h-[18px] bg-[#21262d] rounded-full animate-pulse" style={{ width: label3 }} />}
+        </div>
+        {summary && <div className="h-[14px] bg-[#21262d] rounded animate-pulse mb-1.5" style={{ width: summary }} />}
+        <div className="h-[12px] bg-[#21262d] rounded animate-pulse" style={{ width: meta }} />
+      </div>
+    </div>
+  );
+}
+
+const SKELETON_ROWS = [
+  { title: 180, label1: 56,  label2: 80,  label3: null, summary: 420, meta: 240 },
+  { title: 140, label1: 56,  label2: null, label3: null, summary: 380, meta: 200 },
+  { title: 220, label1: 56,  label2: 70,  label3: 90,   summary: 480, meta: 280 },
+  { title: 160, label1: 70,  label2: null, label3: null, summary: 320, meta: 220 },
+  { title: 200, label1: 56,  label2: 80,  label3: null, summary: 440, meta: 260 },
+  { title: 130, label1: null, label2: null, label3: null, summary: 360, meta: 180 },
+];
+
 // GitHub-style label — tinted bg, colored text, colored border
 function Label({ text, color }) {
   const colors = {
@@ -371,16 +402,19 @@ export default function AllConfigs({ onNavigate, bearerToken, onTokenExpired, ca
           </button>
         </div>
 
-        {/* Loading state — during own fetch or env switch */}
-        {(loading || envSwitching) && configs.length === 0 && (
-          <div className="text-center py-16">
-            <div className="w-5 h-5 border-2 border-[#30363d] border-t-[#58a6ff] rounded-full animate-spin mx-auto mb-3" />
-            <div className="text-[14px] text-[#8b949e]">{envSwitching ? 'Switching environment...' : 'Loading configs...'}</div>
-          </div>
+        {/* Loading state — skeleton rows match real layout so transition is seamless.
+            Shown for both initial load AND refresh-click (regardless of cached data),
+            and stays visible until `loading` flips to false — prevents the brief blank
+            gap where parent had updated cachedConfigs but our own `loading` wasn't
+            cleared yet. */}
+        {(loading || envSwitching) && (
+          <>
+            {SKELETON_ROWS.map((widths, i) => <SkeletonRow key={i} widths={widths} />)}
+          </>
         )}
 
         {/* Config rows — GitHub issue row style */}
-        {!loading && paginated.map(config => {
+        {!loading && !envSwitching && paginated.map(config => {
           const envVarCount = Object.keys(config.default_env_config || {}).length;
           const preview = extractSummaryPreview(config.config);
           const hasSummary = !!config.config?.app_summary;
@@ -424,7 +458,7 @@ export default function AllConfigs({ onNavigate, bearerToken, onTokenExpired, ca
         })}
 
         {/* Empty states */}
-        {!loading && configs.length > 0 && filtered.length === 0 && (
+        {!loading && !envSwitching && configs.length > 0 && filtered.length === 0 && (
           <div className="text-center py-16">
             <SearchIcon className="w-6 h-6 text-[#484f58] mx-auto mb-3" />
             <div className="text-[20px] font-semibold text-[#e6edf3] mb-1">No results matched your search.</div>
@@ -432,7 +466,7 @@ export default function AllConfigs({ onNavigate, bearerToken, onTokenExpired, ca
           </div>
         )}
 
-        {!loading && configs.length === 0 && !error && bearerToken && (
+        {!loading && !envSwitching && configs.length === 0 && !error && bearerToken && (
           <div className="text-center py-16">
             <DatabaseIcon className="w-6 h-6 text-[#484f58] mx-auto mb-3" />
             <div className="text-[20px] font-semibold text-[#e6edf3] mb-1">No configs yet.</div>

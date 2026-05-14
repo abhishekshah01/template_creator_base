@@ -53,3 +53,19 @@ body {
 ::-webkit-scrollbar-thumb:hover {
   background: #484f58;
 }
+
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(2px); }
+  to   { opacity: 1; transform: translateY(0);    }
+}
+.animate-fade-in {
+  animation: fade-in 0.25s ease-out;
+}
+
+@keyframes shiny-text {
+  0%, 90%, 100% { background-position: calc(-100% - var(--shiny-width, 80px)) 0; }
+  30%, 60%      { background-position: calc(100% + var(--shiny-width, 80px)) 0;  }
+}
+.animate-shiny-text {
+  animation: shiny-text 8s infinite;
+}

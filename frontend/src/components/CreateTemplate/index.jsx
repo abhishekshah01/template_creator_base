@@ -15,6 +15,27 @@ function now() {
   return new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
 }
 
+function resumingMessage(elapsed) {
+  if (elapsed < 8)  return 'Starting your preview environment...';
+  if (elapsed < 16) return 'Waking up the environment...';
+  if (elapsed < 25) return 'Provisioning your pod...';
+  if (elapsed < 30) return 'Almost ready...';
+  if (elapsed < 50) return 'Taking longer than expected — hang tight...';
+  return 'Almost there — just a few more seconds...';
+}
+
+const SHINY_TEXT_STYLE = {
+  backgroundColor: '#c9d1d9',
+  backgroundImage: 'linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.95) 50%, transparent 100%)',
+  backgroundSize: '80px 100%',
+  backgroundPosition: '0 0',
+  backgroundRepeat: 'no-repeat',
+  backgroundClip: 'text',
+  WebkitBackgroundClip: 'text',
+  color: 'transparent',
+  '--shiny-width': '80px',
+};
+
 const CAUTION_KEYWORDS = [
   'setting', 'config', 'rule', 'permission', 'role', 'auth',
   'feature', 'flag', 'schema', 'migration', 'secret', 'credential',
@@ -117,6 +138,10 @@ export default function CreateTemplate({ bearerToken = "" }) {
   const [deployUrl, setDeployUrl] = usePersistedState('cT.deployUrl', '');
   const [deployments, setDeployments] = usePersistedState('cT.deployments', []);
   const [loadingDeployments, setLoadingDeployments] = useState(false);
+  const [lastFetchedJobId, setLastFetchedJobId] = usePersistedState('cT.lastFetchedJobId', '');
+  // Captured at the start of fetchJob — true if user is fetching a different job than last time.
+  const [isFreshJobFetch, setIsFreshJobFetch] = useState(false);
+  const freshHoldTimerRef = useRef(null);
   const [, setDeployTick] = useState(0); // forces re-render every 1s while deploying for live elapsed
   const [rightPanelTab, setRightPanelTab] = usePersistedState('cT.rightPanelTab', 'inspector'); // 'inspector' | 'deployments'
 
@@ -149,20 +174,6 @@ export default function CreateTemplate({ bearerToken = "" }) {
     return () => clearInterval(id);
   }, [deployStatus]);
 
-  // Fetch deploy history + current live URL whenever job changes, so the right
-  // panel button shows "Redeploy" + the manage view shows the live URL when the
-  // job already has past deployments.
-  useEffect(() => {
-    if (!jobId || !bearerToken) return;
-    setLoadingDeployments(true);
-    Promise.all([
-      api.getDeployHistory(jobId, bearerToken).then(d => setDeployments(d.deployments || [])).catch(() => {}),
-      api.getDeployStatus(jobId, bearerToken).then(d => {
-        if (d.deploy_url) setDeployUrl(d.deploy_url);
-      }).catch(() => {}),
-    ]).finally(() => setLoadingDeployments(false));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [jobId, bearerToken]);
 
   // On mount, if a deployment was in progress when we last unmounted, resume it.
   // Does an immediate sync to seed the UI, then starts the polling loop if still running.
@@ -241,6 +252,8 @@ export default function CreateTemplate({ bearerToken = "" }) {
     setResumeState('idle'); setResumeError(''); setResumeElapsed(0);
     setDeployStatus('idle'); setDeploySteps([]); setDeployUrl(''); setDeployments([]);
     setRightPanelTab('inspector');
+    setLastFetchedJobId('');
+    setIsFreshJobFetch(false);
   }
 
   function stepStatus(n) {
@@ -271,12 +284,20 @@ export default function CreateTemplate({ bearerToken = "" }) {
     setTimes(prev => { const { 2: _2, ...rest } = prev; return rest; });
   }
 
-  function resetDownstream() {
+  function resetDownstream({ keepDeployData = false } = {}) {
     setCollections([]);
     setSelected(new Set());
     setDbName('');
     setInspectCollection('');
-    resetDeployStep();
+    if (keepDeployData) {
+      // Partial deploy reset — keep deployUrl/deployStatus/deployments so
+      // Job A's preview/URL/list stay visible while we fetch Job B.
+      setDeploySteps([]);
+      setStatuses(prev => { const { 2: _2, ...rest } = prev; return rest; });
+      setTimes(prev => { const { 2: _2, ...rest } = prev; return rest; });
+    } else {
+      resetDeployStep();
+    }
     resetClearStep();
     resetCreateStep();
     setResumeState('idle');
@@ -288,14 +309,35 @@ export default function CreateTemplate({ bearerToken = "" }) {
     if (!templateName.trim()) { setStatusFor(1, 'Please enter a Template Name', 'error'); return; }
     if (!/^[a-zA-Z0-9_-]+$/.test(templateName)) { setStatusFor(1, 'Template name: only letters, numbers, hyphens, underscores', 'error'); return; }
 
+    const freshJob = jobId.trim() !== lastFetchedJobId;
+    // Whether the user was sitting at step 1 when they clicked. Captured from
+    // the closure (pre-click value) so we know to advance step 1 even on a
+    // "same-job" refetch when the user hasn't actually moved past it yet —
+    // e.g. right after a Reset, where lastFetchedJobId is still persisted.
+    const wasAtStep1 = step === 1;
+    // Cancel any pending fresh-hold timer from a previous fetch — otherwise
+    // an old setTimeout could fire mid-new-fetch and flip isFreshJobFetch
+    // back to false, exposing IdleView.
+    if (freshHoldTimerRef.current) {
+      clearTimeout(freshHoldTimerRef.current);
+      freshHoldTimerRef.current = null;
+    }
     setLoading('fetch');
-    setStep(1);
-    setTimes(prev => { const { 1: _1, ...rest } = prev; return rest; });
-    resetDownstream();
+    // For same-job refetch we want a silent refresh — don't reset step/times/
+    // downstream state or the preview/URL/list will disappear briefly.
+    // For fresh-job: reset downstream BUT keep deploy data (preview/URL/list)
+    // visible until we're actually fetching the new job's deployments. This
+    // avoids the IdleView flash at t=0 since ManageView stays rendered.
+    if (freshJob) {
+      setStep(1);
+      setTimes(prev => { const { 1: _1, ...rest } = prev; return rest; });
+      resetDownstream({ keepDeployData: true });
+    }
     setJobPaused(false);
-    setUserId('');
-    setEnvId('');
-    setPodName('');
+    // Intentionally don't clear userId/envId/podName here. Letting stale chips
+    // stay visible during the in-flight fetch avoids a jarring "click button →
+    // info vanishes" flash. The success branch overwrites them with fresh
+    // values; the catch branch clears them if the fetch actually fails.
     setInspectorStatus('loading');
     setInspectorReason('');
     setStatusFor(1, 'Fetching job details...', 'loading');
@@ -324,25 +366,60 @@ export default function CreateTemplate({ bearerToken = "" }) {
       setSelected(new Set());
       setStatusFor(1, `Found ${coll.collections.length} collection(s) in "${coll.db_name}"`, 'success');
       setInspectorStatus('ready');
+      // Transition point for a fresh-job fetch: NOW switch to the skeleton.
+      // Clearing deployments + flipping isFreshJobFetch in the same batch
+      // ensures DeployPanel goes ManageView(A) -> FreshFetchView directly,
+      // no intermediate IdleView render.
+      if (freshJob) {
+        setDeployments([]);
+        setDeployUrl('');
+        setDeployStatus('idle');
+        setIsFreshJobFetch(true);
+      }
       setLoadingDeployments(true);
       Promise.all([
         api.getDeployHistory(jobId, bearerToken).then(d => setDeployments(d.deployments || [])).catch(() => {}),
         api.getDeployStatus(jobId, bearerToken).then(d => {
           if (d.deploy_url) setDeployUrl(d.deploy_url);
         }).catch(() => {}),
-      ]).finally(() => setLoadingDeployments(false));
-      completeStep(1);
+      ]).finally(() => {
+        setLoadingDeployments(false);
+        // Hold the fresh-fetch skeleton ~1.5s post-resolve so it's
+        // unmistakably perceptible even when the deploy-history endpoint
+        // returns instantly (e.g. for jobs with zero deployments).
+        if (freshJob) {
+          freshHoldTimerRef.current = setTimeout(() => {
+            setIsFreshJobFetch(false);
+            freshHoldTimerRef.current = null;
+          }, 1500);
+        }
+      });
+      setLastFetchedJobId(jobId.trim());
+      // Advance + auto-open deploy tab for fresh-job fetches AND for same-job
+      // fetches when the user is still at step 1 (e.g. after Reset). Avoids
+      // disrupting silent-refresh from step 2+.
+      if (freshJob || wasAtStep1) {
+        completeStep(1);
+        setRightPanelTab('deployments');
+      }
     } catch (e) {
       setStep(1);
       setTimes(prev => { const { 1: _, ...rest } = prev; return rest; });
-      // Clear stale data from any previous successful fetch
       setCollections([]);
       setDbName('');
-      setUserId('');
-      setEnvId('');
-      setPodName('');
       const msg = e.message || '';
-      if (msg.toLowerCase().includes('timed out') || msg.toLowerCase().includes('pod exec failed')) {
+      const isPausedError = msg.toLowerCase().includes('timed out') || msg.toLowerCase().includes('pod exec failed');
+      // Only clear chips when the failure means the job info itself was bad.
+      // For a paused-pod failure, user_id/env_id came back from a successful
+      // job-info call and stay valid — clearing them here was the flash that
+      // made the chips look like they disappeared right when the banner
+      // appeared.
+      if (!isPausedError) {
+        setUserId('');
+        setEnvId('');
+        setPodName('');
+      }
+      if (isPausedError) {
         setJobPaused(true);
         setPodStatus(podStatus || 'POD_NOT_FOUND');
         setStatusFor(1, 'failed', 'error');
@@ -645,20 +722,36 @@ export default function CreateTemplate({ bearerToken = "" }) {
             const isSuccess = resumeState === 'success';
             const isError = resumeState === 'error';
             const variant = isSuccess ? 'success' : isError ? 'critical' : isResuming ? 'upsell' : 'warning';
+            const resumingMsg = resumingMessage(resumeElapsed);
             const message = isResuming
-              ? `Resuming environment... ${resumeElapsed}s elapsed.`
+              ? (
+                  <>
+                    <span
+                      key={resumingMsg}
+                      className="animate-shiny-text animate-fade-in inline-block"
+                      style={SHINY_TEXT_STYLE}
+                    >
+                      {resumingMsg}
+                    </span>
+                    <span className="text-[#8b949e] ml-1.5 text-[13px] tabular-nums font-mono">
+                      ({resumeElapsed}s)
+                    </span>
+                  </>
+                )
               : isSuccess
                 ? 'Environment is ready. Continuing...'
                 : isError
                   ? `Resume failed: ${resumeError}`
-                  : 'This job is paused. Click Resume Job to wake the environment — takes ~30–60s.';
+                  : 'Job is paused — click Resume to wake the environment (~30–60s).';
             return (
               <Banner
                 variant={variant}
                 className="mb-3"
                 action={isSuccess ? null : (
-                  <button onClick={resumeJob} disabled={isResuming} className={btnDefault} data-testid="resume-job-btn">
-                    {isResuming && <div className={spinner} />}
+                  <button onClick={resumeJob} disabled={isResuming}
+                    className={`${isResuming ? btnDefault : btnPrimary} justify-center min-w-[72px] !px-5`}
+                    data-testid="resume-job-btn">
+                    {isResuming && <div className="w-3.5 h-3.5 border-2 border-[#484f58] border-t-[#8b949e] rounded-full animate-spin" />}
                     {isResuming ? 'Resuming...' : isError ? 'Retry' : 'Resume Job'}
                   </button>
                 )}
@@ -668,7 +761,7 @@ export default function CreateTemplate({ bearerToken = "" }) {
             );
           })()}
           <StatusBar {...(statuses[1] || {})} />
-          {(userId || envId || podName) && (
+          {(userId || envId) && (
             <div className="flex gap-2 mt-3 flex-wrap">
               {userId && (
                 <span className="inline-flex items-center gap-1.5 text-[12px] px-2.5 py-[3px] rounded-full font-mono"
@@ -678,14 +771,8 @@ export default function CreateTemplate({ bearerToken = "" }) {
               )}
               {envId && (
                 <span className="inline-flex items-center gap-1.5 text-[12px] px-2.5 py-[3px] rounded-full font-mono"
-                  style={{ backgroundColor: 'rgba(35,134,54,0.15)', color: '#3fb950', border: '1px solid rgba(35,134,54,0.3)' }}>
-                  Env <span className="text-[#c9d1d9]">{envId}</span>
-                </span>
-              )}
-              {podName && (
-                <span className="inline-flex items-center gap-1.5 text-[12px] px-2.5 py-[3px] rounded-full font-mono"
                   style={{ backgroundColor: 'rgba(137,87,229,0.15)', color: '#bc8cff', border: '1px solid rgba(137,87,229,0.3)' }}>
-                  Pod <span className="text-[#c9d1d9]">{podName}</span>
+                  Env <span className="text-[#c9d1d9]">{envId}</span>
                 </span>
               )}
             </div>
@@ -839,8 +926,10 @@ export default function CreateTemplate({ bearerToken = "" }) {
                           viewBox="0 0 16 16" fill="currentColor">
                           <path d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8Zm8-6.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13ZM6.5 7.75A.75.75 0 0 1 7.25 7h1a.75.75 0 0 1 .75.75v2.75h.25a.75.75 0 0 1 0 1.5h-2a.75.75 0 0 1 0-1.5h.25v-2h-.25a.75.75 0 0 1-.75-.75ZM8 6a1 1 0 1 1 0-2 1 1 0 0 1 0 2Z" />
                         </svg>
-                        <div className="absolute right-0 top-[calc(100%+4px)] w-[260px] z-20 invisible group-hover/info:visible bg-[#161b22] border border-[#30363d] rounded-md px-3 py-2 text-[12px] leading-[1.5] text-[#c9d1d9] shadow-lg pointer-events-none">
-                          {info.message}
+                        <div className="absolute right-0 top-full pt-1 w-[260px] z-20 invisible group-hover/info:visible">
+                          <div className="bg-[#161b22] border border-[#30363d] rounded-md px-3 py-2 text-[12px] leading-[1.5] text-[#c9d1d9] shadow-lg">
+                            {info.message}
+                          </div>
                         </div>
                       </div>
                       <button onClick={e => { e.stopPropagation(); inspectCollectionFromEye(c.name); }}
@@ -920,6 +1009,7 @@ export default function CreateTemplate({ bearerToken = "" }) {
             hasDeployments={deployments.length > 0}
             loading={loadingDeployments}
             deploying={deployStatus === 'deploying'}
+            disabled={!times[1]}
             onClick={() => setRightPanelTab('deployments')}
           />
         )}
@@ -933,6 +1023,8 @@ export default function CreateTemplate({ bearerToken = "" }) {
             deploySteps={deploySteps}
             deployUrl={deployUrl}
             deployments={deployments}
+            refreshing={loadingDeployments}
+            freshFetch={isFreshJobFetch}
             onStartDeploy={runDeploy}
             onSkipDeploy={skipDeploy}
             onClose={() => setRightPanelTab('inspector')}
@@ -957,8 +1049,21 @@ export default function CreateTemplate({ bearerToken = "" }) {
   );
 }
 
-function DeployButton({ hasDeployments, loading, deploying, onClick }) {
+function DeployButton({ hasDeployments, loading, deploying, onClick, disabled }) {
   const baseCls = "px-3 py-[5px] text-[13px] font-medium rounded-md flex items-center gap-2 transition-colors";
+
+  if (disabled) {
+    return (
+      <button disabled
+        title="Fetch the job first"
+        className={`${baseCls} bg-[#161b22] border border-[#30363d] text-[#8b949e] cursor-not-allowed`}>
+        <svg className="w-4 h-4 text-[#c9d1d9]" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M19.35 10.04A7.49 7.49 0 0 0 12 4C9.11 4 6.6 5.64 5.35 8.04A5.994 5.994 0 0 0 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96Z" />
+        </svg>
+        Deploy
+      </button>
+    );
+  }
 
   if (loading) {
     return (
