@@ -463,9 +463,9 @@ function ManageView({ url, deployments, refreshing = false, latestRunFailed = fa
                     <div className={`font-medium ${isFailed ? 'text-[#f85149]' : 'text-[#e6edf3]'}`}>
                       {isFailed ? 'Deployment failed' : `Deployment ${deployments.length - i}`}
                     </div>
-                    <div className="text-[11.5px] text-[#8b949e] mt-0.5">
-                      {d.created_at ? timeAgo(d.created_at, now) : 'unknown time'}
-                      {runId && <span className="font-mono ml-2">{String(runId).slice(0, 8)}</span>}
+                    <div className="text-[12px] mt-0.5">
+                      <span className="text-[#e6edf3]">{d.created_at ? timeAgo(d.created_at, now) : 'unknown time'}</span>
+                      {runId && <span className="font-mono ml-2 text-[#8b949e]">{String(runId).slice(0, 8)}</span>}
                     </div>
                   </div>
                 </div>
