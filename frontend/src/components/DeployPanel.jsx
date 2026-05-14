@@ -87,6 +87,32 @@ export default function DeployPanel({
   );
 }
 
+// Circular ring of 8 dots that pulse with staggered timing — same visual feel as
+// E1ectron's animated-spinner.gif. Pure inline SVG, no binary asset.
+function CircularDotsSpinner({ size = 28, color = 'currentColor', count = 8, className = '' }) {
+  const center = size / 2;
+  const radius = size * 0.38;
+  const baseR = size * 0.085;
+  const peakR = size * 0.16;
+  return (
+    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} className={className}>
+      {Array.from({ length: count }).map((_, i) => {
+        const angle = (i * 360) / count - 90;
+        const rad = (angle * Math.PI) / 180;
+        const cx = center + radius * Math.cos(rad);
+        const cy = center + radius * Math.sin(rad);
+        const delay = `-${((count - i) * 1.0) / count}s`;
+        return (
+          <circle key={i} cx={cx} cy={cy} r={baseR} fill={color} opacity={0.35}>
+            <animate attributeName="r" values={`${baseR};${peakR};${baseR}`} dur="1s" begin={delay} repeatCount="indefinite" />
+            <animate attributeName="opacity" values="0.35;1;0.35" dur="1s" begin={delay} repeatCount="indefinite" />
+          </circle>
+        );
+      })}
+    </svg>
+  );
+}
+
 // Shown when fetchJob is in-flight for a NEW job — clears stale preview/URL/list
 // and signals that fresh deployment data is on the way.
 function FreshFetchView() {
@@ -197,7 +223,7 @@ function ProgressView({ steps, isFailed, onRetry, onSkip }) {
                 <div className="flex items-center justify-between px-4 py-3 rounded-[12px]"
                   style={{ background: 'linear-gradient(211.6deg, rgba(188,140,255,0.10) 3.37%, rgba(110,64,201,0.10) 102.77%)' }}>
                   <div className="flex items-center gap-3">
-                    <DotsLoader size={22} dotSize={2.5} className="text-[#bc8cff]" />
+                    <CircularDotsSpinner size={22} color="#bc8cff" />
                     <span className="text-[15px] font-mono"
                       style={{ background: 'linear-gradient(234.4deg, #bc8cff 3.37%, #6e40c9 102.77%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>
                       {DEPLOY_PHASE_LABELS[name] || name}…
