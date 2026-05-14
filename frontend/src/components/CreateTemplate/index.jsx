@@ -149,20 +149,6 @@ export default function CreateTemplate({ bearerToken = "" }) {
     return () => clearInterval(id);
   }, [deployStatus]);
 
-  // Fetch deploy history + current live URL whenever job changes, so the right
-  // panel button shows "Redeploy" + the manage view shows the live URL when the
-  // job already has past deployments.
-  useEffect(() => {
-    if (!jobId || !bearerToken) return;
-    setLoadingDeployments(true);
-    Promise.all([
-      api.getDeployHistory(jobId, bearerToken).then(d => setDeployments(d.deployments || [])).catch(() => {}),
-      api.getDeployStatus(jobId, bearerToken).then(d => {
-        if (d.deploy_url) setDeployUrl(d.deploy_url);
-      }).catch(() => {}),
-    ]).finally(() => setLoadingDeployments(false));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [jobId, bearerToken]);
 
   // On mount, if a deployment was in progress when we last unmounted, resume it.
   // Does an immediate sync to seed the UI, then starts the polling loop if still running.
