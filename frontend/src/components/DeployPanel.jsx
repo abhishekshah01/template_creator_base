@@ -187,13 +187,14 @@ function ProgressView({ steps, isFailed, onRetry, onSkip }) {
           <div className="text-[13px] text-[#8b949e]">Setting up your live app… usually 5–7 minutes.</div>
         </div>
       )}
-      <div className="border border-[#30363d] rounded-md overflow-hidden bg-[#0d1117]">
+      <div className="border border-[#242424] rounded-[20px] overflow-hidden bg-[#0c1117]">
         {ordered.map((name, i) => {
           const step = stepsByName[name];
           const status = step?.status || 'pending';
           const isActive = status === 'running';
           const isDone = status === 'success';
           const isFailedRow = status === 'failed';
+          const isLast = i === ordered.length - 1;
           let elapsed = '';
           if (step?.created_at && (isActive || isDone || isFailedRow)) {
             const start = new Date(step.created_at).getTime();
@@ -202,33 +203,54 @@ function ProgressView({ steps, isFailed, onRetry, onSkip }) {
               : now;
             elapsed = formatElapsed(Math.floor((end - start) / 1000));
           }
+
+          if (isActive) {
+            return (
+              <div key={name} className={`p-1.5 ${!isLast ? 'border-b border-[#242424]' : ''}`}>
+                <div className="flex items-center justify-between px-4 py-3 rounded-[12px]"
+                  style={{ background: 'linear-gradient(211.6deg, rgba(188,140,255,0.10) 3.37%, rgba(110,64,201,0.10) 102.77%)' }}>
+                  <div className="flex items-center gap-3">
+                    <DotsLoader size={18} dotSize={3} className="text-[#bc8cff]" />
+                    <span className="text-[15px] font-mono"
+                      style={{ background: 'linear-gradient(234.4deg, #bc8cff 3.37%, #6e40c9 102.77%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>
+                      {DEPLOY_PHASE_LABELS[name] || name}…
+                    </span>
+                  </div>
+                  {elapsed && (
+                    <span className="text-[13px] font-mono text-[#e6edf3] tabular-nums">{elapsed}</span>
+                  )}
+                </div>
+              </div>
+            );
+          }
+
           return (
             <div key={name}
-              className={`flex items-center gap-3 px-4 py-3 ${i > 0 ? 'border-t border-[#21262d]' : ''} ${isActive ? 'bg-gradient-to-r from-[#1f6feb]/10 to-transparent' : ''
-                }`}>
-              <div className="w-4 h-4 flex items-center justify-center shrink-0">
-                {isActive && <DotsLoader size={14} dotSize={2} className="text-[#58a6ff]" />}
+              className={`flex items-center gap-3 px-5 py-4 ${!isLast ? 'border-b border-[#242424]' : ''}`}>
+              <div className="w-5 h-5 flex items-center justify-center shrink-0">
                 {isDone && (
-                  <svg className="w-4 h-4" viewBox="0 0 16 16" fill="#3fb950">
+                  <svg className="w-5 h-5" viewBox="0 0 16 16" fill="#dddde6">
                     <path d="M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0Z" />
                   </svg>
                 )}
                 {isFailedRow && (
-                  <svg className="w-4 h-4" viewBox="0 0 16 16" fill="#f85149">
+                  <svg className="w-5 h-5" viewBox="0 0 16 16" fill="#f85149">
                     <path d="M3.72 3.72a.75.75 0 0 1 1.06 0L8 6.94l3.22-3.22a.749.749 0 0 1 1.275.326.749.749 0 0 1-.215.734L9.06 8l3.22 3.22a.749.749 0 0 1-.326 1.275.749.749 0 0 1-.734-.215L8 9.06l-3.22 3.22a.751.751 0 0 1-1.042-.018.751.751 0 0 1-.018-1.042L6.94 8 3.72 4.78a.75.75 0 0 1 0-1.06Z" />
                   </svg>
                 )}
-                {status === 'pending' && <div className="w-3 h-3 rounded-full border border-[#484f58]" />}
+                {status === 'pending' && <div className="w-3.5 h-3.5 rounded-full border-[1.5px] border-[#484f58]" />}
               </div>
-              <span className={`flex-1 font-mono text-[13px] ${isActive ? 'text-[#58a6ff] font-medium'
-                  : isDone ? 'text-[#c9d1d9]'
-                    : isFailedRow ? 'text-[#f85149]'
-                      : 'text-[#8b949e]'
-                }`}>
-                {DEPLOY_PHASE_LABELS[name] || name}{isActive ? '...' : ''}
+              <span className={`flex-1 font-mono text-[15px] ${
+                isDone ? 'text-[#dddde6]'
+                : isFailedRow ? 'text-[#f85149]'
+                : 'text-[#737780]'
+              }`}>
+                {DEPLOY_PHASE_LABELS[name] || name}
               </span>
               {elapsed && (
-                <span className="font-mono text-[12px] text-[#8b949e] tabular-nums">{elapsed}</span>
+                <span className={`font-mono text-[13px] tabular-nums ${
+                  isFailedRow ? 'text-[#f85149]/60' : 'text-[#737780]'
+                }`}>{elapsed}</span>
               )}
             </div>
           );
