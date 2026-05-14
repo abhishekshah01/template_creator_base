@@ -169,22 +169,9 @@ function ProgressView({ steps, isFailed, onRetry, onSkip }) {
   return (
     <>
       {!isFailed && (
-        <div className="text-center mb-6 pt-2">
-          <div
-            className="text-[20px] font-bold mb-3"
-            style={{
-              background: 'linear-gradient(135deg, #bc8cff 0%, #8957e5 50%, #6e40c9 100%)',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-              backgroundClip: 'text',
-            }}
-          >
-            Your app will be live in some time
-          </div>
-          <div className="flex justify-center mb-2">
-            <DotsLoader size={28} dotSize={5} className="text-[#bc8cff]" />
-          </div>
-          <div className="text-[13px] text-[#8b949e]">Setting up your live app… usually 5–7 minutes.</div>
+        <div className="text-center mb-4">
+          <div className="text-[18px] font-semibold text-[#e6edf3]">Your app will be live soon</div>
+          <div className="text-[14px] text-[#8b949e] mt-1">Usually 5–7 minutes.</div>
         </div>
       )}
       <div className="border border-[#242424] rounded-[20px] overflow-hidden bg-[#0c1117]">
@@ -210,7 +197,7 @@ function ProgressView({ steps, isFailed, onRetry, onSkip }) {
                 <div className="flex items-center justify-between px-4 py-3 rounded-[12px]"
                   style={{ background: 'linear-gradient(211.6deg, rgba(188,140,255,0.10) 3.37%, rgba(110,64,201,0.10) 102.77%)' }}>
                   <div className="flex items-center gap-3">
-                    <DotsLoader size={18} dotSize={3} className="text-[#bc8cff]" />
+                    <DotsLoader size={22} dotSize={2.5} className="text-[#bc8cff]" />
                     <span className="text-[15px] font-mono"
                       style={{ background: 'linear-gradient(234.4deg, #bc8cff 3.37%, #6e40c9 102.77%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>
                       {DEPLOY_PHASE_LABELS[name] || name}…
