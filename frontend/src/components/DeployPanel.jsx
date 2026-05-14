@@ -272,13 +272,13 @@ function ManageView({ url, deployments, refreshing = false, onRedeploy }) {
               <div className="text-[12.5px] text-[#8b949e] mt-0.5">All deployed versions of your app</div>
             </div>
             {refreshing && (
-              <span className="inline-flex items-center gap-1.5 text-[12px] text-[#58a6ff] shrink-0 mt-1">
-                <div className="w-3 h-3 border-2 border-[#30363d] border-t-[#58a6ff] rounded-full animate-spin" />
-                Updating deployments…
+              <span className="inline-flex items-center gap-1.5 text-[12px] text-[#8b949e] shrink-0 mt-1">
+                <div className="w-3 h-3 border-2 border-[#30363d] border-t-[#8b949e] rounded-full animate-spin" />
+                Fetching latest deployments…
               </span>
             )}
           </div>
-          <div className={`-mx-2 transition-opacity duration-200 ${refreshing ? 'opacity-50' : 'opacity-100'}`}>
+          <div className="-mx-2">
             {deployments.slice(0, 10).map((d, i) => {
               const runId = d.id || d.run_id;
               return (
