@@ -674,7 +674,7 @@ export default function CreateTemplate({ bearerToken = "" }) {
               )}
               {envId && (
                 <span className="inline-flex items-center gap-1.5 text-[12px] px-2.5 py-[3px] rounded-full font-mono"
-                  style={{ backgroundColor: 'rgba(35,134,54,0.15)', color: '#3fb950', border: '1px solid rgba(35,134,54,0.3)' }}>
+                  style={{ backgroundColor: 'rgba(137,87,229,0.15)', color: '#bc8cff', border: '1px solid rgba(137,87,229,0.3)' }}>
                   Env <span className="text-[#c9d1d9]">{envId}</span>
                 </span>
               )}
