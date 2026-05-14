@@ -138,6 +138,9 @@ export default function CreateTemplate({ bearerToken = "" }) {
   const [deployUrl, setDeployUrl] = usePersistedState('cT.deployUrl', '');
   const [deployments, setDeployments] = usePersistedState('cT.deployments', []);
   const [loadingDeployments, setLoadingDeployments] = useState(false);
+  const [lastFetchedJobId, setLastFetchedJobId] = usePersistedState('cT.lastFetchedJobId', '');
+  // Captured at the start of fetchJob — true if user is fetching a different job than last time.
+  const [isFreshJobFetch, setIsFreshJobFetch] = useState(false);
   const [, setDeployTick] = useState(0); // forces re-render every 1s while deploying for live elapsed
   const [rightPanelTab, setRightPanelTab] = usePersistedState('cT.rightPanelTab', 'inspector'); // 'inspector' | 'deployments'
 
@@ -295,11 +298,14 @@ export default function CreateTemplate({ bearerToken = "" }) {
     if (!templateName.trim()) { setStatusFor(1, 'Please enter a Template Name', 'error'); return; }
     if (!/^[a-zA-Z0-9_-]+$/.test(templateName)) { setStatusFor(1, 'Template name: only letters, numbers, hyphens, underscores', 'error'); return; }
 
+    const freshJob = jobId.trim() !== lastFetchedJobId;
+    setIsFreshJobFetch(freshJob);
     setLoading('fetch');
     setStep(1);
     setTimes(prev => { const { 1: _1, ...rest } = prev; return rest; });
     resetDownstream();
     setJobPaused(false);
+    if (freshJob) setDeployments([]);
     // Intentionally don't clear userId/envId/podName here. Letting stale chips
     // stay visible during the in-flight fetch avoids a jarring "click button →
     // info vanishes" flash. The success branch overwrites them with fresh
@@ -339,6 +345,7 @@ export default function CreateTemplate({ bearerToken = "" }) {
           if (d.deploy_url) setDeployUrl(d.deploy_url);
         }).catch(() => {}),
       ]).finally(() => setLoadingDeployments(false));
+      setLastFetchedJobId(jobId.trim());
       completeStep(1);
       setRightPanelTab('deployments');
     } catch (e) {
@@ -963,6 +970,7 @@ export default function CreateTemplate({ bearerToken = "" }) {
             deployUrl={deployUrl}
             deployments={deployments}
             refreshing={loadingDeployments}
+            freshFetch={loadingDeployments && isFreshJobFetch}
             onStartDeploy={runDeploy}
             onSkipDeploy={skipDeploy}
             onClose={() => setRightPanelTab('inspector')}

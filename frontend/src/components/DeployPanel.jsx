@@ -25,6 +25,7 @@ function timeAgo(dateStr, nowMs) {
 export default function DeployPanel({
   deployStatus, deploySteps, deployUrl, deployments,
   refreshing = false,
+  freshFetch = false,
   onStartDeploy, onSkipDeploy, onClose,
 }) {
   const hasDeployments = (deployments || []).length > 0;
@@ -57,23 +58,61 @@ export default function DeployPanel({
       </div>
 
       <div className="flex-1 overflow-y-auto p-4">
-        {isIdle && !hasDeployments && (
-          <IdleView onStart={onStartDeploy} onSkip={onSkipDeploy} />
+        {/* Different-job refetch: clear UI, show skeleton + message instead of stale data */}
+        {freshFetch ? (
+          <FreshFetchView />
+        ) : (
+          <>
+            {isIdle && !hasDeployments && (
+              <IdleView onStart={onStartDeploy} onSkip={onSkipDeploy} />
+            )}
+            {isIdle && hasDeployments && (
+              <ManageView url={deployUrl || deployments[0]?.deploy_url} deployments={deployments} refreshing={refreshing} onRedeploy={onStartDeploy} />
+            )}
+            {(isDeploying || isFailed) && (
+              <ProgressView steps={deploySteps} isFailed={isFailed} onRetry={onStartDeploy} onSkip={onSkipDeploy} />
+            )}
+            {isSuccess && (
+              <ManageView url={deployUrl} deployments={deployments} onRedeploy={onStartDeploy} />
+            )}
+            {isSkipped && (
+              <div className="text-center py-12 text-[14px] text-[#8b949e]">
+                Deployment skipped.
+              </div>
+            )}
+          </>
         )}
-        {isIdle && hasDeployments && (
-          <ManageView url={deployUrl || deployments[0]?.deploy_url} deployments={deployments} refreshing={refreshing} onRedeploy={onStartDeploy} />
-        )}
-        {(isDeploying || isFailed) && (
-          <ProgressView steps={deploySteps} isFailed={isFailed} onRetry={onStartDeploy} onSkip={onSkipDeploy} />
-        )}
-        {isSuccess && (
-          <ManageView url={deployUrl} deployments={deployments} onRedeploy={onStartDeploy} />
-        )}
-        {isSkipped && (
-          <div className="text-center py-12 text-[14px] text-[#8b949e]">
-            Deployment skipped.
+      </div>
+    </div>
+  );
+}
+
+// Shown when fetchJob is in-flight for a NEW job — clears stale preview/URL/list
+// and signals that fresh deployment data is on the way.
+function FreshFetchView() {
+  return (
+    <div>
+      <div className="flex items-center gap-2 mb-4 text-[13px] text-[#8b949e]">
+        <div className="w-3.5 h-3.5 border-2 border-[#30363d] border-t-[#8b949e] rounded-full animate-spin" />
+        Fetching deployments for the new job…
+      </div>
+      <div className="w-full h-[120px] rounded-xl border border-[#30363d] bg-[#010409] animate-pulse mb-4" />
+      <div className="flex items-center gap-3 mb-5">
+        <div className="h-[22px] w-[60px] rounded-full bg-[#21262d] animate-pulse" />
+        <div className="h-[14px] w-[180px] rounded bg-[#21262d] animate-pulse" />
+      </div>
+      <div className="border border-[#21262d] rounded-md p-4 bg-[#0c1117]">
+        <div className="h-[15px] w-[120px] bg-[#21262d] rounded animate-pulse mb-1.5" />
+        <div className="h-[12px] w-[200px] bg-[#21262d] rounded animate-pulse mb-4" />
+        {[120, 100, 110].map((w, i) => (
+          <div key={i} className="flex items-start gap-3 py-2">
+            <div className="w-2.5 h-2.5 rounded-full bg-[#21262d] mt-1.5 animate-pulse" />
+            <div className="flex-1">
+              <div className="h-[14px] rounded bg-[#21262d] animate-pulse mb-1" style={{ width: `${w}px` }} />
+              <div className="h-[11px] w-[140px] rounded bg-[#21262d] animate-pulse" />
+            </div>
           </div>
-        )}
+        ))}
       </div>
     </div>
   );
