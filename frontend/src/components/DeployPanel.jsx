@@ -234,10 +234,8 @@ function ProgressView({ steps, isFailed, onRetry, onSkip }) {
             );
           }
 
-          // Completed steps get a subtle blue tint to distinguish from pending.
-          const doneBg = isDone
-            ? { background: 'linear-gradient(211.6deg, rgba(56,139,253,0.06) 3.37%, rgba(31,111,235,0.06) 102.77%)' }
-            : undefined;
+          // Completed steps get a solid dark-blue tint to distinguish from pending.
+          const doneBg = isDone ? { backgroundColor: '#0d141a' } : undefined;
           return (
             <div key={name}
               style={doneBg}
