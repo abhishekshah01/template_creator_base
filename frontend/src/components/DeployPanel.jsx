@@ -206,7 +206,7 @@ function ProgressView({ steps, isFailed, onRetry, onSkip }) {
           <div className="text-[14px] text-[#8b949e] mt-1">Usually 5–7 minutes.</div>
         </div>
       )}
-      <div className="border border-[#242424] rounded-[20px] overflow-hidden bg-[#0c1117]">
+      <div className="border border-[#242424] rounded-md overflow-hidden bg-[#0c1117]">
         {ordered.map((name, i) => {
           const step = stepsByName[name];
           const status = step?.status || 'pending';
@@ -225,8 +225,8 @@ function ProgressView({ steps, isFailed, onRetry, onSkip }) {
 
           if (isActive) {
             return (
-              <div key={name} className={`p-1.5 ${!isLast ? 'border-b border-[#242424]' : ''}`}>
-                <div className="flex items-center justify-between px-4 py-3 rounded-[12px]"
+              <div key={name} className={`p-1 ${!isLast ? 'border-b border-[#242424]' : ''}`}>
+                <div className="flex items-center justify-between px-4 py-3 rounded-md"
                   style={{ background: 'linear-gradient(211.6deg, rgba(188,140,255,0.10) 3.37%, rgba(110,64,201,0.10) 102.77%)' }}>
                   <div className="flex items-center gap-3">
                     <CircularDotsSpinner size={22} color="#bc8cff" />
@@ -243,12 +243,17 @@ function ProgressView({ steps, isFailed, onRetry, onSkip }) {
             );
           }
 
+          // Completed steps get a subtle blue tint to distinguish from pending.
+          const doneBg = isDone
+            ? { background: 'linear-gradient(211.6deg, rgba(56,139,253,0.06) 3.37%, rgba(31,111,235,0.06) 102.77%)' }
+            : undefined;
           return (
             <div key={name}
+              style={doneBg}
               className={`flex items-center gap-3 px-5 py-4 ${!isLast ? 'border-b border-[#242424]' : ''}`}>
               <div className="w-5 h-5 flex items-center justify-center shrink-0">
                 {isDone && (
-                  <svg className="w-5 h-5" viewBox="0 0 16 16" fill="#dddde6">
+                  <svg className="w-5 h-5" viewBox="0 0 16 16" fill="#3fb950">
                     <path d="M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0Z" />
                   </svg>
                 )}
