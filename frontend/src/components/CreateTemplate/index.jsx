@@ -301,11 +301,15 @@ export default function CreateTemplate({ bearerToken = "" }) {
     const freshJob = jobId.trim() !== lastFetchedJobId;
     setIsFreshJobFetch(freshJob);
     setLoading('fetch');
-    setStep(1);
-    setTimes(prev => { const { 1: _1, ...rest } = prev; return rest; });
-    resetDownstream();
+    // For same-job refetch we want a silent refresh — don't reset step/times/
+    // downstream state or the preview/URL/list will disappear briefly.
+    if (freshJob) {
+      setStep(1);
+      setTimes(prev => { const { 1: _1, ...rest } = prev; return rest; });
+      resetDownstream();
+      setDeployments([]);
+    }
     setJobPaused(false);
-    if (freshJob) setDeployments([]);
     // Intentionally don't clear userId/envId/podName here. Letting stale chips
     // stay visible during the in-flight fetch avoids a jarring "click button →
     // info vanishes" flash. The success branch overwrites them with fresh
@@ -346,8 +350,12 @@ export default function CreateTemplate({ bearerToken = "" }) {
         }).catch(() => {}),
       ]).finally(() => setLoadingDeployments(false));
       setLastFetchedJobId(jobId.trim());
-      completeStep(1);
-      setRightPanelTab('deployments');
+      // Only advance/scroll on fresh-job fetches — same-job refetch keeps
+      // the user wherever they are in the flow.
+      if (freshJob) {
+        completeStep(1);
+        setRightPanelTab('deployments');
+      }
     } catch (e) {
       setStep(1);
       setTimes(prev => { const { 1: _, ...rest } = prev; return rest; });
