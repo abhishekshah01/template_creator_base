@@ -431,18 +431,24 @@ function ManageView({ url, deployments, refreshing = false, latestRunFailed = fa
             <div className="text-[15px] font-semibold text-[#e6edf3]">Deployments</div>
             <div className="text-[12.5px] text-[#8b949e] mt-0.5">All deployed versions of your app</div>
           </div>
+          {/* Index of the most recent successful deployment — that one gets the green dot. */}
+          {(() => null)()}
           <div className="-mx-2">
-            {deployments.slice(0, 10).map((d, i) => {
-              const runId = d.id || d.run_id;
-              const isFirst = i === 0;
-              const isFailed = (d.status || d.run_status || '').toLowerCase() === 'failed' || (isFirst && latestRunFailed);
-              const rowBg = isFailed
-                ? 'bg-[rgba(218,54,51,0.10)] hover:bg-[rgba(218,54,51,0.14)]'
-                : isFirst
-                  ? 'bg-[rgba(46,160,67,0.10)] hover:bg-[rgba(46,160,67,0.14)]'
-                  : 'hover:bg-[rgba(255,255,255,0.04)]';
-              const dotColor = isFailed ? '#f85149' : isFirst ? '#3fb950' : '#484f58';
-              const dotHaloColor = isFailed ? 'rgba(248,81,73,0.20)' : isFirst ? 'rgba(63,185,80,0.20)' : 'rgba(72,79,88,0.20)';
+            {(() => {
+              const shown = deployments.slice(0, 10);
+              const latestOkIdx = shown.findIndex(d => !isFailedRun(d));
+              return shown.map((d, i) => {
+                const runId = d.id || d.run_id;
+                const isFirst = i === 0;
+                const isFailed = isFailedRun(d) || (isFirst && latestRunFailed);
+                const isLatestOk = i === latestOkIdx && !isFailed;
+                const rowBg = isFailed
+                  ? 'bg-[rgba(218,54,51,0.10)] hover:bg-[rgba(218,54,51,0.14)]'
+                  : isLatestOk
+                    ? 'bg-[rgba(46,160,67,0.10)] hover:bg-[rgba(46,160,67,0.14)]'
+                    : 'hover:bg-[rgba(255,255,255,0.04)]';
+                const dotColor = isFailed ? '#f85149' : isLatestOk ? '#3fb950' : '#484f58';
+                const dotHaloColor = isFailed ? 'rgba(248,81,73,0.20)' : isLatestOk ? 'rgba(63,185,80,0.20)' : 'rgba(72,79,88,0.20)';
               return (
                 <div key={runId || i}
                   className={`flex items-start gap-3 text-[13.5px] px-2 py-2 rounded-md transition-colors ${rowBg}`}>
@@ -464,11 +470,11 @@ function ManageView({ url, deployments, refreshing = false, latestRunFailed = fa
                   </div>
                 </div>
               );
-            })}
+              });
+            })()}
           </div>
         </div>
       )}
-
       {/* Footer actions */}
       <div className="flex items-center justify-end gap-2 mt-5 pt-4 border-t border-[#30363d]">
         <button onClick={onRedeploy}
