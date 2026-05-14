@@ -67,5 +67,5 @@ body {
   30%, 60%      { background-position: calc(100% + var(--shiny-width, 80px)) 0;  }
 }
 .animate-shiny-text {
-  animation: shiny-text 5s infinite;
+  animation: shiny-text 8s infinite;
 }
