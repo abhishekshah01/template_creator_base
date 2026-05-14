@@ -220,7 +220,7 @@ function ProgressView({ steps, isFailed, onRetry, onSkip }) {
                     <DotsLoader size={14} className="text-[#bc8cff]" />
                     <span className="text-[13px] font-mono"
                       style={{ background: 'linear-gradient(234.4deg, #bc8cff 3.37%, #6e40c9 102.77%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>
-                      {DEPLOY_PHASE_LABELS[name] || name}<span className="tracking-[0.35em] ml-[2px]">...</span>
+                      {DEPLOY_PHASE_LABELS[name] || name}<span className="tracking-[0.15em] ml-[2px]">...</span>
                     </span>
                   </div>
                   {elapsed && (
