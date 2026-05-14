@@ -169,9 +169,22 @@ function ProgressView({ steps, isFailed, onRetry, onSkip }) {
   return (
     <>
       {!isFailed && (
-        <div className="text-center mb-4">
-          <div className="text-[16px] font-semibold text-[#e6edf3]">Your app will be live soon</div>
-          <div className="text-[12px] text-[#8b949e] mt-0.5">Usually 5–7 minutes.</div>
+        <div className="text-center mb-6 pt-2">
+          <div
+            className="text-[20px] font-bold mb-3"
+            style={{
+              background: 'linear-gradient(135deg, #bc8cff 0%, #8957e5 50%, #6e40c9 100%)',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              backgroundClip: 'text',
+            }}
+          >
+            Your app will be live in some time
+          </div>
+          <div className="flex justify-center mb-2">
+            <DotsLoader size={28} dotSize={5} className="text-[#bc8cff]" />
+          </div>
+          <div className="text-[13px] text-[#8b949e]">Setting up your live app… usually 5–7 minutes.</div>
         </div>
       )}
       <div className="border border-[#30363d] rounded-md overflow-hidden bg-[#0d1117]">
