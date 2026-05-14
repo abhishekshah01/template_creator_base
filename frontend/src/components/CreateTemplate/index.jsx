@@ -643,7 +643,7 @@ export default function CreateTemplate({ bearerToken = "" }) {
                 variant={variant}
                 className="mb-3"
                 action={isSuccess ? null : (
-                  <button onClick={resumeJob} disabled={isResuming} className={btnDefault} data-testid="resume-job-btn">
+                  <button onClick={resumeJob} disabled={isResuming} className={btnPrimary} data-testid="resume-job-btn">
                     {isResuming && <div className={spinner} />}
                     {isResuming ? 'Resuming...' : isError ? 'Retry' : 'Resume Job'}
                   </button>
