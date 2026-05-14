@@ -322,14 +322,21 @@ export default function CreateTemplate({ bearerToken = "" }) {
     } catch (e) {
       setStep(1);
       setTimes(prev => { const { 1: _, ...rest } = prev; return rest; });
-      // Clear stale data from any previous successful fetch
       setCollections([]);
       setDbName('');
-      setUserId('');
-      setEnvId('');
-      setPodName('');
       const msg = e.message || '';
-      if (msg.toLowerCase().includes('timed out') || msg.toLowerCase().includes('pod exec failed')) {
+      const isPausedError = msg.toLowerCase().includes('timed out') || msg.toLowerCase().includes('pod exec failed');
+      // Only clear chips when the failure means the job info itself was bad.
+      // For a paused-pod failure, user_id/env_id came back from a successful
+      // job-info call and stay valid — clearing them here was the flash that
+      // made the chips look like they disappeared right when the banner
+      // appeared.
+      if (!isPausedError) {
+        setUserId('');
+        setEnvId('');
+        setPodName('');
+      }
+      if (isPausedError) {
         setJobPaused(true);
         setPodStatus(podStatus || 'POD_NOT_FOUND');
         setStatusFor(1, 'failed', 'error');
