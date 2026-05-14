@@ -35,7 +35,7 @@ export default function DeployPanel({
   const isFailed = deployStatus === 'failed';
   const isSkipped = deployStatus === 'skipped';
 
-  const title = isDeploying ? 'Deploying...'
+  const title = isDeploying ? 'Deployment in progress...'
     : isFailed ? 'Deployment failed'
       : (isSuccess || hasDeployments) ? 'Manage Deployments'
         : 'Deploy';
