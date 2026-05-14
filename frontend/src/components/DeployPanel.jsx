@@ -290,11 +290,32 @@ function ManageView({ url, deployments, refreshing = false, onRedeploy }) {
             </div>
           </a>
           <div className="flex-1 min-w-0">
-            <span className="inline-flex items-center gap-2 text-[14px] px-3 py-1 rounded-full font-medium mb-2.5"
-              style={{ color: '#3fb950', border: '1px solid rgba(63,185,80,0.55)' }}>
-              <span className="w-2 h-2 rounded-full bg-[#3fb950] shadow-[0_0_6px_rgba(63,185,80,0.7)]" />
-              Live
-            </span>
+            <div className="flex items-center gap-3 flex-wrap mb-2.5">
+              <span className="inline-flex items-center gap-2 text-[14px] px-3 py-1 rounded-full font-medium"
+                style={{ color: '#3fb950', border: '1px solid rgba(63,185,80,0.55)' }}>
+                <span className="w-2 h-2 rounded-full bg-[#3fb950] shadow-[0_0_6px_rgba(63,185,80,0.7)]" />
+                Live
+              </span>
+              <span className="inline-flex items-center gap-1.5">
+                <svg className="w-5 h-5 shrink-0" viewBox="0 0 49 48" fill="none">
+                  <g clipPath="url(#manage_coin_clip)">
+                    <circle opacity="0.1" cx="24.5" cy="24" r="24" fill="#F3CA5F" />
+                    <path fill="#F3CA5F" d="M24.5002 4.79883C35.104 4.79896 43.7004 13.3952 43.7004 23.999C43.7004 34.6028 35.104 43.1991 24.5002 43.1992C13.8964 43.1992 5.30005 34.6029 5.30005 23.999C5.30005 13.3952 13.8964 4.79883 24.5002 4.79883ZM25.4797 15.8135C24.8472 14.2461 24.3146 13.7212 23.5549 15.5928C21.893 19.5817 19.9091 21.4827 16.0032 23.1289C15.611 23.3101 14.9043 23.6249 14.8997 23.998C14.9043 24.3712 15.6064 24.686 16.0032 24.8672C19.9045 26.5086 21.8931 28.4141 23.5549 32.4033C24.3238 34.3087 24.8579 33.7101 25.4797 32.1826C27.1463 28.327 29.0079 26.5378 32.9387 24.8672C33.3507 24.6707 34.0306 24.4099 34.0999 24.0186V23.9736C34.0309 23.5852 33.3554 23.3206 32.9387 23.124V23.1289C29.0083 21.4583 27.1463 19.6705 25.4797 15.8135Z" />
+                    <path fill="url(#manage_coin_grad)" style={{ mixBlendMode: 'overlay' }} d="M24.5002 4.79883C35.104 4.79896 43.7004 13.3952 43.7004 23.999C43.7004 34.6028 35.104 43.1991 24.5002 43.1992C13.8964 43.1992 5.30005 34.6029 5.30005 23.999C5.30005 13.3952 13.8964 4.79883 24.5002 4.79883ZM25.4797 15.8135C24.8472 14.2461 24.3146 13.7212 23.5549 15.5928C21.893 19.5817 19.9091 21.4827 16.0032 23.1289C15.611 23.3101 14.9043 23.6249 14.8997 23.998C14.9043 24.3712 15.6064 24.686 16.0032 24.8672C19.9045 26.5086 21.8931 28.4141 23.5549 32.4033C24.3238 34.3087 24.8579 33.7101 25.4797 32.1826C27.1463 28.327 29.0079 26.5378 32.9387 24.8672C33.3507 24.6707 34.0306 24.4099 34.0999 24.0186V23.9736C34.0309 23.5852 33.3554 23.3206 32.9387 23.124V23.1289C29.0083 21.4583 27.1463 19.6705 25.4797 15.8135Z" />
+                  </g>
+                  <defs>
+                    <linearGradient id="manage_coin_grad" x1="24.5002" y1="4.79883" x2="24.5002" y2="43.1992" gradientUnits="userSpaceOnUse">
+                      <stop stopColor="white" />
+                      <stop offset="1" />
+                    </linearGradient>
+                    <clipPath id="manage_coin_clip">
+                      <rect width="48" height="48" fill="white" transform="translate(0.5)" />
+                    </clipPath>
+                  </defs>
+                </svg>
+                <span className="text-[13.5px] font-medium text-[#F3CA5F]">50 credits / month</span>
+              </span>
+            </div>
             <div className="flex items-center gap-1.5 mb-2 min-w-0">
               <a href={url} target="_blank" rel="noopener noreferrer"
                 title={url}
@@ -356,7 +377,7 @@ function ManageView({ url, deployments, refreshing = false, onRedeploy }) {
       {/* Footer actions */}
       <div className="flex items-center justify-end gap-2 mt-5 pt-4 border-t border-[#30363d]">
         <button onClick={onRedeploy}
-          className="px-4 py-[7px] bg-white text-[#0d1117] text-[14px] font-semibold rounded-md hover:bg-[#f0f6fc] transition-colors">
+          className="px-4 py-[7px] bg-[#37007a] text-white text-[14px] font-semibold rounded-md border border-[#8957e5]/40 hover:bg-[#6e40c9] hover:border-[#8957e5]/70 hover:shadow-[0_0_20px_rgba(137,87,229,0.30)] transition-all">
           Re-deploy changes
         </button>
       </div>
