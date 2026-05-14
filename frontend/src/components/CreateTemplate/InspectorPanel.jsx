@@ -218,7 +218,7 @@ export default function InspectorPanel({ jobId, dbName, collections, inspectColl
           <div className="w-3.5 h-3.5 border-2 border-[#30363d] border-t-[#58a6ff] rounded-full animate-spin" />
         )}
         {status === 'error' && (
-          <span className="text-[11px] font-medium text-[#f85149] bg-[#da3633]/10 border border-[#da3633]/30 rounded-full px-2 py-0.5">Error</span>
+          <span className="text-[12px] font-medium text-[#f85149]">Disconnected</span>
         )}
         {isReady && (
           <span className="text-[11px] font-medium text-[#3fb950] bg-[#238636]/10 border border-[#238636]/30 rounded-full px-2 py-0.5">Connected</span>
