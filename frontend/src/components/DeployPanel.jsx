@@ -142,7 +142,7 @@ function IdleView({ onStart }) {
             </clipPath>
           </defs>
         </svg>
-        <span className="text-[15px] font-medium text-[#F3CA5F]">50 credits / month</span>
+        <span className="text-[15px] font-semibold text-[#F3CA5F]">50 credits / month</span>
       </div>
       <button onClick={onStart}
         className="px-6 py-2.5 bg-[#238636] text-white text-[14px] font-semibold rounded-md hover:bg-[#2ea043] hover:shadow-[0_0_20px_rgba(35,134,54,0.20)] transition-all flex items-center justify-center gap-2">
