@@ -279,9 +279,10 @@ export default function CreateTemplate({ bearerToken = "" }) {
     setTimes(prev => { const { 1: _1, ...rest } = prev; return rest; });
     resetDownstream();
     setJobPaused(false);
-    setUserId('');
-    setEnvId('');
-    setPodName('');
+    // Intentionally don't clear userId/envId/podName here. Letting stale chips
+    // stay visible during the in-flight fetch avoids a jarring "click button →
+    // info vanishes" flash. The success branch overwrites them with fresh
+    // values; the catch branch clears them if the fetch actually fails.
     setInspectorStatus('loading');
     setInspectorReason('');
     setStatusFor(1, 'Fetching job details...', 'loading');
