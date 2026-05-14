@@ -340,6 +340,7 @@ export default function CreateTemplate({ bearerToken = "" }) {
         }).catch(() => {}),
       ]).finally(() => setLoadingDeployments(false));
       completeStep(1);
+      setRightPanelTab('deployments');
     } catch (e) {
       setStep(1);
       setTimes(prev => { const { 1: _, ...rest } = prev; return rest; });
