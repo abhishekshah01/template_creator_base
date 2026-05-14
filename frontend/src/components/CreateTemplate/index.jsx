@@ -252,6 +252,8 @@ export default function CreateTemplate({ bearerToken = "" }) {
     setResumeState('idle'); setResumeError(''); setResumeElapsed(0);
     setDeployStatus('idle'); setDeploySteps([]); setDeployUrl(''); setDeployments([]);
     setRightPanelTab('inspector');
+    setLastFetchedJobId('');
+    setIsFreshJobFetch(false);
   }
 
   function stepStatus(n) {
@@ -308,6 +310,11 @@ export default function CreateTemplate({ bearerToken = "" }) {
     if (!/^[a-zA-Z0-9_-]+$/.test(templateName)) { setStatusFor(1, 'Template name: only letters, numbers, hyphens, underscores', 'error'); return; }
 
     const freshJob = jobId.trim() !== lastFetchedJobId;
+    // Whether the user was sitting at step 1 when they clicked. Captured from
+    // the closure (pre-click value) so we know to advance step 1 even on a
+    // "same-job" refetch when the user hasn't actually moved past it yet —
+    // e.g. right after a Reset, where lastFetchedJobId is still persisted.
+    const wasAtStep1 = step === 1;
     // Cancel any pending fresh-hold timer from a previous fetch — otherwise
     // an old setTimeout could fire mid-new-fetch and flip isFreshJobFetch
     // back to false, exposing IdleView.
@@ -388,9 +395,10 @@ export default function CreateTemplate({ bearerToken = "" }) {
         }
       });
       setLastFetchedJobId(jobId.trim());
-      // Only advance/scroll on fresh-job fetches — same-job refetch keeps
-      // the user wherever they are in the flow.
-      if (freshJob) {
+      // Advance + auto-open deploy tab for fresh-job fetches AND for same-job
+      // fetches when the user is still at step 1 (e.g. after Reset). Avoids
+      // disrupting silent-refresh from step 2+.
+      if (freshJob || wasAtStep1) {
         completeStep(1);
         setRightPanelTab('deployments');
       }
