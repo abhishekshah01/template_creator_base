@@ -663,13 +663,18 @@ export default function CreateTemplate({ bearerToken = "" }) {
             const resumingMsg = resumingMessage(resumeElapsed);
             const message = isResuming
               ? (
-                  <span
-                    key={resumingMsg}
-                    className="animate-shiny-text animate-fade-in inline-block"
-                    style={SHINY_TEXT_STYLE}
-                  >
-                    {resumingMsg}
-                  </span>
+                  <>
+                    <span
+                      key={resumingMsg}
+                      className="animate-shiny-text animate-fade-in inline-block"
+                      style={SHINY_TEXT_STYLE}
+                    >
+                      {resumingMsg}
+                    </span>
+                    <span className="text-[#8b949e] ml-1.5 text-[13px] tabular-nums font-mono">
+                      ({resumeElapsed}s)
+                    </span>
+                  </>
                 )
               : isSuccess
                 ? 'Environment is ready. Continuing...'
@@ -681,19 +686,12 @@ export default function CreateTemplate({ bearerToken = "" }) {
                 variant={variant}
                 className="mb-3"
                 action={isSuccess ? null : (
-                  <div className="flex items-center gap-2">
-                    {isResuming && (
-                      <span className="text-[12px] text-[#e6edf3] font-medium tabular-nums">
-                        time elapsed — <span className="font-mono">{resumeElapsed}s</span>
-                      </span>
-                    )}
-                    <button onClick={resumeJob} disabled={isResuming}
-                      className={isResuming ? btnDefault : btnPrimary}
-                      data-testid="resume-job-btn">
-                      {isResuming && <div className="w-3.5 h-3.5 border-2 border-[#484f58] border-t-[#8b949e] rounded-full animate-spin" />}
-                      {isResuming ? 'Resuming...' : isError ? 'Retry' : 'Resume Job'}
-                    </button>
-                  </div>
+                  <button onClick={resumeJob} disabled={isResuming}
+                    className={isResuming ? btnDefault : btnPrimary}
+                    data-testid="resume-job-btn">
+                    {isResuming && <div className="w-3.5 h-3.5 border-2 border-[#484f58] border-t-[#8b949e] rounded-full animate-spin" />}
+                    {isResuming ? 'Resuming...' : isError ? 'Retry' : 'Resume Job'}
+                  </button>
                 )}
               >
                 {message}
