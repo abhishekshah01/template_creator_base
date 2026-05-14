@@ -655,7 +655,7 @@ export default function CreateTemplate({ bearerToken = "" }) {
             );
           })()}
           <StatusBar {...(statuses[1] || {})} />
-          {(userId || envId || podName) && (
+          {(userId || envId) && (
             <div className="flex gap-2 mt-3 flex-wrap">
               {userId && (
                 <span className="inline-flex items-center gap-1.5 text-[12px] px-2.5 py-[3px] rounded-full font-mono"
@@ -667,12 +667,6 @@ export default function CreateTemplate({ bearerToken = "" }) {
                 <span className="inline-flex items-center gap-1.5 text-[12px] px-2.5 py-[3px] rounded-full font-mono"
                   style={{ backgroundColor: 'rgba(35,134,54,0.15)', color: '#3fb950', border: '1px solid rgba(35,134,54,0.3)' }}>
                   Env <span className="text-[#c9d1d9]">{envId}</span>
-                </span>
-              )}
-              {podName && (
-                <span className="inline-flex items-center gap-1.5 text-[12px] px-2.5 py-[3px] rounded-full font-mono"
-                  style={{ backgroundColor: 'rgba(137,87,229,0.15)', color: '#bc8cff', border: '1px solid rgba(137,87,229,0.3)' }}>
-                  Pod <span className="text-[#c9d1d9]">{podName}</span>
                 </span>
               )}
             </div>
