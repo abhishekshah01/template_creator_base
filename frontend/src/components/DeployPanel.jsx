@@ -145,7 +145,7 @@ function IdleView({ onStart }) {
         <span className="text-[13.5px] font-medium text-[#F3CA5F]">50 credits / month</span>
       </div>
       <button onClick={onStart}
-        className="px-6 py-2.5 bg-[#37007a] text-white text-[14px] font-semibold rounded-md hover:bg-[#6e40c9] hover:shadow-[0_0_20px_rgba(137,87,229,0.30)] transition-all flex items-center justify-center gap-2">
+        className="px-6 py-2.5 bg-[#37007a] text-white text-[14px] font-semibold rounded-md border border-[#8957e5]/40 hover:bg-[#6e40c9] hover:border-[#8957e5]/70 hover:shadow-[0_0_20px_rgba(137,87,229,0.30)] transition-all flex items-center justify-center gap-2">
         <CloudUploadIcon className="w-4 h-4" />
         Start Deployment
       </button>
