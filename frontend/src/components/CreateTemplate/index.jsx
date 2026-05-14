@@ -637,7 +637,7 @@ export default function CreateTemplate({ bearerToken = "" }) {
                 ? 'Environment is ready. Continuing...'
                 : isError
                   ? `Resume failed: ${resumeError}`
-                  : 'This job is paused. Click Resume Job to wake the environment — takes ~30–60s.';
+                  : 'Job is paused — click Resume to wake the environment (~30–60s).';
             return (
               <Banner
                 variant={variant}
