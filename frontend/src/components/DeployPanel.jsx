@@ -24,6 +24,7 @@ function timeAgo(dateStr, nowMs) {
 
 export default function DeployPanel({
   deployStatus, deploySteps, deployUrl, deployments,
+  refreshing = false,
   onStartDeploy, onSkipDeploy, onClose,
 }) {
   const hasDeployments = (deployments || []).length > 0;
@@ -60,7 +61,7 @@ export default function DeployPanel({
           <IdleView onStart={onStartDeploy} onSkip={onSkipDeploy} />
         )}
         {isIdle && hasDeployments && (
-          <ManageView url={deployUrl || deployments[0]?.deploy_url} deployments={deployments} onRedeploy={onStartDeploy} />
+          <ManageView url={deployUrl || deployments[0]?.deploy_url} deployments={deployments} refreshing={refreshing} onRedeploy={onStartDeploy} />
         )}
         {(isDeploying || isFailed) && (
           <ProgressView steps={deploySteps} isFailed={isFailed} onRetry={onStartDeploy} onSkip={onSkipDeploy} />
@@ -184,7 +185,7 @@ function ProgressView({ steps, isFailed, onRetry, onSkip }) {
   );
 }
 
-function ManageView({ url, deployments, onRedeploy }) {
+function ManageView({ url, deployments, refreshing = false, onRedeploy }) {
   const [now, setNow] = useState(() => Date.now());
   const [copied, setCopied] = useState(false);
   const [previewLoaded, setPreviewLoaded] = useState(false);
@@ -265,11 +266,19 @@ function ManageView({ url, deployments, onRedeploy }) {
       {/* Deployments timeline */}
       {(deployments || []).length > 0 && (
         <div className="mt-5 border border-[#21262d] rounded-md p-4 bg-[#0c1117]">
-          <div className="mb-3">
-            <div className="text-[15px] font-semibold text-[#e6edf3]">Deployments</div>
-            <div className="text-[12.5px] text-[#8b949e] mt-0.5">All deployed versions of your app</div>
+          <div className="mb-3 flex items-start justify-between gap-3">
+            <div>
+              <div className="text-[15px] font-semibold text-[#e6edf3]">Deployments</div>
+              <div className="text-[12.5px] text-[#8b949e] mt-0.5">All deployed versions of your app</div>
+            </div>
+            {refreshing && (
+              <span className="inline-flex items-center gap-1.5 text-[12px] text-[#58a6ff] shrink-0 mt-1">
+                <div className="w-3 h-3 border-2 border-[#30363d] border-t-[#58a6ff] rounded-full animate-spin" />
+                Updating deployments…
+              </span>
+            )}
           </div>
-          <div className="-mx-2">
+          <div className={`-mx-2 transition-opacity duration-200 ${refreshing ? 'opacity-50' : 'opacity-100'}`}>
             {deployments.slice(0, 10).map((d, i) => {
               const runId = d.id || d.run_id;
               return (

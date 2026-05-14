@@ -962,6 +962,7 @@ export default function CreateTemplate({ bearerToken = "" }) {
             deploySteps={deploySteps}
             deployUrl={deployUrl}
             deployments={deployments}
+            refreshing={loadingDeployments}
             onStartDeploy={runDeploy}
             onSkipDeploy={skipDeploy}
             onClose={() => setRightPanelTab('inspector')}
