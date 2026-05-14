@@ -377,7 +377,7 @@ function ManageView({ url, deployments, refreshing = false, onRedeploy }) {
       {/* Footer actions */}
       <div className="flex items-center justify-end gap-2 mt-5 pt-4 border-t border-[#30363d]">
         <button onClick={onRedeploy}
-          className="px-4 py-[7px] bg-[#37007a] text-white text-[14px] font-semibold rounded-md border border-[#8957e5]/40 hover:bg-[#6e40c9] hover:border-[#8957e5]/70 hover:shadow-[0_0_20px_rgba(137,87,229,0.30)] transition-all">
+          className="px-4 py-[7px] bg-white text-[#0d1117] text-[14px] font-semibold rounded-md hover:bg-[#f0f6fc] transition-colors">
           Re-deploy changes
         </button>
       </div>
