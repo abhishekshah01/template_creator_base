@@ -355,6 +355,7 @@ export default function CreateConfig({ bearerToken, onTokenExpired, onNavigate, 
         </>
       )}
 
+      <div className="bg-[#010409] border border-[#30363d] rounded-md p-6 mb-6">
       {/* Template Name */}
       <div className="mb-6">
         <label className="block text-[14px] font-semibold text-[#e6edf3] mb-1">
@@ -401,13 +402,13 @@ export default function CreateConfig({ bearerToken, onTokenExpired, onNavigate, 
         )}
       </div>
 
-      <hr className="border-[#30363d] mb-6" />
+      <hr className="border-[#21262d] mb-6" />
 
       {/* Visibility */}
       <div className="mb-6">
         <label className="block text-[14px] font-semibold text-[#e6edf3] mb-1">Visibility</label>
         <p className="text-[12px] text-[#8b949e] mb-3">Control who can access this template config.</p>
-        <div className="border border-[#30363d] rounded-md overflow-hidden">
+        <div className="border border-[#30363d] rounded-md overflow-hidden bg-[#0d1117]">
           <div className="flex items-center justify-between gap-4 px-4 py-3 border-b border-[#30363d]">
             <div>
               <div className="text-[14px] font-medium text-[#e6edf3]">Internal</div>
@@ -445,7 +446,7 @@ export default function CreateConfig({ bearerToken, onTokenExpired, onNavigate, 
         </div>
       </div>
 
-      <hr className="border-[#30363d] mb-6" />
+      <hr className="border-[#21262d] mb-6" />
 
       {/* Default Env Config */}
       <div className="mb-6">
@@ -530,6 +531,7 @@ export default function CreateConfig({ bearerToken, onTokenExpired, onNavigate, 
           </div>
         )}
       </div>
+      </div>{/* end form card */}
 
       <hr className="border-[#30363d] mb-6" />
 
