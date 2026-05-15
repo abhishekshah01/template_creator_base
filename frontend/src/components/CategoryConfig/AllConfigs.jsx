@@ -34,8 +34,8 @@ function extractSummaryPreview(config) {
 function SearchIcon({ className }) {
   return <svg className={className} viewBox="0 0 16 16" fill="currentColor"><path d="M10.68 11.74a6 6 0 0 1-7.922-8.982 6 6 0 0 1 8.982 7.922l3.04 3.04a.749.749 0 0 1-.326 1.275.749.749 0 0 1-.734-.215ZM11.5 7a4.499 4.499 0 1 0-8.997 0A4.499 4.499 0 0 0 11.5 7Z" /></svg>;
 }
-function IssueOpenIcon({ className }) {
-  return <svg className={className} viewBox="0 0 16 16" fill="currentColor"><path d="M8 9.5a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3Z" /><path d="M8 0a8 8 0 1 1 0 16A8 8 0 0 1 8 0ZM1.5 8a6.5 6.5 0 1 0 13 0 6.5 6.5 0 0 0-13 0Z" /></svg>;
+function ListUnorderedIcon({ className }) {
+  return <svg className={className} viewBox="0 0 16 16" fill="currentColor"><path d="M2.5 3.75a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0Zm0 4.5a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0ZM1.75 13.5a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5ZM5.75 4a.75.75 0 0 1 .75-.75h7.75a.75.75 0 0 1 0 1.5H6.5A.75.75 0 0 1 5.75 4Zm0 4.5a.75.75 0 0 1 .75-.75h7.75a.75.75 0 0 1 0 1.5H6.5a.75.75 0 0 1-.75-.75Zm0 4.5a.75.75 0 0 1 .75-.75h7.75a.75.75 0 0 1 0 1.5H6.5a.75.75 0 0 1-.75-.75Z" /></svg>;
 }
 function ChevronDown({ className }) {
   return <svg className={className} viewBox="0 0 16 16" fill="currentColor"><path d="M12.78 5.22a.749.749 0 0 1 0 1.06l-4.25 4.25a.749.749 0 0 1-1.06 0L3.22 6.28a.749.749 0 1 1 1.06-1.06L8 8.939l3.72-3.719a.749.749 0 0 1 1.06 0Z" /></svg>;
@@ -279,7 +279,7 @@ export default function AllConfigs({ onNavigate, bearerToken, onTokenExpired, ca
       {/* Search bar + filters — GitHub issues style */}
       <div className="flex items-center gap-2 mb-4">
         {/* Search input with integrated label filter */}
-        <div className="flex-1 flex items-stretch border border-[#30363d] rounded-md overflow-hidden">
+        <div className="flex-1 flex items-stretch border border-[#30363d] rounded-md overflow-hidden transition-colors focus-within:border-[#1f6feb] focus-within:ring-1 focus-within:ring-[#1f6feb]/40">
           <div className="flex items-center gap-2 flex-1 px-3 py-[6px] bg-[#0d1117]">
             <SearchIcon className="w-4 h-4 text-[#484f58] shrink-0" />
             <input type="text" value={search} onChange={e => setSearch(e.target.value)}
@@ -370,12 +370,12 @@ export default function AllConfigs({ onNavigate, bearerToken, onTokenExpired, ca
       )}
 
       {/* Issues-style table */}
-      <div className="border border-[#30363d] rounded-md overflow-hidden">
+      <div className="border border-[#30363d] rounded-md overflow-hidden bg-[#010409]">
         {/* Tab header — matches GitHub "Open / Closed" bar */}
         <div className="flex items-center px-4 py-3 bg-[#161b22] border-b border-[#30363d]">
           <div className="flex items-center gap-4 flex-1">
             {[
-              { key: 'all', label: 'All', count: allCount, icon: IssueOpenIcon },
+              { key: 'all', label: 'All', count: allCount, icon: ListUnorderedIcon },
               { key: 'internal', label: 'Internal', count: internalCount },
               { key: 'public', label: 'Public', count: publicCount },
             ].map(t => (
@@ -422,14 +422,14 @@ export default function AllConfigs({ onNavigate, bearerToken, onTokenExpired, ca
           return (
             <div key={config.id}
               data-testid={`config-row-${config.id}`}
-              onClick={() => onNavigate('config-detail', config.id)}
-              className="flex items-start px-4 py-2.5 border-b border-[#21262d] last:border-b-0 hover:bg-[#161b22] cursor-pointer transition-colors group">
+              className="flex items-start px-4 py-2.5 border-b border-[#21262d] last:border-b-0">
               <div className="flex-1 min-w-0">
                 {/* Title line + labels */}
                 <div className="flex items-center gap-2 flex-wrap">
-                  <span className="text-[16px] font-semibold text-[#e6edf3] group-hover:text-[#58a6ff] transition-colors leading-snug">
+                  <button onClick={() => onNavigate('config-detail', config.id)}
+                    className="text-[16px] font-semibold text-[#e6edf3] hover:text-[#58a6ff] hover:underline transition-colors leading-snug text-left">
                     {config.template_name}
-                  </span>
+                  </button>
                   {config.internal && <Label text="internal" color="blue" />}
                   {config.public && <Label text="public" color="green" />}
                   {hasSummary && <Label text="has summary" color="purple" />}
