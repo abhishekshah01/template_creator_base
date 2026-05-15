@@ -9,6 +9,20 @@ function formatElapsed(seconds) {
   return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
 }
 
+// Status fields can vary across API shapes — treat anything not explicitly
+// failed/errored as a successful run when picking the URL for the preview.
+function isFailedRun(d) {
+  const s = (d.status || d.run_status || d.state || '').toLowerCase();
+  return s === 'failed' || s === 'error';
+}
+function latestSuccessfulUrl(deployments) {
+  for (const d of deployments || []) {
+    const u = d.deploy_url || d.url;
+    if (u && !isFailedRun(d)) return u;
+  }
+  return '';
+}
+
 function timeAgo(dateStr, nowMs) {
   if (!dateStr) return '';
   const seconds = Math.floor(((nowMs ?? 0) - new Date(dateStr).getTime()) / 1000);
@@ -35,10 +49,10 @@ export default function DeployPanel({
   const isFailed = deployStatus === 'failed';
   const isSkipped = deployStatus === 'skipped';
 
-  const title = isDeploying ? 'Deploying...'
-    : isFailed ? 'Deployment failed'
-    : (isSuccess || hasDeployments) ? 'Manage Deployments'
-    : 'Deploy';
+  const title = isDeploying ? 'Deployment in progress...'
+    : isFailed && !hasDeployments ? 'Deployment failed'
+      : (isSuccess || hasDeployments || isFailed) ? 'Manage Deployments'
+        : 'Deploy';
 
   return (
     <div className="h-full flex flex-col bg-black border border-[#30363d] rounded-md overflow-hidden">
@@ -46,7 +60,6 @@ export default function DeployPanel({
         <div className="flex items-center gap-2">
           <CloudIcon className="w-4 h-4 text-[#8b949e]" />
           <span className="text-[14px] font-semibold text-[#e6edf3]">{title}</span>
-          {isDeploying && <DotsLoader size={14} dotSize={2} className="text-[#58a6ff] ml-1" />}
         </div>
         {onClose && (
           <button onClick={onClose} title="Close" className="p-1 rounded hover:bg-[#30363d] text-[#8b949e] hover:text-[#e6edf3] transition-colors">
@@ -67,10 +80,16 @@ export default function DeployPanel({
               <IdleView onStart={onStartDeploy} onSkip={onSkipDeploy} />
             )}
             {isIdle && hasDeployments && (
-              <ManageView url={deployUrl || deployments[0]?.deploy_url} deployments={deployments} refreshing={refreshing} onRedeploy={onStartDeploy} />
+              <ManageView url={deployUrl || latestSuccessfulUrl(deployments)} deployments={deployments} refreshing={refreshing} onRedeploy={onStartDeploy} />
             )}
-            {(isDeploying || isFailed) && (
-              <ProgressView steps={deploySteps} isFailed={isFailed} onRetry={onStartDeploy} onSkip={onSkipDeploy} />
+            {isDeploying && (
+              <ProgressView steps={deploySteps} isFailed={false} onRetry={onStartDeploy} onSkip={onSkipDeploy} />
+            )}
+            {isFailed && !hasDeployments && (
+              <ProgressView steps={deploySteps} isFailed={true} onRetry={onStartDeploy} onSkip={onSkipDeploy} />
+            )}
+            {isFailed && hasDeployments && (
+              <ManageView url={deployUrl || latestSuccessfulUrl(deployments)} deployments={deployments} refreshing={refreshing} latestRunFailed={true} onRedeploy={onStartDeploy} />
             )}
             {isSuccess && (
               <ManageView url={deployUrl} deployments={deployments} onRedeploy={onStartDeploy} />
@@ -118,21 +137,36 @@ function FreshFetchView() {
   );
 }
 
-function IdleView({ onStart, onSkip }) {
+function IdleView({ onStart }) {
   return (
-    <div className="text-center py-10">
-      <div className="text-[18px] font-semibold text-[#e6edf3] mb-2">Take your app live</div>
-      <p className="text-[13px] text-[#8b949e] mb-6 max-w-[260px] mx-auto leading-relaxed">
-        Deploy to a hosted production-ready environment and get a live URL for your app.
+    <div className="border border-dashed border-[#30363d] rounded-2xl bg-[#0c1117] p-8 flex flex-col items-center justify-center text-center min-h-[400px]">
+      <div className="text-[20px] font-bold text-[#e6edf3] mb-3">Take your app live!</div>
+      <p className="text-[14px] text-[#8b949e] leading-relaxed max-w-[280px] mb-6">
+        Deploy to an Emergent hosted production-ready environment and get a live URL for your app.
       </p>
+      <div className="inline-flex items-center gap-1.5 mb-5">
+        <svg className="w-[26px] h-[26px] shrink-0" viewBox="0 0 49 48" fill="none">
+          <g clipPath="url(#deploy_coin_clip)">
+            <circle opacity="0.1" cx="24.5" cy="24" r="24" fill="#F3CA5F" />
+            <path fill="#F3CA5F" d="M24.5002 4.79883C35.104 4.79896 43.7004 13.3952 43.7004 23.999C43.7004 34.6028 35.104 43.1991 24.5002 43.1992C13.8964 43.1992 5.30005 34.6029 5.30005 23.999C5.30005 13.3952 13.8964 4.79883 24.5002 4.79883ZM25.4797 15.8135C24.8472 14.2461 24.3146 13.7212 23.5549 15.5928C21.893 19.5817 19.9091 21.4827 16.0032 23.1289C15.611 23.3101 14.9043 23.6249 14.8997 23.998C14.9043 24.3712 15.6064 24.686 16.0032 24.8672C19.9045 26.5086 21.8931 28.4141 23.5549 32.4033C24.3238 34.3087 24.8579 33.7101 25.4797 32.1826C27.1463 28.327 29.0079 26.5378 32.9387 24.8672C33.3507 24.6707 34.0306 24.4099 34.0999 24.0186V23.9736C34.0309 23.5852 33.3554 23.3206 32.9387 23.124V23.1289C29.0083 21.4583 27.1463 19.6705 25.4797 15.8135Z" />
+            <path fill="url(#deploy_coin_grad)" style={{ mixBlendMode: 'overlay' }} d="M24.5002 4.79883C35.104 4.79896 43.7004 13.3952 43.7004 23.999C43.7004 34.6028 35.104 43.1991 24.5002 43.1992C13.8964 43.1992 5.30005 34.6029 5.30005 23.999C5.30005 13.3952 13.8964 4.79883 24.5002 4.79883ZM25.4797 15.8135C24.8472 14.2461 24.3146 13.7212 23.5549 15.5928C21.893 19.5817 19.9091 21.4827 16.0032 23.1289C15.611 23.3101 14.9043 23.6249 14.8997 23.998C14.9043 24.3712 15.6064 24.686 16.0032 24.8672C19.9045 26.5086 21.8931 28.4141 23.5549 32.4033C24.3238 34.3087 24.8579 33.7101 25.4797 32.1826C27.1463 28.327 29.0079 26.5378 32.9387 24.8672C33.3507 24.6707 34.0306 24.4099 34.0999 24.0186V23.9736C34.0309 23.5852 33.3554 23.3206 32.9387 23.124V23.1289C29.0083 21.4583 27.1463 19.6705 25.4797 15.8135Z" />
+          </g>
+          <defs>
+            <linearGradient id="deploy_coin_grad" x1="24.5002" y1="4.79883" x2="24.5002" y2="43.1992" gradientUnits="userSpaceOnUse">
+              <stop stopColor="white" />
+              <stop offset="1" />
+            </linearGradient>
+            <clipPath id="deploy_coin_clip">
+              <rect width="48" height="48" fill="white" transform="translate(0.5)" />
+            </clipPath>
+          </defs>
+        </svg>
+        <span className="text-[16px] font-medium text-[#F3CA5F]">50 credits / month</span>
+      </div>
       <button onClick={onStart}
-        className="w-full max-w-[260px] mx-auto px-4 py-2 bg-[#238636] text-white text-[14px] font-medium rounded-md hover:bg-[#2ea043] border border-[#2ea043]/60 transition-colors flex items-center justify-center gap-2 mb-2">
+        className="px-6 py-2.5 bg-[#37007a] text-white text-[14px] font-semibold rounded-md border border-[#8957e5]/40 hover:bg-[#6e40c9] hover:border-[#8957e5]/70 hover:shadow-[0_0_20px_rgba(137,87,229,0.30)] transition-all flex items-center justify-center gap-2">
         <CloudUploadIcon className="w-4 h-4" />
         Start Deployment
-      </button>
-      <button onClick={onSkip}
-        className="text-[13px] text-[#8b949e] hover:text-[#e6edf3] transition-colors">
-        Skip (already deployed)
       </button>
     </div>
   );
@@ -159,13 +193,14 @@ function ProgressView({ steps, isFailed, onRetry, onSkip }) {
           <div className="text-[12px] text-[#8b949e] mt-0.5">Usually 5–7 minutes.</div>
         </div>
       )}
-      <div className="border border-[#30363d] rounded-md overflow-hidden bg-[#0d1117]">
+      <div className="border border-[#242424] rounded-md overflow-hidden bg-[#0c1117]">
         {ordered.map((name, i) => {
           const step = stepsByName[name];
           const status = step?.status || 'pending';
           const isActive = status === 'running';
           const isDone = status === 'success';
           const isFailedRow = status === 'failed';
+          const isLast = i === ordered.length - 1;
           let elapsed = '';
           if (step?.created_at && (isActive || isDone || isFailedRow)) {
             const start = new Date(step.created_at).getTime();
@@ -174,13 +209,34 @@ function ProgressView({ steps, isFailed, onRetry, onSkip }) {
               : now;
             elapsed = formatElapsed(Math.floor((end - start) / 1000));
           }
+
+          if (isActive) {
+            return (
+              <div key={name} className={`p-1 ${!isLast ? 'border-b border-[#242424]' : ''}`}>
+                <div className="flex items-center justify-between px-3 py-2 rounded-md"
+                  style={{ background: 'linear-gradient(211.6deg, rgba(188,140,255,0.10) 3.37%, rgba(110,64,201,0.10) 102.77%)' }}>
+                  <div className="flex items-center gap-3">
+                    <DotsLoader size={14} className="text-[#bc8cff]" />
+                    <span className="text-[13px] font-mono"
+                      style={{ background: 'linear-gradient(234.4deg, #bc8cff 3.37%, #6e40c9 102.77%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>
+                      {DEPLOY_PHASE_LABELS[name] || name}<span className="tracking-[0.15em] ml-[2px]">...</span>
+                    </span>
+                  </div>
+                  {elapsed && (
+                    <span className="text-[12px] font-mono text-[#e6edf3] tabular-nums">{elapsed}</span>
+                  )}
+                </div>
+              </div>
+            );
+          }
+
+          // Completed steps get a solid dark-blue tint to distinguish from pending.
+          const doneBg = isDone ? { backgroundColor: '#0d141a' } : undefined;
           return (
             <div key={name}
-              className={`flex items-center gap-3 px-4 py-3 ${i > 0 ? 'border-t border-[#21262d]' : ''} ${
-                isActive ? 'bg-gradient-to-r from-[#1f6feb]/10 to-transparent' : ''
-              }`}>
+              style={doneBg}
+              className={`flex items-center gap-3 px-4 py-3 ${!isLast ? 'border-b border-[#242424]' : ''}`}>
               <div className="w-4 h-4 flex items-center justify-center shrink-0">
-                {isActive && <DotsLoader size={14} dotSize={2} className="text-[#58a6ff]" />}
                 {isDone && (
                   <svg className="w-4 h-4" viewBox="0 0 16 16" fill="#3fb950">
                     <path d="M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0Z" />
@@ -194,15 +250,16 @@ function ProgressView({ steps, isFailed, onRetry, onSkip }) {
                 {status === 'pending' && <div className="w-3 h-3 rounded-full border border-[#484f58]" />}
               </div>
               <span className={`flex-1 font-mono text-[13px] ${
-                isActive ? 'text-[#58a6ff] font-medium'
-                : isDone ? 'text-[#c9d1d9]'
+                isDone ? 'text-[#dddde6]'
                 : isFailedRow ? 'text-[#f85149]'
-                : 'text-[#8b949e]'
+                : 'text-[#737780]'
               }`}>
-                {DEPLOY_PHASE_LABELS[name] || name}{isActive ? '...' : ''}
+                {DEPLOY_PHASE_LABELS[name] || name}
               </span>
               {elapsed && (
-                <span className="font-mono text-[12px] text-[#8b949e] tabular-nums">{elapsed}</span>
+                <span className={`font-mono text-[12px] tabular-nums ${
+                  isFailedRow ? 'text-[#f85149]/60' : 'text-[#737780]'
+                }`}>{elapsed}</span>
               )}
             </div>
           );
@@ -224,7 +281,7 @@ function ProgressView({ steps, isFailed, onRetry, onSkip }) {
   );
 }
 
-function ManageView({ url, deployments, refreshing = false, onRedeploy }) {
+function ManageView({ url, deployments, refreshing = false, latestRunFailed = false, onRedeploy }) {
   const [now, setNow] = useState(() => Date.now());
   const [copied, setCopied] = useState(false);
   const [previewLoaded, setPreviewLoaded] = useState(false);
@@ -240,7 +297,7 @@ function ManageView({ url, deployments, refreshing = false, onRedeploy }) {
     navigator.clipboard.writeText(url).then(() => {
       setCopied(true);
       setTimeout(() => setCopied(false), 1500);
-    }).catch(() => {});
+    }).catch(() => { });
   }
 
   return (
@@ -277,11 +334,32 @@ function ManageView({ url, deployments, refreshing = false, onRedeploy }) {
             </div>
           </a>
           <div className="flex-1 min-w-0">
-            <span className="inline-flex items-center gap-2 text-[14px] px-3 py-1 rounded-full font-medium mb-2.5"
-              style={{ color: '#3fb950', border: '1px solid rgba(63,185,80,0.55)' }}>
-              <span className="w-2 h-2 rounded-full bg-[#3fb950] shadow-[0_0_6px_rgba(63,185,80,0.7)]" />
-              Live
-            </span>
+            <div className="flex items-center gap-3 flex-wrap mb-2.5">
+              <span className="inline-flex items-center gap-2 text-[14px] px-3 py-1 rounded-full font-medium"
+                style={{ color: '#3fb950', border: '1px solid rgba(63,185,80,0.55)' }}>
+                <span className="w-2 h-2 rounded-full bg-[#3fb950] shadow-[0_0_6px_rgba(63,185,80,0.7)]" />
+                Live
+              </span>
+              <span className="inline-flex items-center gap-1.5">
+                <svg className="w-5 h-5 shrink-0" viewBox="0 0 49 48" fill="none">
+                  <g clipPath="url(#manage_coin_clip)">
+                    <circle opacity="0.1" cx="24.5" cy="24" r="24" fill="#F3CA5F" />
+                    <path fill="#F3CA5F" d="M24.5002 4.79883C35.104 4.79896 43.7004 13.3952 43.7004 23.999C43.7004 34.6028 35.104 43.1991 24.5002 43.1992C13.8964 43.1992 5.30005 34.6029 5.30005 23.999C5.30005 13.3952 13.8964 4.79883 24.5002 4.79883ZM25.4797 15.8135C24.8472 14.2461 24.3146 13.7212 23.5549 15.5928C21.893 19.5817 19.9091 21.4827 16.0032 23.1289C15.611 23.3101 14.9043 23.6249 14.8997 23.998C14.9043 24.3712 15.6064 24.686 16.0032 24.8672C19.9045 26.5086 21.8931 28.4141 23.5549 32.4033C24.3238 34.3087 24.8579 33.7101 25.4797 32.1826C27.1463 28.327 29.0079 26.5378 32.9387 24.8672C33.3507 24.6707 34.0306 24.4099 34.0999 24.0186V23.9736C34.0309 23.5852 33.3554 23.3206 32.9387 23.124V23.1289C29.0083 21.4583 27.1463 19.6705 25.4797 15.8135Z" />
+                    <path fill="url(#manage_coin_grad)" style={{ mixBlendMode: 'overlay' }} d="M24.5002 4.79883C35.104 4.79896 43.7004 13.3952 43.7004 23.999C43.7004 34.6028 35.104 43.1991 24.5002 43.1992C13.8964 43.1992 5.30005 34.6029 5.30005 23.999C5.30005 13.3952 13.8964 4.79883 24.5002 4.79883ZM25.4797 15.8135C24.8472 14.2461 24.3146 13.7212 23.5549 15.5928C21.893 19.5817 19.9091 21.4827 16.0032 23.1289C15.611 23.3101 14.9043 23.6249 14.8997 23.998C14.9043 24.3712 15.6064 24.686 16.0032 24.8672C19.9045 26.5086 21.8931 28.4141 23.5549 32.4033C24.3238 34.3087 24.8579 33.7101 25.4797 32.1826C27.1463 28.327 29.0079 26.5378 32.9387 24.8672C33.3507 24.6707 34.0306 24.4099 34.0999 24.0186V23.9736C34.0309 23.5852 33.3554 23.3206 32.9387 23.124V23.1289C29.0083 21.4583 27.1463 19.6705 25.4797 15.8135Z" />
+                  </g>
+                  <defs>
+                    <linearGradient id="manage_coin_grad" x1="24.5002" y1="4.79883" x2="24.5002" y2="43.1992" gradientUnits="userSpaceOnUse">
+                      <stop stopColor="white" />
+                      <stop offset="1" />
+                    </linearGradient>
+                    <clipPath id="manage_coin_clip">
+                      <rect width="48" height="48" fill="white" transform="translate(0.5)" />
+                    </clipPath>
+                  </defs>
+                </svg>
+                <span className="text-[13.5px] font-medium text-[#F3CA5F]">50 credits / month</span>
+              </span>
+            </div>
             <div className="flex items-center gap-1.5 mb-2 min-w-0">
               <a href={url} target="_blank" rel="noopener noreferrer"
                 title={url}
@@ -308,6 +386,18 @@ function ManageView({ url, deployments, refreshing = false, onRedeploy }) {
         </div>
       )}
 
+      {latestRunFailed && (
+        <div className="mb-4 px-3 py-2.5 rounded-md border border-[#30363d] bg-[#161b22] flex items-center justify-between gap-3">
+          <span className="text-[13.5px] font-light text-[#f85149]">Latest deployment failed</span>
+          <button onClick={onRedeploy}
+            className="inline-flex items-center gap-1.5 text-[13px] text-[#e6edf3] hover:text-white transition-colors">
+            <svg className="w-3.5 h-3.5" viewBox="0 0 16 16" fill="currentColor">
+              <path d="M1.705 8.005a.75.75 0 0 1 .834.656 5.5 5.5 0 0 0 9.592 2.97l-1.204-1.204a.25.25 0 0 1 .177-.427h3.646a.25.25 0 0 1 .25.25v3.646a.25.25 0 0 1-.427.177l-1.38-1.38A7.002 7.002 0 0 1 1.05 8.84a.75.75 0 0 1 .656-.834ZM8 2.5a5.487 5.487 0 0 0-4.131 1.869l1.204 1.204A.25.25 0 0 1 4.896 6H1.25A.25.25 0 0 1 1 5.75V2.104a.25.25 0 0 1 .427-.177l1.38 1.38A7.002 7.002 0 0 1 14.95 7.16a.75.75 0 0 1-1.49.178A5.5 5.5 0 0 0 8 2.5Z" />
+            </svg>
+            <span className="underline underline-offset-2">Retry</span>
+          </button>
+        </div>
+      )}
       {/* Deployments timeline */}
       {(deployments || []).length > 0 && (
         <div className="mt-5 border border-[#21262d] rounded-md p-4 bg-[#0c1117]">
@@ -315,20 +405,40 @@ function ManageView({ url, deployments, refreshing = false, onRedeploy }) {
             <div className="text-[15px] font-semibold text-[#e6edf3]">Deployments</div>
             <div className="text-[12.5px] text-[#8b949e] mt-0.5">All deployed versions of your app</div>
           </div>
-          <div className="-mx-2">
-            {deployments.slice(0, 10).map((d, i) => {
-              const runId = d.id || d.run_id;
+          {/* Index of the most recent successful deployment — that one gets the green dot. */}
+          {(() => null)()}
+          <div className="-mx-2 max-h-[280px] overflow-y-auto pr-1">
+            {(() => {
+              const shown = deployments.slice(0, 30);
+              const latestOkIdx = shown.findIndex(d => !isFailedRun(d));
+              return shown.map((d, i) => {
+                const runId = d.id || d.run_id;
+                const isFirst = i === 0;
+                const isFailed = isFailedRun(d) || (isFirst && latestRunFailed);
+                const isLatestOk = i === latestOkIdx && !isFailed;
+                // Only the top-most row gets a tinted bg — older rows stay flat
+                // (just hover) so the eye lands on the most recent run.
+                const rowBg = !isFirst
+                  ? 'hover:bg-[rgba(255,255,255,0.04)]'
+                  : isFailed
+                    ? 'bg-[rgba(218,54,51,0.10)] hover:bg-[rgba(218,54,51,0.14)]'
+                    : 'bg-[rgba(46,160,67,0.10)] hover:bg-[rgba(46,160,67,0.14)]';
+                const dotColor = isFailed ? '#f85149' : isLatestOk ? '#3fb950' : '#484f58';
+                const dotHaloColor = isFailed ? 'rgba(248,81,73,0.20)' : isLatestOk ? 'rgba(63,185,80,0.20)' : 'rgba(72,79,88,0.20)';
               return (
                 <div key={runId || i}
-                  className={`flex items-start gap-3 text-[13.5px] px-2 py-2 rounded-md transition-colors ${
-                    i === 0 ? 'bg-[rgba(46,160,67,0.10)] hover:bg-[rgba(46,160,67,0.14)]' : 'hover:bg-[rgba(255,255,255,0.04)]'
-                  }`}>
+                  className={`flex items-start gap-3 text-[13.5px] px-2 py-2 rounded-md transition-colors ${rowBg}`}>
                   <div className="flex flex-col items-center pt-1 shrink-0">
-                    <div className={`w-2.5 h-2.5 rounded-full ${i === 0 ? 'bg-[#3fb950]' : 'bg-[#484f58]'}`} />
-                    {i < deployments.slice(0, 10).length - 1 && <div className="w-px flex-1 bg-[#30363d] mt-1 min-h-[20px]" />}
+                    <span className="inline-flex items-center justify-center w-[18px] h-[18px] rounded-full"
+                      style={{ backgroundColor: dotHaloColor }}>
+                      <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: dotColor }} />
+                    </span>
+                    {i < shown.length - 1 && <div className="w-px flex-1 mt-1 min-h-[20px] border-l border-dashed border-[#30363d]" />}
                   </div>
                   <div className="flex-1 min-w-0 pb-2">
-                    <div className="text-[#e6edf3] font-medium">Deployment {deployments.length - i}</div>
+                    <div className={`${isFailed ? 'text-[#f85149]' : 'text-[#e6edf3]'}`}>
+                      {isFailed ? 'Deployment failed' : `Deployment ${deployments.length - i}`}
+                    </div>
                     <div className="text-[11.5px] text-[#8b949e] mt-0.5">
                       {d.created_at ? timeAgo(d.created_at, now) : 'unknown time'}
                       {runId && <span className="font-mono ml-2">{String(runId).slice(0, 8)}</span>}
@@ -336,11 +446,11 @@ function ManageView({ url, deployments, refreshing = false, onRedeploy }) {
                   </div>
                 </div>
               );
-            })}
+              });
+            })()}
           </div>
         </div>
       )}
-
       {/* Footer actions */}
       <div className="flex items-center justify-end gap-2 mt-5 pt-4 border-t border-[#30363d]">
         <button onClick={onRedeploy}
@@ -367,3 +477,4 @@ function CloudUploadIcon({ className }) {
     </svg>
   );
 }
+

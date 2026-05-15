@@ -1,4 +1,4 @@
-export default function StepCard({ number, title, time, status, hasError, children }) {
+export default function StepCard({ number, title, time, status, hasError, icon, children }) {
   const isActive = status === 'active';
   const isComplete = status === 'completed' || status === 'locked';
   const isDisabled = status === 'disabled';
@@ -13,6 +13,11 @@ export default function StepCard({ number, title, time, status, hasError, childr
       <div className={`flex items-center gap-2 px-4 py-2.5 border-b rounded-t-md ${
         isDisabled ? 'border-[#21262d]' : 'border-[#30363d] bg-[#161b22]'
       }`}>
+        {icon && (
+          <span className={`shrink-0 ${isDisabled ? 'text-[#484f58]' : 'text-[#8b949e]'}`}>
+            {icon}
+          </span>
+        )}
         <span className="text-[14px] font-semibold text-[#e6edf3]">
           {title}
         </span>

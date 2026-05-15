@@ -136,6 +136,7 @@ export default function CreateTemplate({ bearerToken = "" }) {
   const [deployStatus, setDeployStatus] = usePersistedState('cT.deployStatus', 'idle'); // 'idle' | 'deploying' | 'success' | 'failed' | 'skipped'
   const [deploySteps, setDeploySteps] = usePersistedState('cT.deploySteps', []);
   const [deployUrl, setDeployUrl] = usePersistedState('cT.deployUrl', '');
+  const [deployUrlCopied, setDeployUrlCopied] = useState(false);
   const [deployments, setDeployments] = usePersistedState('cT.deployments', []);
   const [loadingDeployments, setLoadingDeployments] = useState(false);
   const [lastFetchedJobId, setLastFetchedJobId] = usePersistedState('cT.lastFetchedJobId', '');
@@ -323,6 +324,15 @@ export default function CreateTemplate({ bearerToken = "" }) {
       freshHoldTimerRef.current = null;
     }
     setLoading('fetch');
+    // Fetch Job Info acts as a refresh button. Clear transient terminal
+    // deploy states ('skipped'/'failed') so the freshly-fetched deployments
+    // drive Step 2's UI. Leave 'success'/'deploying' untouched — those
+    // represent live flows we shouldn't reset under the user.
+    if (deployStatus === 'skipped' || deployStatus === 'failed') {
+      setDeployStatus('idle');
+      setDeploySteps([]);
+      setStatuses(prev => { const { 2: _2, ...rest } = prev; return rest; });
+    }
     // For same-job refetch we want a silent refresh — don't reset step/times/
     // downstream state or the preview/URL/list will disappear briefly.
     // For fresh-job: reset downstream BUT keep deploy data (preview/URL/list)
@@ -697,7 +707,12 @@ export default function CreateTemplate({ bearerToken = "" }) {
 
       {/* Step 1 */}
       <div ref={el => stepsRef.current[1] = el}>
-        <StepCard number={1} title="Identify Job" time={times[1]} status={stepStatus(1)} hasError={statuses[1]?.type === 'error'}>
+        <StepCard number={1} title="Identify Job" time={times[1]} status={stepStatus(1)} hasError={statuses[1]?.type === 'error'}
+          icon={
+            <svg className="w-4 h-4" viewBox="0 0 16 16" fill="currentColor">
+              <path d="M10.68 11.74a6 6 0 0 1-7.922-8.982 6 6 0 0 1 8.982 7.922l3.04 3.04a.749.749 0 0 1-.326 1.275.749.749 0 0 1-.734-.215ZM11.5 7a4.499 4.499 0 1 0-8.997 0A4.499 4.499 0 0 0 11.5 7Z" />
+            </svg>
+          }>
           <div className="flex gap-3 items-end mb-3">
             <div className="flex-[2]">
               <label className={labelCls}>Job ID <span className="text-[#f85149]">*</span></label>
@@ -780,55 +795,118 @@ export default function CreateTemplate({ bearerToken = "" }) {
         </StepCard>
       </div>
 
-      {/* Step 2 — Deploy App */}
+      {/* Step 2 — Publish Live Preview */}
       <div ref={el => stepsRef.current[2] = el}>
-        <StepCard number={2} title="Deploy App" time={times[2]} status={stepStatus(2)}
+        <StepCard number={2} title="Publish Live Preview" time={times[2]} status={stepStatus(2)}
+          icon={
+            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M19.35 10.04A7.49 7.49 0 0 0 12 4C9.11 4 6.6 5.64 5.35 8.04A5.994 5.994 0 0 0 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96Z" />
+            </svg>
+          }
           hasError={deployStatus === 'failed' || statuses[2]?.type === 'error'}>
-          {deployStatus === 'idle' && (
-            <>
-              {deployments.length > 0 ? (
-                <Banner variant="info" className="mb-3">
-                  This job already has an active deployment
-                  {deployments[0]?.deploy_url ? <> at <a href={deployments[0].deploy_url} target="_blank" rel="noopener noreferrer" className="font-mono text-[12px] text-[#58a6ff] hover:underline break-all">{deployments[0].deploy_url}</a></> : ''}
-                  . Skip to continue, or redeploy if you've changed the app — redeploys are free.
-                </Banner>
-              ) : (
-                <Banner variant="info" className="mb-3">
-                  Deploying this app creates a live URL. Deploy credits will be deducted from your account, but the deployment is yours — it will appear in your emergent account's deployment history. Takes ~5–7 minutes.
-                </Banner>
-              )}
-              <div className="flex gap-2 mb-3">
-                <button onClick={runDeploy} disabled={loading === 'deploy'}
-                  className={deployments.length > 0
-                    ? "px-3 py-[5px] bg-[#1f6feb] text-white text-[14px] font-medium rounded-md hover:bg-[#388bfd] disabled:opacity-50 transition-colors flex items-center gap-2 border border-[#1f6feb]/60"
-                    : btnPrimary}
-                  data-testid="deploy-app-btn">
-                  <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M19.35 10.04A7.49 7.49 0 0 0 12 4C9.11 4 6.6 5.64 5.35 8.04A5.994 5.994 0 0 0 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96ZM14 13v4h-4v-4H7l5-5 5 5h-3Z" />
-                  </svg>
-                  {deployments.length > 0 ? 'Redeploy' : 'Start Deployment'}
-                </button>
-                <button onClick={skipDeploy} className={btnGhost} data-testid="skip-deploy-btn">
-                  {deployments.length > 0 ? 'Skip' : 'Skip (already deployed)'}
-                </button>
-              </div>
-            </>
-          )}
+          {deployStatus === 'idle' && (() => {
+            const isFailedRun = (d) => {
+              const s = (d.status || d.run_status || d.state || '').toLowerCase();
+              return s === 'failed' || s === 'error';
+            };
+            // Deploy history rows often omit the URL — it comes from the
+            // top-level getDeployStatus call. Mirror DeployPanel's logic:
+            // any non-failed run counts as "has live", URL falls back to
+            // deployUrl when the row itself doesn't carry one.
+            const successfulDeploy = deployments.find(d => !isFailedRun(d));
+            const liveUrl = deployUrl || successfulDeploy?.deploy_url || successfulDeploy?.url || '';
+            const hasLive = Boolean(successfulDeploy) || Boolean(deployUrl);
+            return (
+              <>
+                {hasLive ? (
+                  <>
+                    <Banner variant="success" className="mb-3">
+                      You already have a live deployment. Skip to continue, or redeploy if you've made recent changes. Redeploys are free.
+                    </Banner>
+                    {liveUrl && (
+                      <>
+                        <div className="text-[11.5px] uppercase tracking-wide text-[#8b949e] mb-1.5">Live preview URL</div>
+                        <div className="flex items-stretch gap-2 mb-2">
+                          <div className="flex-1 flex items-center bg-[#010409] border border-[#30363d] rounded-md px-3 py-2 overflow-hidden">
+                            <span className="font-mono text-[13px] text-[#e6edf3] truncate">{liveUrl}</span>
+                          </div>
+                          <button
+                            onClick={() => {
+                              navigator.clipboard?.writeText(liveUrl).then(() => {
+                                setDeployUrlCopied(true);
+                                setTimeout(() => setDeployUrlCopied(false), 1500);
+                              }).catch(() => {});
+                            }}
+                            title={deployUrlCopied ? 'Copied!' : 'Copy URL'}
+                            className="shrink-0 px-2.5 rounded-md border border-[#30363d] bg-[#010409] text-[#8b949e] hover:text-[#e6edf3] hover:bg-[#161b22] hover:border-[#484f58] transition-colors flex items-center justify-center"
+                          >
+                            {deployUrlCopied ? (
+                              <svg className="w-4 h-4" viewBox="0 0 16 16" fill="#3fb950">
+                                <path d="M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0Z" />
+                              </svg>
+                            ) : (
+                              <svg className="w-4 h-4" viewBox="0 0 16 16" fill="currentColor">
+                                <path d="M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 0 1 0 1.5h-1.5a.25.25 0 0 0-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 0 0 .25-.25v-1.5a.75.75 0 0 1 1.5 0v1.5A1.75 1.75 0 0 1 9.25 16h-7.5A1.75 1.75 0 0 1 0 14.25Z" />
+                                <path d="M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0 1 14.25 11h-7.5A1.75 1.75 0 0 1 5 9.25Zm1.75-.25a.25.25 0 0 0-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 0 0 .25-.25v-7.5a.25.25 0 0 0-.25-.25Z" />
+                              </svg>
+                            )}
+                          </button>
+                        </div>
+                        <div className="flex items-start gap-2 mb-3 text-[12.5px] text-[#8b949e]">
+                          <svg className="w-4 h-4 shrink-0 mt-[1px]" viewBox="0 0 16 16" fill="currentColor">
+                            <path d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8Zm8-6.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13ZM6.5 7.75A.75.75 0 0 1 7.25 7h1a.75.75 0 0 1 .75.75v2.75h.25a.75.75 0 0 1 0 1.5h-2a.75.75 0 0 1 0-1.5h.25v-2h-.25a.75.75 0 0 1-.75-.75ZM8 6a1 1 0 1 1 0-2 1 1 0 0 1 0 2Z" />
+                          </svg>
+                          <span>Save this URL. You'll need it later when creating or updating the category config.</span>
+                        </div>
+                      </>
+                    )}
+                  </>
+                ) : (
+                  <>
+                    <Banner variant="info" className="mb-2">
+                      No live deployment yet. Publishing creates a hosted URL for this app.
+                    </Banner>
+                    <div className="flex items-center gap-1 p-2 rounded-[6px] border mb-3"
+                      style={{ backgroundColor: 'rgba(243,202,95,0.10)', borderColor: 'rgba(243,202,95,0.30)' }}>
+                      <svg className="w-[22px] h-[22px] shrink-0 mx-1.5" viewBox="0 0 49 48" fill="none">
+                        <g clipPath="url(#publish_coin_clip)">
+                          <circle opacity="0.1" cx="24.5" cy="24" r="24" fill="#F3CA5F" />
+                          <path fill="#F3CA5F" d="M24.5002 4.79883C35.104 4.79896 43.7004 13.3952 43.7004 23.999C43.7004 34.6028 35.104 43.1991 24.5002 43.1992C13.8964 43.1992 5.30005 34.6029 5.30005 23.999C5.30005 13.3952 13.8964 4.79883 24.5002 4.79883ZM25.4797 15.8135C24.8472 14.2461 24.3146 13.7212 23.5549 15.5928C21.893 19.5817 19.9091 21.4827 16.0032 23.1289C15.611 23.3101 14.9043 23.6249 14.8997 23.998C14.9043 24.3712 15.6064 24.686 16.0032 24.8672C19.9045 26.5086 21.8931 28.4141 23.5549 32.4033C24.3238 34.3087 24.8579 33.7101 25.4797 32.1826C27.1463 28.327 29.0079 26.5378 32.9387 24.8672C33.3507 24.6707 34.0306 24.4099 34.0999 24.0186V23.9736C34.0309 23.5852 33.3554 23.3206 32.9387 23.124V23.1289C29.0083 21.4583 27.1463 19.6705 25.4797 15.8135Z" />
+                          <path fill="url(#publish_coin_grad)" style={{ mixBlendMode: 'overlay' }} d="M24.5002 4.79883C35.104 4.79896 43.7004 13.3952 43.7004 23.999C43.7004 34.6028 35.104 43.1991 24.5002 43.1992C13.8964 43.1992 5.30005 34.6029 5.30005 23.999C5.30005 13.3952 13.8964 4.79883 24.5002 4.79883ZM25.4797 15.8135C24.8472 14.2461 24.3146 13.7212 23.5549 15.5928C21.893 19.5817 19.9091 21.4827 16.0032 23.1289C15.611 23.3101 14.9043 23.6249 14.8997 23.998C14.9043 24.3712 15.6064 24.686 16.0032 24.8672C19.9045 26.5086 21.8931 28.4141 23.5549 32.4033C24.3238 34.3087 24.8579 33.7101 25.4797 32.1826C27.1463 28.327 29.0079 26.5378 32.9387 24.8672C33.3507 24.6707 34.0306 24.4099 34.0999 24.0186V23.9736C34.0309 23.5852 33.3554 23.3206 32.9387 23.124V23.1289C29.0083 21.4583 27.1463 19.6705 25.4797 15.8135Z" />
+                        </g>
+                        <defs>
+                          <linearGradient id="publish_coin_grad" x1="24.5" y1="4.8" x2="24.5" y2="43.2" gradientUnits="userSpaceOnUse">
+                            <stop stopColor="white" />
+                            <stop offset="1" />
+                          </linearGradient>
+                          <clipPath id="publish_coin_clip">
+                            <rect width="48" height="48" fill="white" transform="translate(0.5)" />
+                          </clipPath>
+                        </defs>
+                      </svg>
+                      <span className="flex-1 text-[14px] text-[#e6edf3] leading-[1.5]">
+                        <span className="font-semibold text-[#F3CA5F]">50 credits</span> will be deducted for a successful deployment.
+                      </span>
+                    </div>
+                  </>
+                )}
+                <div className="flex gap-2 mb-3">
+                  <button onClick={runDeploy} disabled={loading === 'deploy'}
+                    className={btnPrimary}
+                    data-testid="deploy-app-btn">
+                    <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M19.35 10.04A7.49 7.49 0 0 0 12 4C9.11 4 6.6 5.64 5.35 8.04A5.994 5.994 0 0 0 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96ZM14 13v4h-4v-4H7l5-5 5 5h-3Z" />
+                    </svg>
+                    {hasLive ? 'Redeploy' : 'Start Deployment'}
+                  </button>
+                  <button onClick={skipDeploy} className={btnGhost} data-testid="skip-deploy-btn">
+                    Skip
+                  </button>
+                </div>
+              </>
+            );
+          })()}
 
-          {/* Deploying — compact card pointing to right panel for the rich progress view */}
-          {deployStatus === 'deploying' && (
-            <div className="flex items-center gap-3 px-4 py-3 border border-[#30363d] rounded-md bg-[#161b22]">
-              <DotsLoader size={16} dotSize={2} className="text-[#58a6ff] shrink-0" />
-              <div className="flex-1 min-w-0">
-                <div className="text-[14px] font-medium text-[#e6edf3]">Deployment in progress</div>
-                <div className="text-[12px] text-[#8b949e] mt-0.5">View phase progress in the Deploy panel on the right →</div>
-              </div>
-              <button onClick={() => setRightPanelTab('deployments')}
-                className={btnDefault}>
-                View
-              </button>
-            </div>
-          )}
 
           {/* Failed — error summary + Retry/Skip; full phase detail lives in right panel */}
           {deployStatus === 'failed' && (
@@ -854,33 +932,74 @@ export default function CreateTemplate({ bearerToken = "" }) {
             <div className="text-[13px] text-[#8b949e]">Deployment skipped — assumed already deployed.</div>
           )}
 
-          {/* Success — compact URL chip pointing to right panel for manage view */}
+          {/* Success — Vercel-style: URL frame + info chip + manage link, no inner box */}
           {deployUrl && deployStatus === 'success' && (
-            <div className="p-3 bg-[#238636]/10 border border-[#238636]/30 rounded-md">
-              <div className="text-[14px] text-[#3fb950] font-medium flex items-center gap-2 mb-1.5">
-                <svg className="w-4 h-4" viewBox="0 0 16 16" fill="currentColor">
-                  <path d="M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0Z" />
-                </svg>
-                Deployment complete
+            <>
+              <div className="text-[11.5px] uppercase tracking-wide text-[#8b949e] mb-1.5">Live preview URL</div>
+              <div className="flex items-stretch gap-2 mb-3">
+                <div className="flex-1 flex items-center bg-[#010409] border border-[#30363d] rounded-md px-3 py-2 overflow-hidden">
+                  <span className="font-mono text-[13px] text-[#e6edf3] truncate">{deployUrl}</span>
+                </div>
+                <button
+                  onClick={() => {
+                    navigator.clipboard?.writeText(deployUrl).then(() => {
+                      setDeployUrlCopied(true);
+                      setTimeout(() => setDeployUrlCopied(false), 1500);
+                    }).catch(() => {});
+                  }}
+                  title={deployUrlCopied ? 'Copied!' : 'Copy URL'}
+                  className="shrink-0 px-2.5 rounded-md border border-[#30363d] bg-[#010409] text-[#8b949e] hover:text-[#e6edf3] hover:bg-[#161b22] hover:border-[#484f58] transition-colors flex items-center justify-center"
+                >
+                  {deployUrlCopied ? (
+                    <svg className="w-4 h-4" viewBox="0 0 16 16" fill="#3fb950">
+                      <path d="M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0Z" />
+                    </svg>
+                  ) : (
+                    <svg className="w-4 h-4" viewBox="0 0 16 16" fill="currentColor">
+                      <path d="M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 0 1 0 1.5h-1.5a.25.25 0 0 0-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 0 0 .25-.25v-1.5a.75.75 0 0 1 1.5 0v1.5A1.75 1.75 0 0 1 9.25 16h-7.5A1.75 1.75 0 0 1 0 14.25Z" />
+                      <path d="M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0 1 14.25 11h-7.5A1.75 1.75 0 0 1 5 9.25Zm1.75-.25a.25.25 0 0 0-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 0 0 .25-.25v-7.5a.25.25 0 0 0-.25-.25Z" />
+                    </svg>
+                  )}
+                </button>
               </div>
-              <a href={deployUrl} target="_blank" rel="noopener noreferrer"
-                className="font-mono text-[12px] text-[#3fb950] bg-[#0d1117] px-3 py-2 rounded-md break-all block hover:underline mb-2">
-                {deployUrl}
-              </a>
-              <button onClick={() => setRightPanelTab('deployments')}
-                className="text-[12px] text-[#58a6ff] hover:underline">
-                Manage on right →
-              </button>
-            </div>
+
+              <div className="flex items-start gap-2 mb-3 text-[12.5px] text-[#8b949e]">
+                <svg className="w-4 h-4 shrink-0 mt-[1px]" viewBox="0 0 16 16" fill="currentColor">
+                  <path d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8Zm8-6.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13ZM6.5 7.75A.75.75 0 0 1 7.25 7h1a.75.75 0 0 1 .75.75v2.75h.25a.75.75 0 0 1 0 1.5h-2a.75.75 0 0 1 0-1.5h.25v-2h-.25a.75.75 0 0 1-.75-.75ZM8 6a1 1 0 1 1 0-2 1 1 0 0 1 0 2Z" />
+                </svg>
+                <span>Save this URL. You'll need it later when creating or updating the category config.</span>
+              </div>
+
+            </>
           )}
 
-          <StatusBar {...(statuses[2] || {})} />
+          <StatusBar {...(statuses[2] || {})}
+            action={(deployStatus === 'success' || deployStatus === 'deploying') && (
+              <button onClick={() => setRightPanelTab('deployments')}
+                className="inline-flex items-center gap-1.5 text-[13px] text-[#e6edf3] hover:text-white transition-colors">
+                <span className="underline underline-offset-2">
+                  {deployStatus === 'deploying' ? 'Click to see deployment progress' : 'Click to manage deployments'}
+                </span>
+                <svg className="w-3.5 h-3.5" viewBox="0 0 16 16" fill="currentColor">
+                  <path d="M8.22 2.97a.75.75 0 0 1 1.06 0l4.25 4.25a.75.75 0 0 1 0 1.06l-4.25 4.25a.751.751 0 0 1-1.042-.018.751.751 0 0 1-.018-1.042L11.69 8.5H1.75a.75.75 0 0 1 0-1.5h9.94L8.22 4.03a.75.75 0 0 1 0-1.06Z" />
+                </svg>
+              </button>
+            )}
+          />
         </StepCard>
       </div>
 
       {/* Step 3 — Clear Database Collections */}
       <div ref={el => stepsRef.current[3] = el}>
-        <StepCard number={3} title="Clear Database Collections" time={times[3]} status={stepStatus(3)} hasError={statuses[3]?.type === 'error'}>
+        <StepCard number={3} title="Clear Database Collections" time={times[3]} status={stepStatus(3)} hasError={statuses[3]?.type === 'error'}
+          icon={
+            <svg className="w-4 h-4" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.25" strokeLinecap="round" strokeLinejoin="round">
+              <ellipse cx="8" cy="3" rx="5.5" ry="1.5" />
+              <path d="M2.5 3v10c0 .83 2.46 1.5 5.5 1.5s5.5-.67 5.5-1.5V3" />
+              <path d="M2.5 6.5c0 .83 2.46 1.5 5.5 1.5s5.5-.67 5.5-1.5" />
+              <path d="M2.5 10c0 .83 2.46 1.5 5.5 1.5s5.5-.67 5.5-1.5" />
+            </svg>
+          }>
           <p className={`${helperCls} mb-3`}>Select collections to delete. Unselected will be preserved.</p>
           {collections.length > 0 && (
             <Banner variant="info" className="mb-3">
@@ -960,6 +1079,11 @@ export default function CreateTemplate({ bearerToken = "" }) {
       {/* Step 4 — Create Template */}
       <div ref={el => stepsRef.current[4] = el}>
         <StepCard number={4} title="Create Template" time={times[4]} status={stepStatus(4)}
+          icon={
+            <svg className="w-4 h-4" viewBox="0 0 16 16" fill="currentColor">
+              <path d="m8.878.392 5.25 3.045c.54.314.872.89.872 1.514v6.098a1.75 1.75 0 0 1-.872 1.514l-5.25 3.045a1.75 1.75 0 0 1-1.756 0l-5.25-3.045A1.75 1.75 0 0 1 1 11.049V4.951c0-.624.332-1.201.872-1.514L7.122.392a1.75 1.75 0 0 1 1.756 0ZM7.875 1.69l-4.63 2.685L8 7.133l4.755-2.758-4.63-2.685a.248.248 0 0 0-.25 0ZM2.5 5.677v5.372c0 .09.047.171.125.216l4.625 2.683V8.432Zm6.25 8.271 4.625-2.683a.25.25 0 0 0 .125-.216V5.677L8.75 8.432Z" />
+            </svg>
+          }
           hasError={pauseSub.status === 'error' || createSub.status === 'error'}>
           <Banner variant="info" className="mb-3">
             Don't refresh the app preview before clicking Create — it re-seeds the database.

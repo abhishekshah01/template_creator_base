@@ -19,7 +19,7 @@ const ICON_PATHS = {
 // Hint icon (info circle)
 const HINT_STYLE = { bg: 'rgba(0,91,209,0.1)', border: 'rgba(0,91,209,0.4)', icon: '#0576ff' };
 
-export default function StatusBar({ message, type, hint }) {
+export default function StatusBar({ message, type, hint, action }) {
   if (!message || message === 'failed') return null;
 
   const s = STYLES[type] || STYLES.info;
@@ -37,6 +37,7 @@ export default function StatusBar({ message, type, hint }) {
           </svg>
         )}
         <span className="flex-1 text-[#e6edf3]">{message}</span>
+        {action && <span className="shrink-0 mr-1">{action}</span>}
       </div>
       {hint && (
         <div className="flex items-center gap-1 p-2 rounded-[6px] border text-[14px] leading-[1.5]"
