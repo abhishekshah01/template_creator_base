@@ -19,12 +19,19 @@ const requestEditorTheme = EditorView.theme({
     fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Consolas, monospace',
   },
   '&.cm-focused': { outline: 'none' },
-  '.cm-content': { padding: '12px 14px', caretColor: '#e6edf3' },
+  '.cm-content': {
+    padding: '12px 14px',
+    caretColor: '#e6edf3',
+    backgroundColor: '#0d1117',
+  },
+  '.cm-scroller': {
+    backgroundColor: '#0d1117',
+    fontFamily: 'inherit',
+  },
   '.cm-line': { padding: 0, lineHeight: '1.6' },
   '.cm-gutters': { backgroundColor: '#0d1117', border: 'none' },
   '.cm-cursor': { borderLeftColor: '#e6edf3' },
   '.cm-selectionBackground, ::selection': { backgroundColor: '#1f6feb40 !important' },
-  '.cm-scroller': { fontFamily: 'inherit' },
 }, { dark: true });
 
 const requestHighlight = HighlightStyle.define([
@@ -643,15 +650,16 @@ export default function CreateConfig({ bearerToken, onTokenExpired, onNavigate, 
           </div>
           <CodeMirror
             value={JSON.stringify(requestBody, null, 2)}
-            extensions={[json(), syntaxHighlighting(requestHighlight), requestEditorTheme]}
-            editable={false}
+            theme={requestEditorTheme}
+            extensions={[json(), syntaxHighlighting(requestHighlight)]}
+            editable={true}
             basicSetup={{
               lineNumbers: false,
               foldGutter: false,
               highlightActiveLine: false,
               highlightActiveLineGutter: false,
             }}
-            style={{ maxHeight: '400px', overflow: 'auto' }}
+            style={{ maxHeight: '400px', overflow: 'auto', backgroundColor: '#0d1117' }}
           />
         </div>
 
