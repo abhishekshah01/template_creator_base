@@ -355,7 +355,7 @@ export default function CreateConfig({ bearerToken, onTokenExpired, onNavigate, 
         </>
       )}
 
-      <div className="bg-[#010409] border border-[#30363d] rounded-md p-6 mb-6">
+      <div className="bg-[#010409] rounded-md p-4 mb-6">
       {/* Template Name */}
       <div className="mb-6">
         <label className="block text-[14px] font-semibold text-[#e6edf3] mb-1">
