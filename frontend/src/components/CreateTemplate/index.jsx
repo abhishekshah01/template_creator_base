@@ -136,6 +136,7 @@ export default function CreateTemplate({ bearerToken = "" }) {
   const [deployStatus, setDeployStatus] = usePersistedState('cT.deployStatus', 'idle'); // 'idle' | 'deploying' | 'success' | 'failed' | 'skipped'
   const [deploySteps, setDeploySteps] = usePersistedState('cT.deploySteps', []);
   const [deployUrl, setDeployUrl] = usePersistedState('cT.deployUrl', '');
+  const [deployUrlCopied, setDeployUrlCopied] = useState(false);
   const [deployments, setDeployments] = usePersistedState('cT.deployments', []);
   const [loadingDeployments, setLoadingDeployments] = useState(false);
   const [lastFetchedJobId, setLastFetchedJobId] = usePersistedState('cT.lastFetchedJobId', '');
@@ -873,14 +874,25 @@ export default function CreateTemplate({ bearerToken = "" }) {
                   <span className="font-mono text-[13px] text-[#e6edf3] truncate">{deployUrl}</span>
                 </div>
                 <button
-                  onClick={() => { navigator.clipboard?.writeText(deployUrl); }}
-                  title="Copy URL"
+                  onClick={() => {
+                    navigator.clipboard?.writeText(deployUrl).then(() => {
+                      setDeployUrlCopied(true);
+                      setTimeout(() => setDeployUrlCopied(false), 1500);
+                    }).catch(() => {});
+                  }}
+                  title={deployUrlCopied ? 'Copied!' : 'Copy URL'}
                   className="shrink-0 px-2.5 rounded-md border border-[#30363d] bg-[#010409] text-[#8b949e] hover:text-[#e6edf3] hover:bg-[#161b22] hover:border-[#484f58] transition-colors flex items-center justify-center"
                 >
-                  <svg className="w-4 h-4" viewBox="0 0 16 16" fill="currentColor">
-                    <path d="M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 0 1 0 1.5h-1.5a.25.25 0 0 0-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 0 0 .25-.25v-1.5a.75.75 0 0 1 1.5 0v1.5A1.75 1.75 0 0 1 9.25 16h-7.5A1.75 1.75 0 0 1 0 14.25Z" />
-                    <path d="M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0 1 14.25 11h-7.5A1.75 1.75 0 0 1 5 9.25Zm1.75-.25a.25.25 0 0 0-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 0 0 .25-.25v-7.5a.25.25 0 0 0-.25-.25Z" />
-                  </svg>
+                  {deployUrlCopied ? (
+                    <svg className="w-4 h-4" viewBox="0 0 16 16" fill="#3fb950">
+                      <path d="M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0Z" />
+                    </svg>
+                  ) : (
+                    <svg className="w-4 h-4" viewBox="0 0 16 16" fill="currentColor">
+                      <path d="M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 0 1 0 1.5h-1.5a.25.25 0 0 0-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 0 0 .25-.25v-1.5a.75.75 0 0 1 1.5 0v1.5A1.75 1.75 0 0 1 9.25 16h-7.5A1.75 1.75 0 0 1 0 14.25Z" />
+                      <path d="M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0 1 14.25 11h-7.5A1.75 1.75 0 0 1 5 9.25Zm1.75-.25a.25.25 0 0 0-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 0 0 .25-.25v-7.5a.25.25 0 0 0-.25-.25Z" />
+                    </svg>
+                  )}
                 </button>
               </div>
 
