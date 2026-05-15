@@ -2,46 +2,18 @@ import { useState, useRef, useEffect } from 'react';
 import CodeMirror from '@uiw/react-codemirror';
 import { json } from '@codemirror/lang-json';
 import { EditorView } from '@codemirror/view';
-import { HighlightStyle, syntaxHighlighting } from '@codemirror/language';
-import { tags as t } from '@lezer/highlight';
+import { githubDark } from '@uiw/codemirror-theme-github';
 import { usePersistedState, SET_OPTS } from '../../hooks/usePersistedState';
 import { api, AuthError } from '../../api';
 import Banner from '../Banner';
 
-// CodeMirror theme + JSON syntax highlighting tuned to match the
-// original JsonHighlight pre-block look (#0d1117 bg, blue keys, light
-// blue strings, orange literals, gray punctuation).
-const requestEditorTheme = EditorView.theme({
-  '&': {
-    backgroundColor: '#0d1117',
-    color: '#c9d1d9',
-    fontSize: '13px',
-    fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Consolas, monospace',
-  },
-  '&.cm-focused': { outline: 'none' },
-  '.cm-content': {
-    padding: '12px 14px',
-    caretColor: '#e6edf3',
-    backgroundColor: '#0d1117',
-  },
-  '.cm-scroller': {
-    backgroundColor: '#0d1117',
-    fontFamily: 'inherit',
-  },
+// Sizing overlay on top of githubDark — match the original pre block's
+// 13px / 1.6 / 12-14px padding instead of the theme's defaults.
+const editorSizingOverlay = EditorView.theme({
+  '&': { fontSize: '13px' },
+  '.cm-content': { padding: '12px 14px' },
   '.cm-line': { padding: 0, lineHeight: '1.6' },
-  '.cm-gutters': { backgroundColor: '#0d1117', border: 'none' },
-  '.cm-cursor': { borderLeftColor: '#e6edf3' },
-  '.cm-selectionBackground': { backgroundColor: 'rgba(31,111,235,0.45) !important' },
-  '&.cm-focused .cm-selectionBackground': { backgroundColor: 'rgba(31,111,235,0.45) !important' },
-  '.cm-content ::selection': { backgroundColor: 'rgba(31,111,235,0.45) !important' },
-}, { dark: true });
-
-const requestHighlight = HighlightStyle.define([
-  { tag: t.propertyName,   color: '#79c0ff' },
-  { tag: t.string,         color: '#a5d6ff' },
-  { tag: [t.number, t.bool, t.null], color: '#f0883e' },
-  { tag: [t.punctuation, t.brace, t.squareBracket, t.separator], color: '#8b949e' },
-]);
+});
 
 const JSON_THEMES = {
   request: {
@@ -652,16 +624,17 @@ export default function CreateConfig({ bearerToken, onTokenExpired, onNavigate, 
           </div>
           <CodeMirror
             value={JSON.stringify(requestBody, null, 2)}
-            theme={requestEditorTheme}
-            extensions={[json(), syntaxHighlighting(requestHighlight)]}
+            theme={githubDark}
+            extensions={[json(), editorSizingOverlay]}
             editable={true}
             basicSetup={{
               lineNumbers: false,
               foldGutter: false,
               highlightActiveLine: false,
               highlightActiveLineGutter: false,
+              highlightSelectionMatches: false,
             }}
-            style={{ maxHeight: '400px', overflow: 'auto', backgroundColor: '#0d1117' }}
+            style={{ maxHeight: '400px', overflow: 'auto' }}
           />
         </div>
 
