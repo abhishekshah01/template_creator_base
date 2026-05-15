@@ -780,9 +780,9 @@ export default function CreateTemplate({ bearerToken = "" }) {
         </StepCard>
       </div>
 
-      {/* Step 2 — Deploy App */}
+      {/* Step 2 — Publish Live Preview */}
       <div ref={el => stepsRef.current[2] = el}>
-        <StepCard number={2} title="Deploy App" time={times[2]} status={stepStatus(2)}
+        <StepCard number={2} title="Publish Live Preview" time={times[2]} status={stepStatus(2)}
           hasError={deployStatus === 'failed' || statuses[2]?.type === 'error'}>
           {deployStatus === 'idle' && (
             <>
