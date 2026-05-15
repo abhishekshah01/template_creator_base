@@ -888,7 +888,7 @@ export default function CreateTemplate({ bearerToken = "" }) {
                         <span className="font-semibold text-[#F3CA5F]">50 credits</span> will be deducted for a successful deployment.
                       </span>
                     </div>
-                    <div className="flex items-start gap-1 mb-5 p-2 rounded-md border border-[#30363d] bg-[#161b22] text-[12.5px] text-[#8b949e] leading-[1.5]">
+                    <div className="flex items-start gap-1 mb-5 p-2 rounded-md bg-[#161b22] text-[12.5px] text-[#8b949e] leading-[1.5]">
                       <svg className="w-4 h-4 shrink-0 mx-2 mt-[1px]" viewBox="0 0 16 16" fill="currentColor">
                         <path d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8Zm8-6.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13ZM6.5 7.75A.75.75 0 0 1 7.25 7h1a.75.75 0 0 1 .75.75v2.75h.25a.75.75 0 0 1 0 1.5h-2a.75.75 0 0 1 0-1.5h.25v-2h-.25a.75.75 0 0 1-.75-.75ZM8 6a1 1 0 1 1 0-2 1 1 0 0 1 0 2Z" />
                       </svg>
