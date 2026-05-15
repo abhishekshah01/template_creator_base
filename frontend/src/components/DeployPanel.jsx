@@ -142,7 +142,7 @@ function IdleView({ onStart }) {
     <div className="border border-dashed border-[#30363d] rounded-2xl bg-[#0c1117] p-8 flex flex-col items-center justify-center text-center min-h-[400px]">
       <div className="text-[20px] font-bold text-[#e6edf3] mb-3">Take your app live!</div>
       <p className="text-[14px] text-[#8b949e] leading-relaxed max-w-[280px] mb-6">
-        Deploy to a hosted production-ready environment and get a live URL for your app.
+        Deploy to an Emergent hosted production-ready environment and get a live URL for your app.
       </p>
       <div className="inline-flex items-center gap-1.5 mb-5">
         <svg className="w-[26px] h-[26px] shrink-0" viewBox="0 0 49 48" fill="none">
