@@ -1,9 +1,38 @@
 import { useState, useRef, useEffect } from 'react';
 import CodeMirror from '@uiw/react-codemirror';
 import { json } from '@codemirror/lang-json';
+import { EditorView } from '@codemirror/view';
+import { HighlightStyle, syntaxHighlighting } from '@codemirror/language';
+import { tags as t } from '@lezer/highlight';
 import { usePersistedState, SET_OPTS } from '../../hooks/usePersistedState';
 import { api, AuthError } from '../../api';
 import Banner from '../Banner';
+
+// CodeMirror theme + JSON syntax highlighting tuned to match the
+// original JsonHighlight pre-block look (#0d1117 bg, blue keys, light
+// blue strings, orange literals, gray punctuation).
+const requestEditorTheme = EditorView.theme({
+  '&': {
+    backgroundColor: '#0d1117',
+    color: '#c9d1d9',
+    fontSize: '13px',
+    fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Consolas, monospace',
+  },
+  '&.cm-focused': { outline: 'none' },
+  '.cm-content': { padding: '12px 14px', caretColor: '#e6edf3' },
+  '.cm-line': { padding: 0, lineHeight: '1.6' },
+  '.cm-gutters': { backgroundColor: '#0d1117', border: 'none' },
+  '.cm-cursor': { borderLeftColor: '#e6edf3' },
+  '.cm-selectionBackground, ::selection': { backgroundColor: '#1f6feb40 !important' },
+  '.cm-scroller': { fontFamily: 'inherit' },
+}, { dark: true });
+
+const requestHighlight = HighlightStyle.define([
+  { tag: t.propertyName,   color: '#79c0ff' },
+  { tag: t.string,         color: '#a5d6ff' },
+  { tag: [t.number, t.bool, t.null], color: '#f0883e' },
+  { tag: [t.punctuation, t.brace, t.squareBracket, t.separator], color: '#8b949e' },
+]);
 
 const JSON_THEMES = {
   request: {
@@ -614,8 +643,7 @@ export default function CreateConfig({ bearerToken, onTokenExpired, onNavigate, 
           </div>
           <CodeMirror
             value={JSON.stringify(requestBody, null, 2)}
-            extensions={[json()]}
-            theme="dark"
+            extensions={[json(), syntaxHighlighting(requestHighlight), requestEditorTheme]}
             editable={false}
             basicSetup={{
               lineNumbers: false,
@@ -623,7 +651,7 @@ export default function CreateConfig({ bearerToken, onTokenExpired, onNavigate, 
               highlightActiveLine: false,
               highlightActiveLineGutter: false,
             }}
-            style={{ fontSize: '13px', maxHeight: '400px', overflow: 'auto' }}
+            style={{ maxHeight: '400px', overflow: 'auto' }}
           />
         </div>
 
