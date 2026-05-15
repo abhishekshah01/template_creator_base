@@ -355,13 +355,16 @@ export default function CreateConfig({ bearerToken, onTokenExpired, onNavigate, 
         </>
       )}
 
-      <div className="bg-[#010409] rounded-md p-4 mb-6">
+      <div className="bg-[#010409] border border-[#30363d] rounded-md p-5 mb-6">
       {/* Template Name */}
       <div className="mb-6">
         <label className="block text-[14px] font-semibold text-[#e6edf3] mb-1">
           Template name {mode === 'create' && <span className="text-[#f85149]">*</span>}
         </label>
-        <p className="text-[12px] text-[#8b949e] mb-2">
+        <p className="flex items-center gap-1.5 text-[12px] text-[#8b949e] mb-2">
+          <svg className="w-3.5 h-3.5 shrink-0" viewBox="0 0 16 16" fill="currentColor">
+            <path d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8Zm8-6.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13ZM6.5 7.75A.75.75 0 0 1 7.25 7h1a.75.75 0 0 1 .75.75v2.75h.25a.75.75 0 0 1 0 1.5h-2a.75.75 0 0 1 0-1.5h.25v-2h-.25a.75.75 0 0 1-.75-.75ZM8 6a1 1 0 1 1 0-2 1 1 0 0 1 0 2Z" />
+          </svg>
           A unique identifier for this config. Use lowercase with hyphens or underscores.
         </p>
         <input type="text" value={templateName} onChange={e => setTemplateName(e.target.value)}
@@ -375,7 +378,10 @@ export default function CreateConfig({ bearerToken, onTokenExpired, onNavigate, 
         <label className="block text-[14px] font-semibold text-[#e6edf3] mb-1">
           Summary source job ID {mode === 'create' && <span className="text-[#f85149]">*</span>}
         </label>
-        <p className="text-[12px] text-[#8b949e] mb-2">
+        <p className="flex items-center gap-1.5 text-[12px] text-[#8b949e] mb-2">
+          <svg className="w-3.5 h-3.5 shrink-0" viewBox="0 0 16 16" fill="currentColor">
+            <path d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8Zm8-6.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13ZM6.5 7.75A.75.75 0 0 1 7.25 7h1a.75.75 0 0 1 .75.75v2.75h.25a.75.75 0 0 1 0 1.5h-2a.75.75 0 0 1 0-1.5h.25v-2h-.25a.75.75 0 0 1-.75-.75ZM8 6a1 1 0 1 1 0-2 1 1 0 0 1 0 2Z" />
+          </svg>
           The job ID to use as the source for this config. Also used to fetch env variables from the pod.
         </p>
         <div className="flex gap-2">
@@ -407,7 +413,12 @@ export default function CreateConfig({ bearerToken, onTokenExpired, onNavigate, 
       {/* Visibility */}
       <div className="mb-6">
         <label className="block text-[14px] font-semibold text-[#e6edf3] mb-1">Visibility</label>
-        <p className="text-[12px] text-[#8b949e] mb-3">Control who can access this template config.</p>
+        <p className="flex items-center gap-1.5 text-[12px] text-[#8b949e] mb-3">
+          <svg className="w-3.5 h-3.5 shrink-0" viewBox="0 0 16 16" fill="currentColor">
+            <path d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8Zm8-6.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13ZM6.5 7.75A.75.75 0 0 1 7.25 7h1a.75.75 0 0 1 .75.75v2.75h.25a.75.75 0 0 1 0 1.5h-2a.75.75 0 0 1 0-1.5h.25v-2h-.25a.75.75 0 0 1-.75-.75ZM8 6a1 1 0 1 1 0-2 1 1 0 0 1 0 2Z" />
+          </svg>
+          Control who can access this template config.
+        </p>
         <div className="border border-[#30363d] rounded-md overflow-hidden bg-[#0d1117]">
           <div className="flex items-center justify-between gap-4 px-4 py-3 border-b border-[#30363d]">
             <div>
@@ -451,7 +462,12 @@ export default function CreateConfig({ bearerToken, onTokenExpired, onNavigate, 
       {/* Default Env Config */}
       <div className="mb-6">
         <label className="block text-[14px] font-semibold text-[#e6edf3] mb-1">Default environment config</label>
-        <p className="text-[12px] text-[#8b949e] mb-3">Select which env variables to include. Use "Fetch env vars" above, or add them manually.</p>
+        <p className="flex items-center gap-1.5 text-[12px] text-[#8b949e] mb-3">
+          <svg className="w-3.5 h-3.5 shrink-0" viewBox="0 0 16 16" fill="currentColor">
+            <path d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8Zm8-6.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13ZM6.5 7.75A.75.75 0 0 1 7.25 7h1a.75.75 0 0 1 .75.75v2.75h.25a.75.75 0 0 1 0 1.5h-2a.75.75 0 0 1 0-1.5h.25v-2h-.25a.75.75 0 0 1-.75-.75ZM8 6a1 1 0 1 1 0-2 1 1 0 0 1 0 2Z" />
+          </svg>
+          Select which env variables to include. Use "Fetch env vars" above, or add them manually.
+        </p>
 
         {variables.length > 0 && (
           <>
