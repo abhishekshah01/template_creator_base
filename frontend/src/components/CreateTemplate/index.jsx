@@ -993,8 +993,11 @@ export default function CreateTemplate({ bearerToken = "" }) {
       <div ref={el => stepsRef.current[3] = el}>
         <StepCard number={3} title="Clear Database Collections" time={times[3]} status={stepStatus(3)} hasError={statuses[3]?.type === 'error'}
           icon={
-            <svg className="w-4 h-4" viewBox="0 0 16 16" fill="currentColor">
-              <path d="M1 3.5c0-.626.292-1.165.7-1.59C2.05 1.55 2.546 1.24 3.094 1H12.906c.548.24 1.044.55 1.394.91.408.425.7.964.7 1.59v9c0 .626-.292 1.165-.7 1.59-.405.414-1.047.71-1.75.91h-9.1c-.703-.2-1.345-.496-1.75-.91C1.292 13.665 1 13.126 1 12.5Zm1.5 0c0 .238.148.473.36.674.213.2.526.374.89.5V5.5h8.5V4.674c.364-.126.677-.3.89-.5.212-.201.36-.436.36-.674 0-.238-.148-.473-.36-.674A2.727 2.727 0 0 0 12.25 2.5h-8.5a2.727 2.727 0 0 0-.89.326c-.212.201-.36.436-.36.674Zm0 3.5V9h9V7Zm9 3.5H2.5V12.5c0 .238.148.473.36.674.213.2.526.374.89.5h8.5c.364-.126.677-.3.89-.5.212-.201.36-.436.36-.674Z" />
+            <svg className="w-4 h-4" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.25" strokeLinecap="round" strokeLinejoin="round">
+              <ellipse cx="8" cy="3" rx="5.5" ry="1.5" />
+              <path d="M2.5 3v10c0 .83 2.46 1.5 5.5 1.5s5.5-.67 5.5-1.5V3" />
+              <path d="M2.5 6.5c0 .83 2.46 1.5 5.5 1.5s5.5-.67 5.5-1.5" />
+              <path d="M2.5 10c0 .83 2.46 1.5 5.5 1.5s5.5-.67 5.5-1.5" />
             </svg>
           }>
           <p className={`${helperCls} mb-3`}>Select collections to delete. Unselected will be preserved.</p>
