@@ -4,10 +4,10 @@
  */
 
 const STYLES = {
-  info:    { bg: 'rgba(0,91,209,0.1)',   border: 'rgba(0,91,209,0.4)',   icon: '#0576ff' },
-  success: { bg: 'rgba(47,111,55,0.15)',  border: 'rgba(47,111,55,0.4)',  icon: '#388f3f' },
-  error:   { bg: 'rgba(195,19,40,0.1)',   border: 'rgba(195,19,40,0.4)', icon: '#eb3342' },
-  loading: { bg: 'rgba(48,54,61,0.3)',    border: 'rgba(48,54,61,0.6)',   icon: '#8b949e' },
+  info:    { bg: 'rgba(0,91,209,0.06)',  border: 'rgba(0,91,209,0.25)',  icon: '#0576ff' },
+  success: { bg: 'rgba(47,111,55,0.08)', border: 'rgba(47,111,55,0.25)', icon: '#388f3f' },
+  error:   { bg: 'rgba(195,19,40,0.06)', border: 'rgba(195,19,40,0.25)', icon: '#eb3342' },
+  loading: { bg: 'rgba(48,54,61,0.2)',   border: 'rgba(48,54,61,0.45)',  icon: '#8b949e' },
 };
 
 const ICON_PATHS = {
@@ -17,7 +17,7 @@ const ICON_PATHS = {
 };
 
 // Hint icon (info circle)
-const HINT_STYLE = { bg: 'rgba(0,91,209,0.1)', border: 'rgba(0,91,209,0.4)', icon: '#0576ff' };
+const HINT_STYLE = { bg: 'rgba(0,91,209,0.06)', border: 'rgba(0,91,209,0.25)', icon: '#0576ff' };
 
 export default function StatusBar({ message, type, hint, action }) {
   if (!message || message === 'failed') return null;

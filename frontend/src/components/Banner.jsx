@@ -8,28 +8,28 @@
 
 const VARIANTS = {
   critical: {
-    bg: 'rgba(195,19,40,0.1)',
-    border: 'rgba(195,19,40,0.4)',
+    bg: 'rgba(195,19,40,0.06)',
+    border: 'rgba(195,19,40,0.25)',
     icon: '#eb3342',
   },
   warning: {
-    bg: 'rgba(137,89,6,0.15)',
-    border: 'rgba(137,89,6,0.4)',
+    bg: 'rgba(137,89,6,0.08)',
+    border: 'rgba(137,89,6,0.25)',
     icon: '#aa7109',
   },
   info: {
-    bg: 'rgba(0,91,209,0.1)',
-    border: 'rgba(0,91,209,0.4)',
+    bg: 'rgba(0,91,209,0.06)',
+    border: 'rgba(0,91,209,0.25)',
     icon: '#0576ff',
   },
   success: {
-    bg: 'rgba(47,111,55,0.15)',
-    border: 'rgba(47,111,55,0.4)',
+    bg: 'rgba(47,111,55,0.08)',
+    border: 'rgba(47,111,55,0.25)',
     icon: '#388f3f',
   },
   upsell: {
-    bg: 'rgba(119,48,232,0.1)',
-    border: 'rgba(119,48,232,0.4)',
+    bg: 'rgba(119,48,232,0.06)',
+    border: 'rgba(119,48,232,0.25)',
     icon: '#975bf1',
   },
 };
