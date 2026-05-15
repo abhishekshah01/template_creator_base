@@ -31,7 +31,9 @@ const requestEditorTheme = EditorView.theme({
   '.cm-line': { padding: 0, lineHeight: '1.6' },
   '.cm-gutters': { backgroundColor: '#0d1117', border: 'none' },
   '.cm-cursor': { borderLeftColor: '#e6edf3' },
-  '.cm-selectionBackground, ::selection': { backgroundColor: '#1f6feb40 !important' },
+  '.cm-selectionBackground': { backgroundColor: 'rgba(31,111,235,0.45) !important' },
+  '&.cm-focused .cm-selectionBackground': { backgroundColor: 'rgba(31,111,235,0.45) !important' },
+  '.cm-content ::selection': { backgroundColor: 'rgba(31,111,235,0.45) !important' },
 }, { dark: true });
 
 const requestHighlight = HighlightStyle.define([
