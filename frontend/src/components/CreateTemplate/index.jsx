@@ -795,36 +795,42 @@ export default function CreateTemplate({ bearerToken = "" }) {
             </svg>
           }
           hasError={deployStatus === 'failed' || statuses[2]?.type === 'error'}>
-          {deployStatus === 'idle' && (
-            <>
-              {deployments.length > 0 ? (
-                <Banner variant="info" className="mb-3">
-                  This job already has an active deployment
-                  {deployments[0]?.deploy_url ? <> at <a href={deployments[0].deploy_url} target="_blank" rel="noopener noreferrer" className="font-mono text-[12px] text-[#58a6ff] hover:underline break-all">{deployments[0].deploy_url}</a></> : ''}
-                  . Skip to continue, or redeploy if you've changed the app — redeploys are free.
-                </Banner>
-              ) : (
-                <Banner variant="info" className="mb-3">
-                  Deploying this app creates a live URL. Deploy credits will be deducted from your account, but the deployment is yours — it will appear in your emergent account's deployment history. Takes ~5–7 minutes.
-                </Banner>
-              )}
-              <div className="flex gap-2 mb-3">
-                <button onClick={runDeploy} disabled={loading === 'deploy'}
-                  className={deployments.length > 0
-                    ? "px-3 py-[5px] bg-[#1f6feb] text-white text-[14px] font-medium rounded-md hover:bg-[#388bfd] disabled:opacity-50 transition-colors flex items-center gap-2 border border-[#1f6feb]/60"
-                    : btnPrimary}
-                  data-testid="deploy-app-btn">
-                  <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M19.35 10.04A7.49 7.49 0 0 0 12 4C9.11 4 6.6 5.64 5.35 8.04A5.994 5.994 0 0 0 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96ZM14 13v4h-4v-4H7l5-5 5 5h-3Z" />
-                  </svg>
-                  {deployments.length > 0 ? 'Redeploy' : 'Start Deployment'}
-                </button>
-                <button onClick={skipDeploy} className={btnGhost} data-testid="skip-deploy-btn">
-                  {deployments.length > 0 ? 'Skip' : 'Skip (already deployed)'}
-                </button>
-              </div>
-            </>
-          )}
+          {deployStatus === 'idle' && (() => {
+            const isLiveRun = (d) => {
+              const s = (d.status || d.run_status || d.state || '').toLowerCase();
+              return d.deploy_url && s !== 'failed' && s !== 'error';
+            };
+            const liveDeploy = deployments.find(isLiveRun);
+            const hasLive = Boolean(liveDeploy);
+            return (
+              <>
+                {hasLive ? (
+                  <Banner variant="success" className="mb-3">
+                    You already have a live deployment
+                    {liveDeploy?.deploy_url ? <> at <a href={liveDeploy.deploy_url} target="_blank" rel="noopener noreferrer" className="font-mono text-[12px] text-[#58a6ff] hover:underline break-all">{liveDeploy.deploy_url}</a></> : ''}
+                    . Skip to continue, or redeploy if you've made recent changes — redeploys are free.
+                  </Banner>
+                ) : (
+                  <Banner variant="info" className="mb-3">
+                    No live deployment yet. Publishing creates a hosted URL for this app — <span className="font-semibold text-[#F3CA5F]">50 credits</span> will be deducted for a successful deployment. Redeploys are free.
+                  </Banner>
+                )}
+                <div className="flex gap-2 mb-3">
+                  <button onClick={runDeploy} disabled={loading === 'deploy'}
+                    className={btnPrimary}
+                    data-testid="deploy-app-btn">
+                    <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M19.35 10.04A7.49 7.49 0 0 0 12 4C9.11 4 6.6 5.64 5.35 8.04A5.994 5.994 0 0 0 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96ZM14 13v4h-4v-4H7l5-5 5 5h-3Z" />
+                    </svg>
+                    {hasLive ? 'Redeploy' : 'Start Deployment'}
+                  </button>
+                  <button onClick={skipDeploy} className={btnGhost} data-testid="skip-deploy-btn">
+                    Skip
+                  </button>
+                </div>
+              </>
+            );
+          })()}
 
 
           {/* Failed — error summary + Retry/Skip; full phase detail lives in right panel */}
