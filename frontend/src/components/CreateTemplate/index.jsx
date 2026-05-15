@@ -697,7 +697,12 @@ export default function CreateTemplate({ bearerToken = "" }) {
 
       {/* Step 1 */}
       <div ref={el => stepsRef.current[1] = el}>
-        <StepCard number={1} title="Identify Job" time={times[1]} status={stepStatus(1)} hasError={statuses[1]?.type === 'error'}>
+        <StepCard number={1} title="Identify Job" time={times[1]} status={stepStatus(1)} hasError={statuses[1]?.type === 'error'}
+          icon={
+            <svg className="w-4 h-4" viewBox="0 0 16 16" fill="currentColor">
+              <path d="M10.68 11.74a6 6 0 0 1-7.922-8.982 6 6 0 0 1 8.982 7.922l3.04 3.04a.749.749 0 0 1-.326 1.275.749.749 0 0 1-.734-.215ZM11.5 7a4.499 4.499 0 1 0-8.997 0A4.499 4.499 0 0 0 11.5 7Z" />
+            </svg>
+          }>
           <div className="flex gap-3 items-end mb-3">
             <div className="flex-[2]">
               <label className={labelCls}>Job ID <span className="text-[#f85149]">*</span></label>
@@ -783,6 +788,11 @@ export default function CreateTemplate({ bearerToken = "" }) {
       {/* Step 2 — Publish Live Preview */}
       <div ref={el => stepsRef.current[2] = el}>
         <StepCard number={2} title="Publish Live Preview" time={times[2]} status={stepStatus(2)}
+          icon={
+            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M19.35 10.04A7.49 7.49 0 0 0 12 4C9.11 4 6.6 5.64 5.35 8.04A5.994 5.994 0 0 0 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96Z" />
+            </svg>
+          }
           hasError={deployStatus === 'failed' || statuses[2]?.type === 'error'}>
           {deployStatus === 'idle' && (
             <>
@@ -910,7 +920,12 @@ export default function CreateTemplate({ bearerToken = "" }) {
 
       {/* Step 3 — Clear Database Collections */}
       <div ref={el => stepsRef.current[3] = el}>
-        <StepCard number={3} title="Clear Database Collections" time={times[3]} status={stepStatus(3)} hasError={statuses[3]?.type === 'error'}>
+        <StepCard number={3} title="Clear Database Collections" time={times[3]} status={stepStatus(3)} hasError={statuses[3]?.type === 'error'}
+          icon={
+            <svg className="w-4 h-4" viewBox="0 0 16 16" fill="currentColor">
+              <path d="M1 3.5c0-.626.292-1.165.7-1.59C2.05 1.55 2.546 1.24 3.094 1H12.906c.548.24 1.044.55 1.394.91.408.425.7.964.7 1.59v9c0 .626-.292 1.165-.7 1.59-.405.414-1.047.71-1.75.91h-9.1c-.703-.2-1.345-.496-1.75-.91C1.292 13.665 1 13.126 1 12.5Zm1.5 0c0 .238.148.473.36.674.213.2.526.374.89.5V5.5h8.5V4.674c.364-.126.677-.3.89-.5.212-.201.36-.436.36-.674 0-.238-.148-.473-.36-.674A2.727 2.727 0 0 0 12.25 2.5h-8.5a2.727 2.727 0 0 0-.89.326c-.212.201-.36.436-.36.674Zm0 3.5V9h9V7Zm9 3.5H2.5V12.5c0 .238.148.473.36.674.213.2.526.374.89.5h8.5c.364-.126.677-.3.89-.5.212-.201.36-.436.36-.674Z" />
+            </svg>
+          }>
           <p className={`${helperCls} mb-3`}>Select collections to delete. Unselected will be preserved.</p>
           {collections.length > 0 && (
             <Banner variant="info" className="mb-3">
@@ -990,6 +1005,11 @@ export default function CreateTemplate({ bearerToken = "" }) {
       {/* Step 4 — Create Template */}
       <div ref={el => stepsRef.current[4] = el}>
         <StepCard number={4} title="Create Template" time={times[4]} status={stepStatus(4)}
+          icon={
+            <svg className="w-4 h-4" viewBox="0 0 16 16" fill="currentColor">
+              <path d="m8.878.392 5.25 3.045c.54.314.872.89.872 1.514v6.098a1.75 1.75 0 0 1-.872 1.514l-5.25 3.045a1.75 1.75 0 0 1-1.756 0l-5.25-3.045A1.75 1.75 0 0 1 1 11.049V4.951c0-.624.332-1.201.872-1.514L7.122.392a1.75 1.75 0 0 1 1.756 0ZM7.875 1.69l-4.63 2.685L8 7.133l4.755-2.758-4.63-2.685a.248.248 0 0 0-.25 0ZM2.5 5.677v5.372c0 .09.047.171.125.216l4.625 2.683V8.432Zm6.25 8.271 4.625-2.683a.25.25 0 0 0 .125-.216V5.677L8.75 8.432Z" />
+            </svg>
+          }
           hasError={pauseSub.status === 'error' || createSub.status === 'error'}>
           <Banner variant="info" className="mb-3">
             Don't refresh the app preview before clicking Create — it re-seeds the database.
