@@ -48,7 +48,7 @@ export default function Banner({ variant = 'info', onDismiss, action, iconPath: 
 
   return (
     <div className={`flex items-center gap-1 p-2 rounded-[6px] border text-[14px] leading-[1.5] ${className}`}
-      style={{ backgroundColor: v.bg, borderColor: v.border }}>
+      style={{ background: `linear-gradient(${v.bg}, ${v.bg}), #0d1117`, borderColor: v.border }}>
       <svg className="w-4 h-4 shrink-0 mx-2" style={{ color: v.icon }} viewBox="0 0 16 16" fill="currentColor">
         <path d={iconPath} />
       </svg>
