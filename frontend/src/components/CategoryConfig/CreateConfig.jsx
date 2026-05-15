@@ -1,4 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
+import CodeMirror from '@uiw/react-codemirror';
+import { json } from '@codemirror/lang-json';
 import { usePersistedState, SET_OPTS } from '../../hooks/usePersistedState';
 import { api, AuthError } from '../../api';
 import Banner from '../Banner';
@@ -610,9 +612,19 @@ export default function CreateConfig({ bearerToken, onTokenExpired, onNavigate, 
               Copy
             </button>
           </div>
-          <pre className="px-3.5 py-3 text-[13px] font-mono leading-[1.6] overflow-x-auto max-h-[400px] overflow-y-auto bg-[#0d1117]">
-            <JsonHighlight json={requestBody} />
-          </pre>
+          <CodeMirror
+            value={JSON.stringify(requestBody, null, 2)}
+            extensions={[json()]}
+            theme="dark"
+            editable={false}
+            basicSetup={{
+              lineNumbers: false,
+              foldGutter: false,
+              highlightActiveLine: false,
+              highlightActiveLineGutter: false,
+            }}
+            style={{ fontSize: '13px', maxHeight: '400px', overflow: 'auto' }}
+          />
         </div>
 
         {/* Response — appears after send */}
