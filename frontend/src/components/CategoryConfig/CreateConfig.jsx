@@ -594,7 +594,7 @@ export default function CreateConfig({ bearerToken, onTokenExpired, onNavigate, 
               Copy
             </button>
           </div>
-          <pre className="px-3.5 py-3 text-[13px] font-mono leading-[1.6] overflow-x-auto max-h-[400px] overflow-y-auto bg-[#010409]">
+          <pre className="px-3.5 py-3 text-[13px] font-mono leading-[1.6] overflow-x-auto max-h-[400px] overflow-y-auto bg-[#0d1117]">
             <JsonHighlight json={requestBody} />
           </pre>
         </div>
@@ -607,7 +607,7 @@ export default function CreateConfig({ bearerToken, onTokenExpired, onNavigate, 
               {result && <span className="text-[13px] font-mono text-[#3fb950]">HTTP 200</span>}
               {submitStatus?.type === 'error' && !result && <span className="text-[13px] font-mono text-[#f85149]">Error</span>}
             </div>
-            <pre className="px-3.5 py-3 text-[13px] font-mono leading-[1.6] overflow-x-auto max-h-[350px] overflow-y-auto bg-[#010409]">
+            <pre className="px-3.5 py-3 text-[13px] font-mono leading-[1.6] overflow-x-auto max-h-[350px] overflow-y-auto bg-[#0d1117]">
               {result ? (
                 <JsonHighlight json={result} theme="response" />
               ) : submitStatus?.type === 'error' ? (
