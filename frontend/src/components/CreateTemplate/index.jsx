@@ -864,28 +864,18 @@ export default function CreateTemplate({ bearerToken = "" }) {
             <div className="text-[13px] text-[#8b949e]">Deployment skipped — assumed already deployed.</div>
           )}
 
-          {/* Success — layered surfaces: elevated block, recessed URL input, info chip */}
+          {/* Success — Vercel-style: URL frame + info chip + manage link, no inner box */}
           {deployUrl && deployStatus === 'success' && (
-            <div className="p-4 bg-[#161b22] border border-[#30363d] rounded-md">
-              <div className="text-[14px] text-[#3fb950] font-medium flex items-center gap-2 mb-3">
-                <svg className="w-4 h-4" viewBox="0 0 16 16" fill="currentColor">
-                  <path d="M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0Z" />
-                </svg>
-                Live preview published
-              </div>
-
+            <>
               <div className="text-[11.5px] uppercase tracking-wide text-[#8b949e] mb-1.5">Live preview URL</div>
               <div className="flex items-stretch gap-2 mb-3">
-                <input
-                  readOnly
-                  value={deployUrl}
-                  onFocus={(e) => e.target.select()}
-                  className="flex-1 font-mono text-[12.5px] text-[#e6edf3] bg-[#010409] border border-[#30363d] rounded-md px-3 py-2 outline-none focus:border-[#1f6feb] truncate"
-                />
+                <div className="flex-1 flex items-center bg-[#010409] border border-[#30363d] rounded-md px-3 py-2 overflow-hidden">
+                  <span className="font-mono text-[13px] text-[#e6edf3] truncate">{deployUrl}</span>
+                </div>
                 <button
                   onClick={() => { navigator.clipboard?.writeText(deployUrl); }}
                   title="Copy URL"
-                  className="shrink-0 px-2.5 rounded-md border border-[#30363d] bg-[#0d1117] text-[#8b949e] hover:text-[#e6edf3] hover:bg-[#161b22] hover:border-[#484f58] transition-colors flex items-center justify-center"
+                  className="shrink-0 px-2.5 rounded-md border border-[#30363d] bg-[#010409] text-[#8b949e] hover:text-[#e6edf3] hover:bg-[#161b22] hover:border-[#484f58] transition-colors flex items-center justify-center"
                 >
                   <svg className="w-4 h-4" viewBox="0 0 16 16" fill="currentColor">
                     <path d="M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 0 1 0 1.5h-1.5a.25.25 0 0 0-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 0 0 .25-.25v-1.5a.75.75 0 0 1 1.5 0v1.5A1.75 1.75 0 0 1 9.25 16h-7.5A1.75 1.75 0 0 1 0 14.25Z" />
@@ -911,7 +901,7 @@ export default function CreateTemplate({ bearerToken = "" }) {
                 </svg>
                 <span className="underline underline-offset-2">Manage on right</span>
               </button>
-            </div>
+            </>
           )}
 
           {deployStatus !== 'success' && <StatusBar {...(statuses[2] || {})} />}
