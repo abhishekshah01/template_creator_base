@@ -826,20 +826,6 @@ export default function CreateTemplate({ bearerToken = "" }) {
             </>
           )}
 
-          {/* Deploying — compact card pointing to right panel for the rich progress view */}
-          {deployStatus === 'deploying' && (
-            <div className="flex items-center gap-3 px-4 py-3 border border-[#30363d] rounded-md bg-[#161b22]">
-              <DotsLoader size={16} dotSize={2} className="text-[#58a6ff] shrink-0" />
-              <div className="flex-1 min-w-0">
-                <div className="text-[14px] font-medium text-[#e6edf3]">Deployment in progress</div>
-                <div className="text-[12px] text-[#8b949e] mt-0.5">View phase progress in the Deploy panel on the right →</div>
-              </div>
-              <button onClick={() => setRightPanelTab('deployments')}
-                className={btnDefault}>
-                View
-              </button>
-            </div>
-          )}
 
           {/* Failed — error summary + Retry/Skip; full phase detail lives in right panel */}
           {deployStatus === 'failed' && (
@@ -904,10 +890,12 @@ export default function CreateTemplate({ bearerToken = "" }) {
           )}
 
           <StatusBar {...(statuses[2] || {})}
-            action={deployStatus === 'success' && (
+            action={(deployStatus === 'success' || deployStatus === 'deploying') && (
               <button onClick={() => setRightPanelTab('deployments')}
                 className="inline-flex items-center gap-1.5 text-[13px] text-[#e6edf3] hover:text-white transition-colors">
-                <span className="underline underline-offset-2">Click to manage deployments</span>
+                <span className="underline underline-offset-2">
+                  {deployStatus === 'deploying' ? 'Click to see deployment progress' : 'Click to manage deployments'}
+                </span>
                 <svg className="w-3.5 h-3.5" viewBox="0 0 16 16" fill="currentColor">
                   <path d="M8.22 2.97a.75.75 0 0 1 1.06 0l4.25 4.25a.75.75 0 0 1 0 1.06l-4.25 4.25a.751.751 0 0 1-1.042-.018.751.751 0 0 1-.018-1.042L11.69 8.5H1.75a.75.75 0 0 1 0-1.5h9.94L8.22 4.03a.75.75 0 0 1 0-1.06Z" />
                 </svg>
