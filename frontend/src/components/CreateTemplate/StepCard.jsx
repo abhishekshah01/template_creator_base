@@ -6,8 +6,8 @@ export default function StepCard({ number, title, time, status, hasError, icon, 
   return (
     <div className={`border rounded-md mb-3 transition-all ${
       isDisabled
-        ? 'border-[#21262d] bg-black opacity-40 pointer-events-none'
-        : 'border-[#30363d] bg-black'
+        ? 'border-[#21262d] bg-[#010409] opacity-40 pointer-events-none'
+        : 'border-[#30363d] bg-[#0d1117]'
     }`}>
       {/* Header */}
       <div className={`flex items-center gap-2 px-4 py-2.5 border-b rounded-t-md ${

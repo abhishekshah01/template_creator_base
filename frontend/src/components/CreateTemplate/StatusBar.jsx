@@ -27,7 +27,7 @@ export default function StatusBar({ message, type, hint, action }) {
   return (
     <div className="mt-3 space-y-2">
       <div className="flex items-center gap-1 p-2 rounded-[6px] border text-[14px] leading-[1.5]"
-        style={{ background: `linear-gradient(${s.bg}, ${s.bg}), #0c1117`, borderColor: s.border }}>
+        style={{ backgroundColor: s.bg, borderColor: s.border }}>
         {type === 'loading' && (
           <div className="w-4 h-4 border-2 border-[#30363d] border-t-[#58a6ff] rounded-full animate-spin shrink-0 mx-2" />
         )}
@@ -41,7 +41,7 @@ export default function StatusBar({ message, type, hint, action }) {
       </div>
       {hint && (
         <div className="flex items-center gap-1 p-2 rounded-[6px] border text-[14px] leading-[1.5]"
-          style={{ background: `linear-gradient(${HINT_STYLE.bg}, ${HINT_STYLE.bg}), #0c1117`, borderColor: HINT_STYLE.border }}>
+          style={{ backgroundColor: HINT_STYLE.bg, borderColor: HINT_STYLE.border }}>
           <svg className="w-4 h-4 shrink-0 mx-2" style={{ color: HINT_STYLE.icon }} viewBox="0 0 16 16" fill="currentColor">
             <path d={ICON_PATHS.info} />
           </svg>
