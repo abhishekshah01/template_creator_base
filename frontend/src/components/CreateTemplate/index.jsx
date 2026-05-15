@@ -805,12 +805,17 @@ export default function CreateTemplate({ bearerToken = "" }) {
           }
           hasError={deployStatus === 'failed' || statuses[2]?.type === 'error'}>
           {deployStatus === 'idle' && (() => {
-            const isLiveRun = (d) => {
+            const isFailedRun = (d) => {
               const s = (d.status || d.run_status || d.state || '').toLowerCase();
-              return d.deploy_url && s !== 'failed' && s !== 'error';
+              return s === 'failed' || s === 'error';
             };
-            const liveDeploy = deployments.find(isLiveRun);
-            const hasLive = Boolean(liveDeploy);
+            // Deploy history rows often omit the URL — it comes from the
+            // top-level getDeployStatus call. Mirror DeployPanel's logic:
+            // any non-failed run counts as "has live", URL falls back to
+            // deployUrl when the row itself doesn't carry one.
+            const successfulDeploy = deployments.find(d => !isFailedRun(d));
+            const liveUrl = deployUrl || successfulDeploy?.deploy_url || successfulDeploy?.url || '';
+            const hasLive = Boolean(successfulDeploy) || Boolean(deployUrl);
             return (
               <>
                 {hasLive ? (
@@ -818,16 +823,16 @@ export default function CreateTemplate({ bearerToken = "" }) {
                     <Banner variant="success" className="mb-3">
                       You already have a live deployment. Skip to continue, or redeploy if you've made recent changes. Redeploys are free.
                     </Banner>
-                    {liveDeploy?.deploy_url && (
+                    {liveUrl && (
                       <>
                         <div className="text-[11.5px] uppercase tracking-wide text-[#8b949e] mb-1.5">Live preview URL</div>
                         <div className="flex items-stretch gap-2 mb-2">
                           <div className="flex-1 flex items-center bg-[#010409] border border-[#30363d] rounded-md px-3 py-2 overflow-hidden">
-                            <span className="font-mono text-[13px] text-[#e6edf3] truncate">{liveDeploy.deploy_url}</span>
+                            <span className="font-mono text-[13px] text-[#e6edf3] truncate">{liveUrl}</span>
                           </div>
                           <button
                             onClick={() => {
-                              navigator.clipboard?.writeText(liveDeploy.deploy_url).then(() => {
+                              navigator.clipboard?.writeText(liveUrl).then(() => {
                                 setDeployUrlCopied(true);
                                 setTimeout(() => setDeployUrlCopied(false), 1500);
                               }).catch(() => {});
