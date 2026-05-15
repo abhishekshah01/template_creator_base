@@ -476,12 +476,12 @@ export default function CreateConfig({ bearerToken, onTokenExpired, onNavigate, 
               <span className="text-[#484f58]">·</span>
               <button onClick={() => selectAll(true)} className="text-[13px] text-[#58a6ff] hover:underline">Select all</button>
               <button onClick={() => selectAll(false)} className="text-[13px] text-[#58a6ff] hover:underline">Deselect all</button>
-              <div className="ml-auto flex items-center gap-1.5 bg-[#0d1117] border border-[#30363d] rounded-md px-2.5 py-1">
+              <div className="ml-auto flex items-center gap-1.5 bg-[#0d1117] border border-[#30363d] rounded-md px-2.5 py-1 transition-colors focus-within:border-[#1f6feb] focus-within:ring-1 focus-within:ring-[#1f6feb]/40">
                 <svg className="w-3.5 h-3.5 text-[#484f58]" viewBox="0 0 16 16" fill="currentColor">
                   <path d="M10.68 11.74a6 6 0 0 1-7.922-8.982 6 6 0 0 1 8.982 7.922l3.04 3.04a.749.749 0 0 1-.326 1.275.749.749 0 0 1-.734-.215ZM11.5 7a4.499 4.499 0 1 0-8.997 0A4.499 4.499 0 0 0 11.5 7Z" />
                 </svg>
                 <input type="text" value={filter} onChange={e => setFilter(e.target.value)}
-                  placeholder="Filter..." className="bg-transparent text-[12px] text-[#e6edf3] outline-none placeholder:text-[#484f58] w-24" />
+                  placeholder="Filter..." className="bg-transparent text-[12px] text-[#e6edf3] outline-none placeholder:text-[#484f58] w-56" />
               </div>
             </div>
 
