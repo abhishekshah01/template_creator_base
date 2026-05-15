@@ -324,6 +324,15 @@ export default function CreateTemplate({ bearerToken = "" }) {
       freshHoldTimerRef.current = null;
     }
     setLoading('fetch');
+    // Fetch Job Info acts as a refresh button. Clear transient terminal
+    // deploy states ('skipped'/'failed') so the freshly-fetched deployments
+    // drive Step 2's UI. Leave 'success'/'deploying' untouched — those
+    // represent live flows we shouldn't reset under the user.
+    if (deployStatus === 'skipped' || deployStatus === 'failed') {
+      setDeployStatus('idle');
+      setDeploySteps([]);
+      setStatuses(prev => { const { 2: _2, ...rest } = prev; return rest; });
+    }
     // For same-job refetch we want a silent refresh — don't reset step/times/
     // downstream state or the preview/URL/list will disappear briefly.
     // For fresh-job: reset downstream BUT keep deploy data (preview/URL/list)
