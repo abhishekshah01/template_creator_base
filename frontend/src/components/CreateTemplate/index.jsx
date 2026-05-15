@@ -805,16 +805,56 @@ export default function CreateTemplate({ bearerToken = "" }) {
             return (
               <>
                 {hasLive ? (
-                  <Banner variant="success" className="mb-3">
-                    You already have a live deployment
-                    {liveDeploy?.deploy_url ? <> at <a href={liveDeploy.deploy_url} target="_blank" rel="noopener noreferrer" className="font-mono text-[12px] text-[#58a6ff] hover:underline break-all">{liveDeploy.deploy_url}</a></> : ''}
-                    . Skip to continue, or redeploy if you've made recent changes — redeploys are free.
-                  </Banner>
+                  <>
+                    <Banner variant="success" className="mb-3">
+                      You already have a live deployment. Skip to continue, or redeploy if you've made recent changes. Redeploys are free.
+                    </Banner>
+                    {liveDeploy?.deploy_url && (
+                      <>
+                        <div className="text-[11.5px] uppercase tracking-wide text-[#8b949e] mb-1.5">Live preview URL</div>
+                        <div className="flex items-stretch gap-2 mb-2">
+                          <div className="flex-1 flex items-center bg-[#010409] border border-[#30363d] rounded-md px-3 py-2 overflow-hidden">
+                            <span className="font-mono text-[13px] text-[#e6edf3] truncate">{liveDeploy.deploy_url}</span>
+                          </div>
+                          <button
+                            onClick={() => {
+                              navigator.clipboard?.writeText(liveDeploy.deploy_url).then(() => {
+                                setDeployUrlCopied(true);
+                                setTimeout(() => setDeployUrlCopied(false), 1500);
+                              }).catch(() => {});
+                            }}
+                            title={deployUrlCopied ? 'Copied!' : 'Copy URL'}
+                            className="shrink-0 px-2.5 rounded-md border border-[#30363d] bg-[#010409] text-[#8b949e] hover:text-[#e6edf3] hover:bg-[#161b22] hover:border-[#484f58] transition-colors flex items-center justify-center"
+                          >
+                            {deployUrlCopied ? (
+                              <svg className="w-4 h-4" viewBox="0 0 16 16" fill="#3fb950">
+                                <path d="M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0Z" />
+                              </svg>
+                            ) : (
+                              <svg className="w-4 h-4" viewBox="0 0 16 16" fill="currentColor">
+                                <path d="M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 0 1 0 1.5h-1.5a.25.25 0 0 0-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 0 0 .25-.25v-1.5a.75.75 0 0 1 1.5 0v1.5A1.75 1.75 0 0 1 9.25 16h-7.5A1.75 1.75 0 0 1 0 14.25Z" />
+                                <path d="M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0 1 14.25 11h-7.5A1.75 1.75 0 0 1 5 9.25Zm1.75-.25a.25.25 0 0 0-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 0 0 .25-.25v-7.5a.25.25 0 0 0-.25-.25Z" />
+                              </svg>
+                            )}
+                          </button>
+                        </div>
+                        <div className="flex items-start gap-2 mb-3 text-[12.5px] text-[#8b949e]">
+                          <svg className="w-4 h-4 shrink-0 mt-[1px]" viewBox="0 0 16 16" fill="currentColor">
+                            <path d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8Zm8-6.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13ZM6.5 7.75A.75.75 0 0 1 7.25 7h1a.75.75 0 0 1 .75.75v2.75h.25a.75.75 0 0 1 0 1.5h-2a.75.75 0 0 1 0-1.5h.25v-2h-.25a.75.75 0 0 1-.75-.75ZM8 6a1 1 0 1 1 0-2 1 1 0 0 1 0 2Z" />
+                          </svg>
+                          <span>Save this URL. You'll need it later when creating or updating the category config.</span>
+                        </div>
+                      </>
+                    )}
+                  </>
                 ) : (
-                  <Banner variant="info" className="mb-3">
-                    No live deployment yet. Publishing creates a hosted URL for this app —{' '}
-                    <span className="inline-flex items-center gap-1 align-baseline">
-                      <svg className="w-[14px] h-[14px] shrink-0 inline-block align-[-2px]" viewBox="0 0 49 48" fill="none">
+                  <>
+                    <Banner variant="info" className="mb-2">
+                      No live deployment yet. Publishing creates a hosted URL for this app.
+                    </Banner>
+                    <div className="flex items-center gap-1 p-2 rounded-[6px] border mb-3"
+                      style={{ backgroundColor: 'rgba(243,202,95,0.10)', borderColor: 'rgba(243,202,95,0.30)' }}>
+                      <svg className="w-4 h-4 shrink-0 mx-2" viewBox="0 0 49 48" fill="none">
                         <g clipPath="url(#publish_coin_clip)">
                           <circle opacity="0.1" cx="24.5" cy="24" r="24" fill="#F3CA5F" />
                           <path fill="#F3CA5F" d="M24.5002 4.79883C35.104 4.79896 43.7004 13.3952 43.7004 23.999C43.7004 34.6028 35.104 43.1991 24.5002 43.1992C13.8964 43.1992 5.30005 34.6029 5.30005 23.999C5.30005 13.3952 13.8964 4.79883 24.5002 4.79883ZM25.4797 15.8135C24.8472 14.2461 24.3146 13.7212 23.5549 15.5928C21.893 19.5817 19.9091 21.4827 16.0032 23.1289C15.611 23.3101 14.9043 23.6249 14.8997 23.998C14.9043 24.3712 15.6064 24.686 16.0032 24.8672C19.9045 26.5086 21.8931 28.4141 23.5549 32.4033C24.3238 34.3087 24.8579 33.7101 25.4797 32.1826C27.1463 28.327 29.0079 26.5378 32.9387 24.8672C33.3507 24.6707 34.0306 24.4099 34.0999 24.0186V23.9736C34.0309 23.5852 33.3554 23.3206 32.9387 23.124V23.1289C29.0083 21.4583 27.1463 19.6705 25.4797 15.8135Z" />
@@ -830,10 +870,11 @@ export default function CreateTemplate({ bearerToken = "" }) {
                           </clipPath>
                         </defs>
                       </svg>
-                      <span className="font-semibold text-[#F3CA5F]">50 credits</span>
-                    </span>
-                    {' '}will be deducted for a successful deployment.
-                  </Banner>
+                      <span className="flex-1 text-[14px] text-[#e6edf3] leading-[1.5]">
+                        <span className="font-semibold text-[#F3CA5F]">50 credits</span> will be deducted for a successful deployment.
+                      </span>
+                    </div>
+                  </>
                 )}
                 <div className="flex gap-2 mb-3">
                   <button onClick={runDeploy} disabled={loading === 'deploy'}
@@ -908,9 +949,12 @@ export default function CreateTemplate({ bearerToken = "" }) {
                 </button>
               </div>
 
-              <Banner variant="info" className="mb-3">
-                Save this URL — you'll need it when registering this template's config later.
-              </Banner>
+              <div className="flex items-start gap-2 mb-3 text-[12.5px] text-[#8b949e]">
+                <svg className="w-4 h-4 shrink-0 mt-[1px]" viewBox="0 0 16 16" fill="currentColor">
+                  <path d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8Zm8-6.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13ZM6.5 7.75A.75.75 0 0 1 7.25 7h1a.75.75 0 0 1 .75.75v2.75h.25a.75.75 0 0 1 0 1.5h-2a.75.75 0 0 1 0-1.5h.25v-2h-.25a.75.75 0 0 1-.75-.75ZM8 6a1 1 0 1 1 0-2 1 1 0 0 1 0 2Z" />
+                </svg>
+                <span>Save this URL. You'll need it later when creating or updating the category config.</span>
+              </div>
 
             </>
           )}
