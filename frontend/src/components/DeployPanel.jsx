@@ -144,8 +144,8 @@ function IdleView({ onStart }) {
       <p className="text-[14px] text-[#8b949e] leading-relaxed max-w-[280px] mb-6">
         Deploy to a hosted production-ready environment and get a live URL for your app.
       </p>
-      <div className="inline-flex items-center gap-2 mb-5">
-        <svg className="w-5 h-5 shrink-0" viewBox="0 0 49 48" fill="none">
+      <div className="inline-flex items-center gap-1.5 mb-5">
+        <svg className="w-[26px] h-[26px] shrink-0" viewBox="0 0 49 48" fill="none">
           <g clipPath="url(#deploy_coin_clip)">
             <circle opacity="0.1" cx="24.5" cy="24" r="24" fill="#F3CA5F" />
             <path fill="#F3CA5F" d="M24.5002 4.79883C35.104 4.79896 43.7004 13.3952 43.7004 23.999C43.7004 34.6028 35.104 43.1991 24.5002 43.1992C13.8964 43.1992 5.30005 34.6029 5.30005 23.999C5.30005 13.3952 13.8964 4.79883 24.5002 4.79883ZM25.4797 15.8135C24.8472 14.2461 24.3146 13.7212 23.5549 15.5928C21.893 19.5817 19.9091 21.4827 16.0032 23.1289C15.611 23.3101 14.9043 23.6249 14.8997 23.998C14.9043 24.3712 15.6064 24.686 16.0032 24.8672C19.9045 26.5086 21.8931 28.4141 23.5549 32.4033C24.3238 34.3087 24.8579 33.7101 25.4797 32.1826C27.1463 28.327 29.0079 26.5378 32.9387 24.8672C33.3507 24.6707 34.0306 24.4099 34.0999 24.0186V23.9736C34.0309 23.5852 33.3554 23.3206 32.9387 23.124V23.1289C29.0083 21.4583 27.1463 19.6705 25.4797 15.8135Z" />
@@ -161,7 +161,7 @@ function IdleView({ onStart }) {
             </clipPath>
           </defs>
         </svg>
-        <span className="text-[13.5px] font-medium text-[#F3CA5F]">50 credits / month</span>
+        <span className="text-[16px] font-medium text-[#F3CA5F]">50 credits / month</span>
       </div>
       <button onClick={onStart}
         className="px-6 py-2.5 bg-[#37007a] text-white text-[14px] font-semibold rounded-md border border-[#8957e5]/40 hover:bg-[#6e40c9] hover:border-[#8957e5]/70 hover:shadow-[0_0_20px_rgba(137,87,229,0.30)] transition-all flex items-center justify-center gap-2">
