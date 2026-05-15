@@ -904,7 +904,7 @@ export default function CreateTemplate({ bearerToken = "" }) {
             </>
           )}
 
-          {deployStatus !== 'success' && <StatusBar {...(statuses[2] || {})} />}
+          <StatusBar {...(statuses[2] || {})} />
         </StepCard>
       </div>
 
