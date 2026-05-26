@@ -51,7 +51,18 @@ export const api = {
   getDeployStatus: (jobId, bearerToken) => request('/deploy-status', { job_id: jobId, bearer_token: bearerToken || '' }),
   getDeployHistory: (jobId, bearerToken) => request('/deploy-history', { job_id: jobId, bearer_token: bearerToken || '' }),
   createTemplate: (jobId, userId, templateName) =>
-    request('/create-template', { job_id: jobId, user_id: userId, template_name: templateName }),
+    request('/create-template', {
+      job_id: jobId,
+      user_id: userId,
+      template_name: templateName,
+    }),
+  getTemplateJob: (dagRunId) =>
+    fetch(`/api/template-job/${encodeURIComponent(dagRunId)}`).then(async r => {
+      const text = await r.text();
+      let data; try { data = JSON.parse(text); } catch { data = {}; }
+      if (!r.ok) throw new Error(data.detail || data.message || `Status check failed (${r.status})`);
+      return data;
+    }),
   getEnvVariables: (jobId) => request('/env-variables', { job_id: jobId }),
   getCollectionData: (jobId, dbName, collectionName, limit = 20) =>
     request('/collection-data', { job_id: jobId, db_name: dbName, collection_name: collectionName, limit }),
