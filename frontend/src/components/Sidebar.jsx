@@ -1,38 +1,43 @@
 import { useState, useEffect } from 'react';
 
 // --- GitHub Octicons (16px filled) ---
-function WorkflowIcon({ className }) {
+function FilePlusIcon({ className }) {
   return (
     <svg className={className} viewBox="0 0 16 16" fill="currentColor">
-      <path d="M0 1.75C0 .784.784 0 1.75 0h12.5C15.216 0 16 .784 16 1.75v3.585a.746.746 0 0 1 0 .83v8.085A1.75 1.75 0 0 1 14.25 16H6.5a.75.75 0 0 1 0-1.5h7.75a.25.25 0 0 0 .25-.25V6.5h-13v1.75a.75.75 0 0 1-1.5 0ZM1.5 5h13V1.75a.25.25 0 0 0-.25-.25H1.75a.25.25 0 0 0-.25.25ZM0 12a3.5 3.5 0 0 1 3.5-3.5.75.75 0 0 1 0 1.5A2 2 0 0 0 1.5 12a2 2 0 0 0 2 2 .75.75 0 0 1 0 1.5A3.5 3.5 0 0 1 0 12Z" />
+      <path d="M2 1.75C2 .784 2.784 0 3.75 0h6.586c.464 0 .909.184 1.237.513l2.914 2.914c.329.328.513.773.513 1.237v9.586A1.75 1.75 0 0 1 13.25 16h-9.5A1.75 1.75 0 0 1 2 14.25Zm1.75-.25a.25.25 0 0 0-.25.25v12.5c0 .138.112.25.25.25h9.5a.25.25 0 0 0 .25-.25V6h-2.75A1.75 1.75 0 0 1 9 4.25V1.5Zm6.75.062V4.25c0 .138.112.25.25.25h2.688l-.011-.013-2.914-2.914-.013-.011ZM8 8.75a.75.75 0 0 1 .75.75v1.25h1.25a.75.75 0 0 1 0 1.5H8.75v1.25a.75.75 0 0 1-1.5 0V12.25H6a.75.75 0 0 1 0-1.5h1.25V9.5A.75.75 0 0 1 8 8.75Z" />
     </svg>
   );
 }
-function DatabaseIcon({ className }) {
+function StackIcon({ className }) {
   return (
     <svg className={className} viewBox="0 0 16 16" fill="currentColor">
-      <path d="M8 1c-3.68 0-6 1.316-6 3v8c0 1.684 2.32 3 6 3s6-1.316 6-3V4c0-1.684-2.32-3-6-3ZM2.5 9.756V7.244C3.626 7.88 5.592 8.25 8 8.25s4.374-.37 5.5-1.006v2.512C12.334 10.576 10.24 11 8 11s-4.334-.424-5.5-1.244ZM13.5 4c0 .55-1.639 1.75-5.5 1.75S2.5 4.55 2.5 4 4.139 2.25 8 2.25 13.5 3.45 13.5 4Zm0 8c0 .55-1.639 1.75-5.5 1.75S2.5 12.55 2.5 12v-2.756C3.626 10.076 5.592 10.5 8 10.5s4.374-.424 5.5-1.256Z" />
+      <path d="M7.122.392a1.75 1.75 0 0 1 1.756 0l5.003 2.902c.83.481.83 1.69 0 2.171L8.878 8.378a1.755 1.755 0 0 1-1.756 0L2.119 5.465a1.255 1.255 0 0 1 0-2.171ZM8.125 1.689a.25.25 0 0 0-.25 0l-4.63 2.685 4.63 2.685a.25.25 0 0 0 .25 0l4.63-2.685ZM1.601 7.789a.75.75 0 0 1 1.025-.273l5.249 3.044a.25.25 0 0 0 .25 0l5.249-3.044a.75.75 0 0 1 .752 1.298l-5.248 3.044a1.75 1.75 0 0 1-1.756 0L1.874 8.814A.75.75 0 0 1 1.6 7.789Zm0 3.5a.75.75 0 0 1 1.025-.273l5.249 3.044a.25.25 0 0 0 .25 0l5.249-3.044a.75.75 0 0 1 .752 1.298l-5.248 3.044a1.75 1.75 0 0 1-1.756 0l-5.248-3.044a.75.75 0 0 1-.273-1.025Z" />
     </svg>
   );
 }
-function ListIcon({ className }) {
+function RowsIcon({ className }) {
   return (
     <svg className={className} viewBox="0 0 16 16" fill="currentColor">
-      <path d="M2 4a1 1 0 1 0 0-2 1 1 0 0 0 0 2Zm3.75-1.5a.75.75 0 0 0 0 1.5h8.5a.75.75 0 0 0 0-1.5Zm0 5a.75.75 0 0 0 0 1.5h8.5a.75.75 0 0 0 0-1.5Zm0 5a.75.75 0 0 0 0 1.5h8.5a.75.75 0 0 0 0-1.5ZM3 8a1 1 0 1 1-2 0 1 1 0 0 1 2 0Zm-1 6a1 1 0 1 0 0-2 1 1 0 0 0 0 2Z" />
+      <path d="M0 3.75C0 2.784.784 2 1.75 2h12.5c.966 0 1.75.784 1.75 1.75v8.5A1.75 1.75 0 0 1 14.25 14H1.75A1.75 1.75 0 0 1 0 12.25Zm1.75-.25a.25.25 0 0 0-.25.25V6h13V3.75a.25.25 0 0 0-.25-.25Zm-.25 4v1h13V7.5Zm0 4.75c0 .138.112.25.25.25h12.5a.25.25 0 0 0 .25-.25V10h-13Z" />
     </svg>
   );
 }
-function PlusCircleIcon({ className }) {
+function PlusIcon({ className }) {
   return (
     <svg className={className} viewBox="0 0 16 16" fill="currentColor">
-      <path d="M8 0a8 8 0 1 1 0 16A8 8 0 0 1 8 0ZM1.5 8a6.5 6.5 0 1 0 13 0 6.5 6.5 0 0 0-13 0Zm7.25-3.25v2.5h2.5a.75.75 0 0 1 0 1.5h-2.5v2.5a.75.75 0 0 1-1.5 0v-2.5h-2.5a.75.75 0 0 1 0-1.5h2.5v-2.5a.75.75 0 0 1 1.5 0Z" />
+      <path d="M7.75 2a.75.75 0 0 1 .75.75V7h4.25a.75.75 0 0 1 0 1.5H8.5v4.25a.75.75 0 0 1-1.5 0V8.5H2.75a.75.75 0 0 1 0-1.5H7V2.75A.75.75 0 0 1 7.75 2Z" />
     </svg>
   );
 }
-function SparkleIcon({ className }) {
+function SparklesIcon({ className }) {
   return (
     <svg className={className} viewBox="0 0 16 16" fill="currentColor">
-      <path d="M7.53 1.282a.5.5 0 0 1 .94 0l.478 1.306a7.492 7.492 0 0 0 4.464 4.464l1.305.478a.5.5 0 0 1 0 .94l-1.305.478a7.492 7.492 0 0 0-4.464 4.464l-.478 1.305a.5.5 0 0 1-.94 0l-.478-1.305a7.492 7.492 0 0 0-4.464-4.464L1.282 8.47a.5.5 0 0 1 0-.94l1.306-.478a7.492 7.492 0 0 0 4.464-4.464Z" />
+      <g transform="translate(10 5.5) scale(0.6) translate(-8 -8)">
+        <path d="M7.53 1.282a.5.5 0 0 1 .94 0l.478 1.306a7.492 7.492 0 0 0 4.464 4.464l1.305.478a.5.5 0 0 1 0 .94l-1.305.478a7.492 7.492 0 0 0-4.464 4.464l-.478 1.305a.5.5 0 0 1-.94 0l-.478-1.305a7.492 7.492 0 0 0-4.464-4.464L1.282 8.47a.5.5 0 0 1 0-.94l1.306-.478a7.492 7.492 0 0 0 4.464-4.464Z" />
+      </g>
+      <g transform="translate(3.75 12) scale(0.32) translate(-8 -8)">
+        <path d="M7.53 1.282a.5.5 0 0 1 .94 0l.478 1.306a7.492 7.492 0 0 0 4.464 4.464l1.305.478a.5.5 0 0 1 0 .94l-1.305.478a7.492 7.492 0 0 0-4.464 4.464l-.478 1.305a.5.5 0 0 1-.94 0l-.478-1.305a7.492 7.492 0 0 0-4.464-4.464L1.282 8.47a.5.5 0 0 1 0-.94l1.306-.478a7.492 7.492 0 0 0 4.464-4.464Z" />
+      </g>
     </svg>
   );
 }
@@ -59,6 +64,55 @@ function ChevronIcon({ className, open }) {
   );
 }
 
+function BookIcon({ className }) {
+  return (
+    <svg className={className} viewBox="0 0 16 16" fill="currentColor">
+      <path d="M0 1.75A.75.75 0 0 1 .75 1h4.253c1.227 0 2.317.59 3 1.501A3.743 3.743 0 0 1 11.006 1h4.245a.75.75 0 0 1 .75.75v10.5a.75.75 0 0 1-.75.75h-4.507a2.25 2.25 0 0 0-1.591.659l-.622.621a.75.75 0 0 1-1.06 0l-.622-.621A2.25 2.25 0 0 0 5.258 13H.75a.75.75 0 0 1-.75-.75Zm7.251 10.324.004-5.073-.002-2.253A2.25 2.25 0 0 0 5.003 2.5H1.5v9h3.757a3.75 3.75 0 0 1 1.994.574ZM8.755 4.75l-.004 7.322a3.752 3.752 0 0 1 1.992-.572H14.5v-9h-3.495a2.25 2.25 0 0 0-2.25 2.25Z" />
+    </svg>
+  );
+}
+function RocketIcon({ className }) {
+  return (
+    <svg className={className} viewBox="0 0 16 16" fill="currentColor">
+      <path d="M14.064 0h.186C15.216 0 16 .784 16 1.75v.186a8.752 8.752 0 0 1-2.564 6.186l-.458.459c-.314.314-.641.616-.979.904v3.207c0 .608-.315 1.172-.833 1.49l-2.774 1.707a.749.749 0 0 1-1.11-.418l-.954-3.102a1.214 1.214 0 0 1-.145-.125L3.754 9.816a1.218 1.218 0 0 1-.124-.145L.528 8.717a.749.749 0 0 1-.418-1.11l1.71-2.774A1.748 1.748 0 0 1 3.31 4h3.204c.288-.338.59-.665.904-.979l.459-.458A8.749 8.749 0 0 1 14.064 0ZM8.938 3.623h-.002l-.458.458c-.76.76-1.437 1.598-2.02 2.5l-1.5 2.317 2.143 2.143 2.317-1.5c.902-.583 1.74-1.26 2.499-2.02l.459-.458a7.25 7.25 0 0 0 2.123-5.127V1.75a.25.25 0 0 0-.25-.25h-.186a7.249 7.249 0 0 0-5.125 2.123ZM3.56 14.56c-.732.732-2.334 1.045-3.005 1.148a.234.234 0 0 1-.201-.064.234.234 0 0 1-.064-.201c.103-.671.416-2.273 1.15-3.003a1.502 1.502 0 1 1 2.12 2.12Zm6.94-3.935c-.088.06-.177.118-.266.175l-2.35 1.521.548 1.783 1.949-1.2a.25.25 0 0 0 .119-.213ZM3.678 8.116 5.2 5.766c.058-.09.117-.178.176-.266H3.309a.25.25 0 0 0-.213.119l-1.2 1.95ZM12 5a1 1 0 1 1 0-2 1 1 0 0 1 0 2Z" />
+    </svg>
+  );
+}
+function InfoIcon({ className }) {
+  return (
+    <svg className={className} viewBox="0 0 16 16" fill="currentColor">
+      <path d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8Zm8-6.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13ZM6.5 7.75A.75.75 0 0 1 7.25 7h1a.75.75 0 0 1 .75.75v2.75h.25a.75.75 0 0 1 0 1.5h-2a.75.75 0 0 1 0-1.5h.25v-2h-.25a.75.75 0 0 1-.75-.75ZM8 6a1 1 0 1 1 0-2 1 1 0 0 1 0 2Z" />
+    </svg>
+  );
+}
+function ZapIcon({ className }) {
+  return (
+    <svg className={className} viewBox="0 0 16 16" fill="currentColor">
+      <path d="M9.504.43a1.516 1.516 0 0 1 2.437 1.713L10.415 5.5h2.123c1.57 0 2.346 1.909 1.22 3.004l-7.34 7.142a1.249 1.249 0 0 1-.871.354h-.302a1.25 1.25 0 0 1-1.157-1.723L5.633 10.5H3.462c-1.57 0-2.346-1.909-1.22-3.004L9.503.429Zm1.047 1.074L3.286 8.571A.25.25 0 0 0 3.462 9H6.75a.75.75 0 0 1 .694 1.034l-1.713 4.188 6.982-6.793A.25.25 0 0 0 12.538 7H9.25a.75.75 0 0 1-.683-1.06l2.008-4.418.003-.006a.036.036 0 0 0-.004-.009l-.006-.006-.008-.001c-.003 0-.006.002-.009.004Z" />
+    </svg>
+  );
+}
+function ToolsIcon({ className }) {
+  return (
+    <svg className={className} viewBox="0 0 16 16" fill="currentColor">
+      <path d="M5.433 2.304A4.492 4.492 0 0 0 3.5 6c0 1.598.832 3.002 2.09 3.802.518.328.81.92.81 1.534V14a1.5 1.5 0 0 0 3 0v-2.664c0-.615.292-1.206.81-1.534A4.498 4.498 0 0 0 12.5 6a4.491 4.491 0 0 0-1.348-3.215l-.768.768c.418.51.66 1.166.616 1.876C10.92 6.96 9.387 8.469 7.5 8.469 5.532 8.469 4 6.96 4 5.429c0-.768.292-1.464.768-1.972ZM8 4a2 2 0 1 0 0 4 2 2 0 0 0 0-4Z" />
+    </svg>
+  );
+}
+function ShieldCheckIcon({ className }) {
+  return (
+    <svg className={className} viewBox="0 0 16 16" fill="currentColor">
+      <path d="M7.467.133a1.748 1.748 0 0 1 1.066 0l5.25 1.68A1.75 1.75 0 0 1 15 3.48V7c0 1.566-.32 3.182-1.303 4.682-.983 1.498-2.585 2.813-5.032 3.855a1.697 1.697 0 0 1-1.33 0c-2.447-1.042-4.049-2.357-5.032-3.855C1.32 10.182 1 8.566 1 7V3.48a1.75 1.75 0 0 1 1.217-1.667Zm.61 1.429a.25.25 0 0 0-.153 0l-5.25 1.68a.25.25 0 0 0-.174.238V7c0 1.358.275 2.666 1.057 3.86.784 1.194 2.121 2.34 4.366 3.297a.196.196 0 0 0 .154 0c2.245-.957 3.582-2.103 4.366-3.297C13.225 9.666 13.5 8.358 13.5 7V3.48a.25.25 0 0 0-.174-.237l-5.25-1.68ZM10.78 5.97a.75.75 0 0 1 0 1.06l-3.25 3.25a.75.75 0 0 1-1.06 0L4.97 8.78a.75.75 0 1 1 1.06-1.06L7 8.69l2.72-2.72a.75.75 0 0 1 1.06 0Z" />
+    </svg>
+  );
+}
+function HelpIcon({ className }) {
+  return (
+    <svg className={className} viewBox="0 0 16 16" fill="currentColor">
+      <path d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8Zm8-6.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13ZM6.92 6.085c.081-.16.19-.299.34-.398.145-.097.371-.187.74-.187.28 0 .553.087.738.225A.613.613 0 0 1 9 6.25c0 .177-.04.264-.077.318a.956.956 0 0 1-.277.245c-.076.051-.158.1-.258.161l-.007.004a7.728 7.728 0 0 0-.313.195 2.416 2.416 0 0 0-.692.661.75.75 0 0 0 1.248.832.956.956 0 0 1 .276-.245 6.3 6.3 0 0 1 .26-.16l.006-.004c.093-.057.204-.123.313-.195.222-.149.487-.355.692-.662.214-.32.329-.702.329-1.15 0-.76-.36-1.348-.863-1.725A2.76 2.76 0 0 0 8 4c-.631 0-1.155.16-1.572.438-.413.276-.68.638-.849.977a.75.75 0 1 0 1.342.67ZM9 11a1 1 0 1 1-2 0 1 1 0 0 1 2 0Z" />
+    </svg>
+  );
+}
 function SettingsIcon({ className }) {
   return (
     <svg className={className} viewBox="0 0 16 16" fill="currentColor">
@@ -69,25 +123,34 @@ function SettingsIcon({ className }) {
 
 const navStructure = [
   {
-    section: 'Workflows',
+    section: 'Getting Started',
+    icon: BookIcon,
+    collapsible: true,
     items: [
-      { id: 'create-template', label: 'Create Template', icon: WorkflowIcon },
+      { id: 'guide-start',    label: 'Start Guide',           icon: RocketIcon },
+      { id: 'guide-token',    label: 'Setup API Token',       icon: KeyIcon },
+      { id: 'guide-create',   label: 'Create a Template',     icon: FilePlusIcon },
+      { id: 'guide-configs',  label: 'Category Configs',      icon: StackIcon },
+      { id: 'guide-verify',   label: 'Verify a Template',     icon: ShieldCheckIcon },
+      { id: 'guide-faq',      label: 'FAQ & Troubleshooting', icon: HelpIcon },
+    ],
+  },
+  {
+    section: 'Workflows',
+    icon: ZapIcon,
+    collapsible: true,
+    items: [
+      { id: 'create-template', label: 'Create Template', icon: FilePlusIcon },
     ],
   },
   {
     section: 'Category Config',
-    icon: DatabaseIcon,
+    icon: StackIcon,
     collapsible: true,
     items: [
-      { id: 'config-all', label: 'All Configs', icon: ListIcon },
-      { id: 'config-create', label: 'Create Config', icon: PlusCircleIcon },
-      { id: 'config-summary', label: 'Generate Summary', icon: SparkleIcon },
-    ],
-  },
-  {
-    section: 'System',
-    items: [
-      { id: 'settings', label: 'Settings', icon: SettingsIcon },
+      { id: 'config-all', label: 'All Configs', icon: RowsIcon },
+      { id: 'config-create', label: 'Create Config', icon: PlusIcon },
+      { id: 'config-summary', label: 'Generate Summary', icon: SparklesIcon },
     ],
   },
 ];
@@ -129,32 +192,14 @@ export default function Sidebar({ activePage, onNavigate, bearerToken, onTokenCh
     <aside className="bg-black border-r border-[#30363d] h-screen fixed top-0 left-0 flex flex-col" style={{ width }}>
       {/* Header */}
       <div className="px-4 pt-5 pb-4 border-b border-[#30363d]">
-        <div className="flex items-center gap-2 mb-3">
-          <h1 className="text-[15px] font-semibold text-[#e6edf3]">template-automation-v0</h1>
-          {deploymentScope && (
-            <span className={`text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded border ${
-              deploymentScope === 'prod'
-                ? 'text-[#f0883e] bg-[#f0883e]/10 border-[#f0883e]/30'
-                : 'text-[#3fb950] bg-[#3fb950]/10 border-[#3fb950]/30'
-            }`}>
-              {deploymentScope}
-            </span>
-          )}
+        <div className={deploymentScope === 'prod' ? '' : 'mb-3'}>
+          <img src="/emergent-logo.svg" alt="Emergent" className="h-[14px] mb-1.5 opacity-60" />
+          <h1 className="text-[16px] font-semibold text-[#e6edf3] leading-tight">Template Creator</h1>
         </div>
-        {/* Environment switcher */}
-        <div className="relative">
-          {deploymentScope === 'prod' ? (
-            /* Prod: static label, no switching */
-            <div className="flex items-center gap-2.5 w-full px-2 py-[7px] rounded-md text-[14px] font-medium text-[#e6edf3] bg-[#161b22] border border-[#30363d]">
-              <svg className="w-[16px] h-[16px] shrink-0 text-[#e6edf3]" viewBox="0 0 16 16" fill="currentColor">
-                <path d="M1.75 1h12.5c.966 0 1.75.784 1.75 1.75V5a1.75 1.75 0 0 1-1.75 1.75H1.75A1.75 1.75 0 0 1 0 5V2.75C0 1.784.784 1 1.75 1ZM1.5 2.75v2.5c0 .138.112.25.25.25h12.5a.25.25 0 0 0 .25-.25v-2.5a.25.25 0 0 0-.25-.25H1.75a.25.25 0 0 0-.25.25ZM1.75 7h12.5c.966 0 1.75.784 1.75 1.75v2.5A1.75 1.75 0 0 1 14.25 13H1.75A1.75 1.75 0 0 1 0 11.25v-2.5C0 7.784.784 7 1.75 7Zm-.25 1.75v2.5c0 .138.112.25.25.25h12.5a.25.25 0 0 0 .25-.25v-2.5a.25.25 0 0 0-.25-.25H1.75a.25.25 0 0 0-.25.25Z" />
-              </svg>
-              <span className="flex-1 text-left truncate">{activeEnv || 'prod'}</span>
-            </div>
-          ) : (
-            /* Dev: full dropdown with standard + ephemeral tabs */
-            <>
-              <button onClick={() => setShowEnvMenu(!showEnvMenu)}
+        {/* Environment switcher — only for dev (prod has nothing to switch) */}
+        {deploymentScope !== 'prod' && (
+          <div className="relative">
+            <button onClick={() => setShowEnvMenu(!showEnvMenu)}
                 data-testid="env-switcher-btn"
                 className="flex items-center gap-2.5 w-full px-2 py-[7px] rounded-md text-[14px] font-medium text-[#e6edf3] bg-[#161b22] border border-[#30363d] hover:bg-[#1c2128] transition-colors outline-none">
                 <svg className="w-[16px] h-[16px] shrink-0 text-[#e6edf3]" viewBox="0 0 16 16" fill="currentColor">
@@ -259,9 +304,8 @@ export default function Sidebar({ activePage, onNavigate, bearerToken, onTokenCh
                   </div>
                 </>
               )}
-            </>
-          )}
-        </div>
+          </div>
+        )}
       </div>
 
       {/* Navigation */}
@@ -276,16 +320,17 @@ export default function Sidebar({ activePage, onNavigate, bearerToken, onTokenCh
               {group.collapsible ? (
                 <button
                   onClick={() => toggleSection(group.section)}
-                  className={`w-full flex items-center gap-2 px-2 py-1 rounded-md text-[11px] font-bold uppercase tracking-wider transition-colors cursor-pointer mb-1 ${
-                    sectionActive ? 'text-[#58a6ff]' : 'text-[#8b949e] hover:text-[#e6edf3]'
+                  className={`w-full flex items-center gap-2.5 px-2 py-1.5 rounded-md text-[14px] font-semibold transition-colors cursor-pointer mb-1 ${
+                    sectionActive ? 'text-[#58a6ff]' : 'text-[#c9d1d9] hover:text-[#e6edf3]'
                   }`}>
-                  {group.icon && <group.icon className="w-4 h-4" />}
+                  {group.icon && <group.icon className="w-4 h-4 shrink-0" />}
                   <span className="flex-1 text-left">{group.section}</span>
-                  <ChevronIcon className="w-3.5 h-3.5" open={isOpen} />
+                  <ChevronIcon className="w-3.5 h-3.5 opacity-70" open={isOpen} />
                 </button>
               ) : (
-                <div className="text-[11px] font-bold text-[#484f58] uppercase tracking-wider px-2 mb-1">
-                  {group.section}
+                <div className="flex items-center gap-2.5 px-2 py-1.5 text-[14px] font-semibold text-[#c9d1d9] mb-1">
+                  {group.icon && <group.icon className="w-4 h-4 shrink-0" />}
+                  <span>{group.section}</span>
                 </div>
               )}
 
@@ -297,9 +342,7 @@ export default function Sidebar({ activePage, onNavigate, bearerToken, onTokenCh
                     key={item.id}
                     onClick={() => onNavigate(item.id)}
                     data-testid={`nav-${item.id}`}
-                    className={`w-full flex items-center gap-2.5 py-[7px] rounded-md text-[14px] transition-all cursor-pointer mb-[2px] ${
-                      group.collapsible ? 'pl-7 pr-3' : 'px-2'
-                    } ${isActive
+                    className={`w-full flex items-center gap-2.5 py-[7px] px-2 rounded-md text-[14px] transition-all cursor-pointer mb-[2px] ${isActive
                       ? 'bg-[#161b22] text-[#e6edf3] font-medium border border-[#30363d]'
                       : 'text-[#8b949e] hover:bg-[#161b22] hover:text-[#e6edf3] border border-transparent'
                     }`}
@@ -314,8 +357,19 @@ export default function Sidebar({ activePage, onNavigate, bearerToken, onTokenCh
         })}
       </nav>
 
-      {/* API Token status — click to go to Settings */}
+      {/* Footer: Settings + API Token */}
       <div className="px-3 py-3 border-t border-[#30363d]">
+        <button
+          onClick={() => onNavigate('settings')}
+          data-testid="nav-settings"
+          className={`w-full flex items-center gap-2.5 px-2 py-[7px] rounded-md text-[14px] transition-colors cursor-pointer border mb-[2px] ${
+            activePage === 'settings'
+              ? 'bg-[#161b22] text-[#e6edf3] font-medium border-[#30363d]'
+              : 'text-[#8b949e] hover:bg-[#161b22] hover:text-[#e6edf3] border-transparent'
+          }`}>
+          <SettingsIcon className={`w-[16px] h-[16px] shrink-0 ${activePage === 'settings' ? 'text-[#e6edf3]' : 'text-[#6e7681]'}`} />
+          <span className="flex-1 text-left">Settings</span>
+        </button>
         <button
           onClick={() => onNavigate('settings')}
           data-testid="api-token-btn"
