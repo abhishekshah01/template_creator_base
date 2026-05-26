@@ -94,20 +94,11 @@ ENVCORE_URL = os.environ.get("ENVCORE_URL", _cfg["envcore_url"])
 DB_DSN = os.environ.get("DB_DSN", _cfg["db_dsn"])
 PAUSE_URL = os.environ.get("PAUSE_URL", _cfg["pause_url"])
 
-# --- Dev VM (template creation via `gcloud compute ssh`) ---
-VM_HOST = os.environ.get("VM_HOST", "emergent-dev-vm-anshul")
-VM_ZONE = os.environ.get("VM_ZONE", "us-central1-a")
-
 # --- Template defaults (scope-aware) ---
 _SCOPE_BUCKETS = {
     "dev":  {"source": "dev-snapshots-restic",  "dest": "emergent-dev-template-restic"},
     "prod": {"source": "prod-snapshots-restic", "dest": "emergent-template-restic"},
 }
-RESTIC_PASSWORD = (
-    os.environ.get("RESTIC_PASSWORD")
-    or os.environ.get(f"{DEPLOYMENT_SCOPE.upper()}_RESTIC_PASSWORD")
-    or "test123"
-)
 SOURCE_BUCKET = (
     os.environ.get("SOURCE_BUCKET")
     or os.environ.get(f"{DEPLOYMENT_SCOPE.upper()}_RESTIC_SOURCE_BUCKET")
@@ -119,8 +110,30 @@ DEST_BUCKET = (
     or _SCOPE_BUCKETS[DEPLOYMENT_SCOPE]["dest"]
 )
 
-# --- Script path on the VM ---
-TEMPLATE_SCRIPT_PATH = os.environ.get(
-    "TEMPLATE_SCRIPT_PATH",
-    "/home/sritam_emergent_sh/create_template_gcs.sh"
-)
+# --- Composer / Airflow DAG trigger (template creation) ---
+# Currently only available for dev + eph environments. Empty in prod = button disabled.
+COMPOSER_DAG_TRIGGER_URL = os.environ.get("COMPOSER_DAG_TRIGGER_URL", "")
+
+# OIDC token audience for Composer's IAP. Defaults to the scheme+host of the
+# trigger URL (what Composer expects). Override via env if Composer rejects.
+def _default_oidc_audience() -> str:
+    if not COMPOSER_DAG_TRIGGER_URL:
+        return ""
+    try:
+        scheme, rest = COMPOSER_DAG_TRIGGER_URL.split("://", 1)
+        return f"{scheme}://{rest.split('/', 1)[0]}"
+    except ValueError:
+        return COMPOSER_DAG_TRIGGER_URL
+
+OIDC_AUDIENCE = os.environ.get("OIDC_AUDIENCE", "") or _default_oidc_audience()
+
+# Notification mode for DAG completion:
+#   "poll"    – backend polls Composer dagRuns endpoint (works locally, default)
+#   "webhook" – Composer POSTs back to TEMPLATE_JOB_WEBHOOK_BASE_URL (needs public URL)
+#   "both"    – send webhook_url AND poll as fallback
+TEMPLATE_JOB_NOTIFY_MODE = os.environ.get("TEMPLATE_JOB_NOTIFY_MODE", "poll")
+TEMPLATE_JOB_WEBHOOK_BASE_URL = os.environ.get("TEMPLATE_JOB_WEBHOOK_BASE_URL", "")
+
+# --- MongoDB (job status persistence) ---
+MONGO_URL = os.environ.get("MONGO_URL", "mongodb://localhost:27017/template_automation")
+DB_NAME = os.environ.get("DB_NAME", "template_automation")

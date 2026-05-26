@@ -9,16 +9,24 @@ import asyncio
 import json
 import re
 import subprocess
+import uuid
+from datetime import datetime, timezone
 
 import httpx
-from fastapi import FastAPI, HTTPException
+from fastapi import BackgroundTasks, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from motor.motor_asyncio import AsyncIOMotorClient
 from pydantic import BaseModel
 
 import config
 
 # Async HTTP client — does NOT block the event loop
 _client = httpx.AsyncClient(follow_redirects=True)
+
+# MongoDB (for template-job status persistence)
+_mongo = AsyncIOMotorClient(config.MONGO_URL)
+_db = _mongo[config.DB_NAME]
+template_jobs = _db["template_jobs"]
 
 app = FastAPI(title="template-automation-v0")
 
@@ -48,6 +56,17 @@ class CreateTemplateRequest(BaseModel):
     job_id: str
     user_id: str
     template_name: str
+
+class TemplateJobCallback(BaseModel):
+    """Body Composer POSTs when a DAG run finishes (webhook mode).
+
+    Field names follow the conventional Airflow callback payload; backend is
+    tolerant to extra keys.
+    """
+    state: str = ""           # "success" | "failed" | other Airflow states
+    dag_run_id: str = ""
+    gcs_path: str = ""
+    error: str = ""
 
 class EnvVarsRequest(BaseModel):
     job_id: str
@@ -665,51 +684,297 @@ async def pause_job(req: JobRequest):
     }
 
 
-@app.post("/api/create-template")
-async def create_template(req: CreateTemplateRequest):
-    """Run the template creation script on the dev VM via `gcloud compute ssh`.
+# ---------------------------------------------------------------------------
+# Template creation — async via Composer DAG
+# ---------------------------------------------------------------------------
+# Sync gcloud-SSH flow was replaced with a Cloud Composer DAG trigger.
+# Backend writes status to MongoDB; frontend polls GET /api/template-job/{id}.
+#
+# Notify modes (config.TEMPLATE_JOB_NOTIFY_MODE):
+#   poll    – backend polls Composer dagRuns endpoint (default, works locally)
+#   webhook – Composer POSTs to /api/template-job/{id}/callback (needs public URL)
+#   both    – send webhook_url + poll as fallback
+# Switching modes is a .env change only — handler / status / callback wiring
+# is identical across modes.
 
-    Relies on the caller's local gcloud auth (`gcloud auth login`).
+TERMINAL_DAG_STATES = {"success", "failed"}
+POLL_INTERVAL_S = 5
+POLL_MAX_DURATION_S = 30 * 60  # 30 min hard ceiling
+
+
+def _utcnow():
+    return datetime.now(timezone.utc)
+
+
+def _build_status_url(dag_run_id: str) -> str:
+    return f"{config.COMPOSER_DAG_TRIGGER_URL.rstrip('/')}/{dag_run_id}"
+
+
+# OIDC token cache. Tokens are ~1h valid; refresh proactively at 50min.
+_OIDC_CACHE = {"token": "", "expires_at": 0.0}
+_OIDC_CACHE_TTL = 50 * 60
+_oidc_lock = asyncio.Lock()
+
+
+async def _get_oidc_token() -> str:
+    """Mint a Google OIDC token via `gcloud auth print-identity-token`.
+
+    Cached to avoid spawning gcloud on every poll tick. Swap to
+    `google.oauth2.id_token.fetch_id_token(Request(), audience=...)` once
+    a service account is available.
     """
-    # Sanitize inputs
+    now = asyncio.get_event_loop().time()
+    if _OIDC_CACHE["token"] and _OIDC_CACHE["expires_at"] > now:
+        return _OIDC_CACHE["token"]
+
+    async with _oidc_lock:
+        now = asyncio.get_event_loop().time()
+        if _OIDC_CACHE["token"] and _OIDC_CACHE["expires_at"] > now:
+            return _OIDC_CACHE["token"]
+
+        cmd = ["gcloud", "auth", "print-identity-token"]
+        if config.OIDC_AUDIENCE:
+            cmd.append(f"--audiences={config.OIDC_AUDIENCE}")
+        try:
+            proc = await asyncio.create_subprocess_exec(
+                *cmd,
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE,
+            )
+            stdout, stderr = await proc.communicate()
+        except FileNotFoundError:
+            raise HTTPException(500, "gcloud CLI not found. Install Google Cloud SDK and run `gcloud auth login`.")
+
+        if proc.returncode != 0:
+            raise HTTPException(
+                500,
+                f"Failed to mint OIDC token via gcloud: {stderr.decode()[:300]}. "
+                "Run `gcloud auth login` and retry.",
+            )
+        token = stdout.decode().strip()
+        if not token:
+            raise HTTPException(500, "gcloud returned empty OIDC token")
+
+        _OIDC_CACHE["token"] = token
+        _OIDC_CACHE["expires_at"] = now + _OIDC_CACHE_TTL
+        return token
+
+
+async def _poll_dag_run(dag_run_id: str):
+    """Poll Composer for a DAG run until terminal state, updating Mongo each tick.
+
+    Runs as a FastAPI BackgroundTask. Survives transient network/5xx errors;
+    bails after POLL_MAX_DURATION_S without a terminal state.
+    """
+    status_url = _build_status_url(dag_run_id)
+    deadline = asyncio.get_event_loop().time() + POLL_MAX_DURATION_S
+
+    while True:
+        if asyncio.get_event_loop().time() > deadline:
+            await template_jobs.update_one(
+                {"dag_run_id": dag_run_id},
+                {"$set": {
+                    "status": "timeout",
+                    "error": f"Polling exceeded {POLL_MAX_DURATION_S}s without terminal state",
+                    "updated_at": _utcnow(),
+                    "finished_at": _utcnow(),
+                }},
+            )
+            return
+
+        await asyncio.sleep(POLL_INTERVAL_S)
+
+        try:
+            token = await _get_oidc_token()
+            resp = await _client.get(
+                status_url,
+                headers={"Authorization": f"Bearer {token}"},
+                timeout=15,
+            )
+        except Exception as e:
+            print(f"[poll {dag_run_id}] transient error: {e}")
+            continue
+
+        if resp.status_code >= 400:
+            print(f"[poll {dag_run_id}] {resp.status_code}: {resp.text[:200]}")
+            if resp.status_code in (401, 403):
+                _OIDC_CACHE["token"] = ""
+                await template_jobs.update_one(
+                    {"dag_run_id": dag_run_id},
+                    {"$set": {
+                        "status": "failed",
+                        "error": "OIDC token rejected by Composer while polling DAG status",
+                        "updated_at": _utcnow(),
+                        "finished_at": _utcnow(),
+                    }},
+                )
+                return
+            continue
+
+        try:
+            data = resp.json()
+        except Exception:
+            continue
+
+        state = (data.get("state") or "").lower()
+        update = {"status": state or "running", "updated_at": _utcnow()}
+
+        if state in TERMINAL_DAG_STATES:
+            update["finished_at"] = _utcnow()
+            if state == "success":
+                # In poll mode the DAG doesn't tell us where it wrote; derive
+                # the canonical destination. Webhook mode overrides this with
+                # the real gcs_path from the DAG's callback payload.
+                doc = await template_jobs.find_one({"dag_run_id": dag_run_id})
+                if doc and not doc.get("gcs_path"):
+                    update["gcs_path"] = f"gs://{config.DEST_BUCKET}/{doc.get('template_name', '')}"
+
+        await template_jobs.update_one(
+            {"dag_run_id": dag_run_id},
+            {"$set": update},
+        )
+
+        if state in TERMINAL_DAG_STATES:
+            return
+
+
+@app.post("/api/create-template")
+async def create_template(req: CreateTemplateRequest, background_tasks: BackgroundTasks):
+    """Trigger the template_publish Composer DAG.
+
+    Returns immediately with a record containing dag_run_id + status="queued".
+    Frontend polls GET /api/template-job/{dag_run_id} until status is terminal.
+    """
     if not re.match(r"^[a-zA-Z0-9_-]+$", req.template_name):
         raise HTTPException(400, "Template name must be alphanumeric with hyphens/underscores only")
+    if not config.COMPOSER_DAG_TRIGGER_URL:
+        raise HTTPException(
+            503,
+            "Template creation is not available in this environment. "
+            "The Composer DAG trigger is only configured for dev / ephemeral deployments.",
+        )
 
-    script_command = (
-        f"sudo docker run --rm --network=host "
-        f"-v {config.TEMPLATE_SCRIPT_PATH}:/run_template.sh:ro "
-        f"alpine:latest sh -c '"
-        f"apk add --no-cache restic git bash curl sed >/dev/null 2>&1 && "
-        f"bash /run_template.sh "
-        f'--source-repo "gs:{config.SOURCE_BUCKET}:/users/{req.user_id}" '
-        f"--template-name {req.template_name} "
-        f"--restic-password {config.RESTIC_PASSWORD} "
-        f"--job-id {req.job_id} "
-        f"--dest-bucket {config.DEST_BUCKET}"
-        f"'"
-    )
+    oidc_token = await _get_oidc_token()
 
-    gcloud_cmd = [
-        "gcloud", "compute", "ssh", config.VM_HOST,
-        f"--zone={config.VM_ZONE}",
-        "--command", script_command,
-    ]
+    # Client-generated dag_run_id so we can write the Mongo record before
+    # triggering — avoids a race where a webhook arrives before our insert.
+    dag_run_id = f"tc-{uuid.uuid4().hex[:12]}"
+
+    webhook_url = ""
+    if (
+        config.TEMPLATE_JOB_NOTIFY_MODE in ("webhook", "both")
+        and config.TEMPLATE_JOB_WEBHOOK_BASE_URL
+    ):
+        webhook_url = (
+            f"{config.TEMPLATE_JOB_WEBHOOK_BASE_URL.rstrip('/')}"
+            f"/api/template-job/{dag_run_id}/callback"
+        )
+
+    payload = {
+        "dag_run_id": dag_run_id,
+        "conf": {
+            "job_id": req.job_id,
+            "user_id": req.user_id,
+            "template_name": req.template_name,
+            "webhook_url": webhook_url,
+            "source_bucket": config.SOURCE_BUCKET,
+            "dest_bucket": config.DEST_BUCKET,
+        },
+    }
+
+    record = {
+        "dag_run_id": dag_run_id,
+        "job_id": req.job_id,
+        "user_id": req.user_id,
+        "template_name": req.template_name,
+        "status": "queued",
+        "gcs_path": "",
+        "error": "",
+        "started_at": _utcnow(),
+        "updated_at": _utcnow(),
+        "finished_at": None,
+    }
+    await template_jobs.insert_one(record)
 
     try:
-        result = subprocess.run(
-            gcloud_cmd,
-            capture_output=True, text=True, timeout=300,
+        resp = await _client.post(
+            config.COMPOSER_DAG_TRIGGER_URL,
+            json=payload,
+            headers={
+                "Content-Type": "application/json",
+                "Authorization": f"Bearer {oidc_token}",
+            },
+            timeout=30,
         )
-        return {
-            "status": "success" if result.returncode == 0 else "failed",
-            "gcs_path": f"gs://{config.DEST_BUCKET}/{req.template_name}",
-            "output": result.stdout[-2000:],
-            "error": result.stderr[-1000:] if result.returncode != 0 else "",
-        }
-    except subprocess.TimeoutExpired:
-        raise HTTPException(504, "Template creation timed out (5 min limit)")
-    except FileNotFoundError:
-        raise HTTPException(500, "gcloud CLI not found. Install Google Cloud SDK and run `gcloud auth login`.")
+    except Exception as e:
+        await template_jobs.update_one(
+            {"dag_run_id": dag_run_id},
+            {"$set": {"status": "failed", "error": str(e), "finished_at": _utcnow()}},
+        )
+        raise HTTPException(502, f"Failed to reach Composer: {e}")
+
+    if resp.status_code >= 400:
+        body = resp.text[:500]
+        await template_jobs.update_one(
+            {"dag_run_id": dag_run_id},
+            {"$set": {"status": "failed", "error": body, "finished_at": _utcnow()}},
+        )
+        raise HTTPException(resp.status_code, f"Composer rejected the DAG trigger: {body}")
+
+    # If Composer returned a different dag_run_id (e.g. version ignored ours),
+    # update the record and use it for polling.
+    try:
+        composer_id = (resp.json() or {}).get("dag_run_id", "")
+    except Exception:
+        composer_id = ""
+    if composer_id and composer_id != dag_run_id:
+        await template_jobs.update_one(
+            {"dag_run_id": dag_run_id},
+            {"$set": {"dag_run_id": composer_id, "updated_at": _utcnow()}},
+        )
+        dag_run_id = composer_id
+
+    if config.TEMPLATE_JOB_NOTIFY_MODE in ("poll", "both"):
+        background_tasks.add_task(_poll_dag_run, dag_run_id)
+
+    record.pop("_id", None)
+    record["dag_run_id"] = dag_run_id
+    return record
+
+
+@app.get("/api/template-job/{dag_run_id}")
+async def get_template_job(dag_run_id: str):
+    """Return current status of a template-creation DAG run (frontend polls this)."""
+    doc = await template_jobs.find_one({"dag_run_id": dag_run_id}, {"_id": 0})
+    if not doc:
+        raise HTTPException(404, f"No template job found for dag_run_id={dag_run_id}")
+    return doc
+
+
+@app.post("/api/template-job/{dag_run_id}/callback")
+async def template_job_callback(dag_run_id: str, body: TemplateJobCallback):
+    """Webhook target Composer POSTs to when the DAG finishes.
+
+    Endpoint is wired now but only USED when TEMPLATE_JOB_NOTIFY_MODE includes
+    "webhook" + TEMPLATE_JOB_WEBHOOK_BASE_URL is set. Switching from poll to
+    webhook is a .env change — no code changes here.
+    """
+    state = (body.state or "").lower()
+    update = {"status": state or "success", "updated_at": _utcnow()}
+    if state in TERMINAL_DAG_STATES or not state:
+        update["finished_at"] = _utcnow()
+    if body.gcs_path:
+        update["gcs_path"] = body.gcs_path
+    if body.error:
+        update["error"] = body.error
+
+    result = await template_jobs.update_one(
+        {"dag_run_id": dag_run_id},
+        {"$set": update},
+    )
+    if result.matched_count == 0:
+        raise HTTPException(404, f"No template job found for dag_run_id={dag_run_id}")
+    return {"status": "ok"}
 
 
 @app.post("/api/env-variables")
