@@ -654,19 +654,54 @@ export default function CreateTemplate({ bearerToken = "" }) {
       }
     }
 
-    setCreateSub({ status: 'loading', message: 'Creating template (this may take a few minutes)...', time: '' });
+    setCreateSub({ status: 'loading', message: 'Triggering template DAG...', time: '' });
     setGcsPath('');
     setLogOutput('');
+
+    let triggered;
     try {
-      const data = await api.createTemplate(jobId, userId, templateName);
-      if (data.output) setLogOutput(data.output);
-      if (data.status === 'success') {
-        setGcsPath(data.gcs_path);
-        setCreateSub({ status: 'success', message: 'Template created successfully!', time: now() });
-        completeStep(4);
-      } else {
-        setLogOutput(data.error || data.output);
-        setCreateSub({ status: 'error', message: 'Template creation failed -- check log output', time: now() });
+      triggered = await api.createTemplate(jobId, userId, templateName);
+    } catch (e) {
+      setCreateSub({ status: 'error', message: e.message, time: now() });
+      setLoading('');
+      return;
+    }
+
+    const dagRunId = triggered.dag_run_id;
+    setCreateSub({
+      status: 'loading',
+      message: `Template DAG queued (run ${dagRunId}). Polling for completion...`,
+      time: now(),
+    });
+
+    // Poll backend every 5s until terminal. Backend internally either polls
+    // Composer or waits for the webhook callback — same status endpoint either way.
+    const TERMINAL = new Set(['success', 'failed', 'timeout']);
+    try {
+      while (true) {
+        await new Promise(r => setTimeout(r, 5000));
+        const job = await api.getTemplateJob(dagRunId);
+        if (TERMINAL.has(job.status)) {
+          if (job.status === 'success') {
+            setGcsPath(job.gcs_path || '');
+            setCreateSub({ status: 'success', message: 'Template created successfully!', time: now() });
+            completeStep(4);
+          } else {
+            if (job.error) setLogOutput(job.error);
+            setCreateSub({
+              status: 'error',
+              message: `Template DAG ${job.status}${job.error ? ` — ${job.error.slice(0, 200)}` : ''}`,
+              time: now(),
+            });
+          }
+          break;
+        }
+        // Mid-flight status update (queued → running)
+        setCreateSub({
+          status: 'loading',
+          message: `Template DAG ${job.status || 'running'} (run ${dagRunId})...`,
+          time: '',
+        });
       }
     } catch (e) {
       setCreateSub({ status: 'error', message: e.message, time: now() });
