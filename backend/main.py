@@ -98,6 +98,12 @@ class TemplateSummaryRequest(BaseModel):
 class BearerTokenRequest(BaseModel):
     bearer_token: str
 
+class TemplateSectionRequest(BaseModel):
+    bearer_token: str
+    lang: str = "en"
+    page: int = 1
+    pageSize: int = 20
+
 class GetCategoryConfigRequest(BaseModel):
     config_id: str
     bearer_token: str
@@ -1055,6 +1061,38 @@ async def list_category_configs(req: BearerTokenRequest):
         return data
 
     return data
+
+
+@app.post("/api/v2/template-section")
+async def template_section(req: TemplateSectionRequest):
+    """Paginated template list + featured templates via the agent service API.
+
+    Replaces /api/list-category-configs. Forwards GET to
+    {API_URL}/api/v1/template-section?lang=&page=&pageSize= with the user's
+    Bearer token. Returns the upstream response (typically a dict with
+    `templates`, `featured`, and `pagination` fields) as-is.
+    """
+    url = f"{config.API_URL}/api/v1/template-section"
+    params = {"lang": req.lang, "page": req.page, "pageSize": req.pageSize}
+    headers = {
+        "Content-Type": "application/json",
+        "Authorization": f"Bearer {req.bearer_token}",
+    }
+    try:
+        resp = await _client.get(url, params=params, headers=headers, timeout=15)
+    except Exception as e:
+        raise HTTPException(502, f"Failed to reach template-section API: {e}")
+
+    if resp.status_code >= 400:
+        body = resp.text[:500]
+        if "<html" in body.lower():
+            raise HTTPException(resp.status_code, f"Upstream returned {resp.status_code}. The environment may not have this endpoint available.")
+        raise HTTPException(resp.status_code, f"Failed to fetch template section: {body}")
+
+    try:
+        return resp.json()
+    except Exception:
+        raise HTTPException(502, "Upstream returned non-JSON body")
 
 
 @app.post("/api/category-config")

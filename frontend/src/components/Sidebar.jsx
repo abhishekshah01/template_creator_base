@@ -149,6 +149,7 @@ const navStructure = [
     collapsible: true,
     items: [
       { id: 'config-all', label: 'All Configs', icon: RowsIcon },
+      { id: 'config-featured', label: 'Featured Templates', icon: SparklesIcon },
       { id: 'config-create', label: 'Create Config', icon: PlusIcon },
       { id: 'config-summary', label: 'Generate Summary', icon: SparklesIcon },
     ],

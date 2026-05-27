@@ -3,7 +3,7 @@ import Sidebar from './components/Sidebar';
 import CreateTemplate from './components/CreateTemplate';
 import TemplateSummary from './components/TemplateSummary';
 import UpdateCategory from './components/UpdateCategory';
-import { ConfigAll, ConfigCreate, ConfigSummary, ConfigDetailPage } from './components/CategoryConfig';
+import { ConfigAll, ConfigCreate, ConfigSummary, ConfigDetailPage, ConfigFeatured } from './components/CategoryConfig';
 import Settings from './components/Settings';
 import Banner from './components/Banner';
 import Guide from './components/Guide';
@@ -189,6 +189,8 @@ export default function App() {
           cachedConfigs={cachedConfigs} refreshConfigs={refreshConfigs} markConfigsStale={markConfigsStale} envConfig={envConfig} />;
       case 'config-summary':
         return <ConfigSummary bearerToken={bearerToken} onTokenExpired={() => updateToken('')} />;
+      case 'config-featured':
+        return <ConfigFeatured onNavigate={navigate} bearerToken={bearerToken} onTokenExpired={() => updateToken('')} activeEnv={activeEnv} />;
       case 'config-detail':
         return <ConfigDetailPage configId={configDetailId} onNavigate={navigate} bearerToken={bearerToken} onTokenExpired={() => updateToken('')} />;
       case 'config-edit':

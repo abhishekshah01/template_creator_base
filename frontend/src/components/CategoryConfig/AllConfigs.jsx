@@ -1,34 +1,7 @@
 import { useState, useEffect } from 'react';
 import { usePersistedState } from '../../hooks/usePersistedState';
+import { api, AuthError } from '../../api';
 import Banner from '../Banner';
-
-// --- Helpers ---
-function timeAgo(dateStr) {
-  if (!dateStr) return '';
-  const now = new Date();
-  const date = new Date(dateStr);
-  const seconds = Math.floor((now - date) / 1000);
-  if (seconds < 60) return 'just now';
-  const minutes = Math.floor(seconds / 60);
-  if (minutes < 60) return `${minutes}m ago`;
-  const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `${hours}h ago`;
-  const days = Math.floor(hours / 24);
-  if (days < 7) return `${days}d ago`;
-  if (days < 30) return `${Math.floor(days / 7)}w ago`;
-  if (days < 365) return `${Math.floor(days / 30)}mo ago`;
-  return `${Math.floor(days / 365)}y ago`;
-}
-
-function extractSummaryPreview(config) {
-  if (!config?.app_summary) return null;
-  let text = config.app_summary;
-  text = text.replace(/<\/?analysis>/g, '');
-  text = text.replace(/\*\*[^*]+\*\*/g, '');
-  text = text.replace(/\n/g, ' ').replace(/\s+/g, ' ').trim();
-  if (text.length > 120) text = text.slice(0, 120).trim() + '...';
-  return text || null;
-}
 
 // --- Icons (GitHub Octicons 16px) ---
 function SearchIcon({ className }) {
@@ -97,22 +70,22 @@ function Label({ text, color }) {
   );
 }
 
-export default function AllConfigs({ onNavigate, bearerToken, onTokenExpired, cachedConfigs = [], configsStale, configsLoaded, refreshConfigs, activeEnv = '', envError, previousEnv, onSwitchBack, envSwitching, setEnvError }) {
+export default function AllConfigs({ onNavigate, bearerToken, onTokenExpired, activeEnv = '', envError, previousEnv, onSwitchBack, envSwitching, setEnvError }) {
+  const [templates, setTemplates] = useState([]);
+  const [total, setTotal] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [isAuthError, setIsAuthError] = useState(false);
   const [search, setSearch] = usePersistedState('aC.search', '');
-  const [tab, setTab] = usePersistedState('aC.tab', 'all');
-  const [sortBy, setSortBy] = usePersistedState('aC.sortBy', 'newest');
+  const [sortBy, setSortBy] = usePersistedState('aC.sortBy', 'default');
   const [showSortMenu, setShowSortMenu] = useState(false);
-  const [hasSummaryFilter, setHasSummaryFilter] = usePersistedState('aC.hasSummaryFilter', false);
-  const [showLabelMenu, setShowLabelMenu] = useState(false);
   const [currentPage, setCurrentPage] = usePersistedState('aC.page', 1);
-  const [pageSize, setPageSize] = usePersistedState('aC.pageSize', 25);
+  const [pageSize, setPageSize] = usePersistedState('aC.pageSize', 20);
 
-  const configs = cachedConfigs;
+  const configs = templates;
 
-  async function handleRefresh() {
+  async function handleRefresh(page = currentPage) {
     if (!bearerToken) {
       setError('Set your API token in the sidebar first.');
       setIsAuthError(false);
@@ -122,13 +95,18 @@ export default function AllConfigs({ onNavigate, bearerToken, onTokenExpired, ca
     setError(null);
     setIsAuthError(false);
     try {
-      await refreshConfigs();
+      const data = await api.getTemplateSection({ page, pageSize, bearerToken });
+      const list = Array.isArray(data?.templates) ? data.templates : [];
+      setTemplates(list);
+      const pg = data?.pagination || {};
+      setTotal(typeof pg.total === 'number' ? pg.total : list.length);
+      setTotalPages(typeof pg.totalPages === 'number' ? pg.totalPages : 1);
     } catch (e) {
-      if (e.name === 'AuthError') {
+      if (e instanceof AuthError || e.name === 'AuthError') {
         setIsAuthError(true);
         setError('Authentication failed — API token is expired or invalid.');
+        onTokenExpired?.();
       } else {
-        // Escalate to global env error so the empty state shows consistently
         setEnvError?.(`Could not reach "${activeEnv}". The environment may not exist or its services are not running.`);
       }
     } finally {
@@ -136,89 +114,60 @@ export default function AllConfigs({ onNavigate, bearerToken, onTokenExpired, ca
     }
   }
 
-  // Clear local auth error when env changes
+  // Clear local auth error when env changes; reset to page 1
   useEffect(() => {
     setError(null);
     setIsAuthError(false);
+    setCurrentPage(1);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeEnv]);
 
-  // Fetch only when cache is empty AND not during an env switch (App.jsx handles that fetch)
+  // Fetch on page/pageSize/env/token change (skip during env switch)
   useEffect(() => {
-    if (bearerToken && !configsLoaded && !envError && !envSwitching) handleRefresh();
-  }, [configsLoaded, bearerToken, envError, envSwitching]); // eslint-disable-line react-hooks/exhaustive-deps
+    if (bearerToken && !envError && !envSwitching) handleRefresh(currentPage);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentPage, pageSize, bearerToken, activeEnv, envError, envSwitching]);
 
   // Close menus on outside click
   useEffect(() => {
-    function handleClick() { setShowSortMenu(false); setShowLabelMenu(false); }
-    if (showSortMenu || showLabelMenu) {
+    function handleClick() { setShowSortMenu(false); }
+    if (showSortMenu) {
       document.addEventListener('click', handleClick);
       return () => document.removeEventListener('click', handleClick);
     }
-  }, [showSortMenu, showLabelMenu]);
+  }, [showSortMenu]);
 
-  // Filter
+  // Filter (client-side, current page only)
   let filtered = configs.filter(c => {
-    if (tab === 'internal' && !c.internal) return false;
-    if (tab === 'public' && !c.public) return false;
-    if (hasSummaryFilter && !c.config?.app_summary) return false;
-    if (search) {
-      const q = search.toLowerCase();
-      return (c.template_name?.toLowerCase().includes(q)) ||
-        (c.summary_source_job_id?.toLowerCase().includes(q)) ||
-        ((c.config?.app_summary || '').toLowerCase().includes(q));
-    }
-    return true;
+    if (!search) return true;
+    const q = search.toLowerCase();
+    return (c.name?.toLowerCase().includes(q)) ||
+      (c.slug?.toLowerCase().includes(q)) ||
+      (c.description?.toLowerCase().includes(q)) ||
+      (c.categoryLabel?.toLowerCase().includes(q));
   });
 
   // Sort
   const SORT_OPTIONS = [
-    { key: 'newest', label: 'Newest' },
-    { key: 'oldest', label: 'Oldest' },
-    { key: 'recently-updated', label: 'Recently updated' },
+    { key: 'default', label: 'Default order' },
     { key: 'name-asc', label: 'Name (A-Z)' },
     { key: 'name-desc', label: 'Name (Z-A)' },
-    { key: 'env-vars', label: 'Most env vars' },
+    { key: 'category', label: 'Category' },
   ];
 
   filtered = [...filtered].sort((a, b) => {
     switch (sortBy) {
-      case 'newest': return new Date(b.created_at || 0) - new Date(a.created_at || 0);
-      case 'oldest': return new Date(a.created_at || 0) - new Date(b.created_at || 0);
-      case 'recently-updated': return new Date(b.updated_at || 0) - new Date(a.updated_at || 0);
-      case 'name-asc': return (a.template_name || '').localeCompare(b.template_name || '');
-      case 'name-desc': return (b.template_name || '').localeCompare(a.template_name || '');
-      case 'env-vars': return Object.keys(b.default_env_config || {}).length - Object.keys(a.default_env_config || {}).length;
+      case 'name-asc': return (a.name || a.slug || '').localeCompare(b.name || b.slug || '');
+      case 'name-desc': return (b.name || b.slug || '').localeCompare(a.name || a.slug || '');
+      case 'category': return (a.category || '').localeCompare(b.category || '');
       default: return 0;
     }
   });
 
-  const allCount = configs.length;
-  const internalCount = configs.filter(c => c.internal).length;
-  const publicCount = configs.filter(c => c.public).length;
-
-  // Pagination math
+  // Server-side pagination: render the current page's items (filtered/sorted client-side).
+  // Numbered pagination removed — we don't have a total from the API yet.
   const PAGE_SIZE_OPTIONS = [10, 25, 50, 100];
-  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
-  const safePage = Math.min(Math.max(1, currentPage), totalPages);
-  const startIdx = (safePage - 1) * pageSize;
-  const endIdx = Math.min(startIdx + pageSize, filtered.length);
-  const paginated = filtered.slice(startIdx, endIdx);
-
-  // Clamp current page when filters shrink the result set
-  useEffect(() => {
-    if (currentPage > totalPages) setCurrentPage(1);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [totalPages]);
-
-  function getPageNumbers(current, total) {
-    if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
-    const pages = [1];
-    if (current > 3) pages.push('…');
-    for (let p = Math.max(2, current - 1); p <= Math.min(total - 1, current + 1); p++) pages.push(p);
-    if (current < total - 2) pages.push('…');
-    pages.push(total);
-    return pages;
-  }
+  const paginated = filtered;
 
   // If env is broken, show clean empty state
   if (envError) {
@@ -288,31 +237,9 @@ export default function AllConfigs({ onNavigate, bearerToken, onTokenExpired, ca
           </div>
         </div>
 
-        {/* Labels filter */}
-        <div className="relative">
-          <button onClick={e => { e.stopPropagation(); setShowLabelMenu(!showLabelMenu); setShowSortMenu(false); }}
-            className={`flex items-center gap-1.5 px-3 py-[6px] bg-[#21262d] border border-[#30363d] rounded-md text-[14px] text-[#c9d1d9] hover:bg-[#30363d] hover:border-[#484f58] transition-colors ${hasSummaryFilter ? '!border-[#8957e5] !text-[#bc8cff]' : ''}`}>
-            <TagIcon className="w-4 h-4" />
-            Labels
-            <ChevronDown className="w-4 h-4 text-[#484f58]" />
-          </button>
-          {showLabelMenu && (
-            <div className="absolute right-0 top-10 z-20 w-[220px] bg-[#161b22] border border-[#30363d] rounded-md shadow-xl overflow-hidden" onClick={e => e.stopPropagation()}>
-              <div className="px-3 py-2 text-[12px] font-semibold text-[#e6edf3] border-b border-[#21262d]">Filter by label</div>
-              <button onClick={() => { setHasSummaryFilter(!hasSummaryFilter); setShowLabelMenu(false); }}
-                className="w-full flex items-center gap-2.5 px-3 py-2.5 text-[14px] text-[#c9d1d9] hover:bg-[#1f6feb]/10 transition-colors text-left">
-                <div className={`w-[16px] h-[16px] rounded-[3px] flex items-center justify-center shrink-0 ${hasSummaryFilter ? 'bg-[#1f6feb]' : 'border border-[#484f58]'}`}>
-                  {hasSummaryFilter && <svg className="w-3 h-3 text-white" viewBox="0 0 16 16" fill="currentColor"><path d="M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0Z" /></svg>}
-                </div>
-                <Label text="has summary" color="purple" />
-              </button>
-            </div>
-          )}
-        </div>
-
         {/* Sort */}
         <div className="relative">
-          <button onClick={e => { e.stopPropagation(); setShowSortMenu(!showSortMenu); setShowLabelMenu(false); }}
+          <button onClick={e => { e.stopPropagation(); setShowSortMenu(!showSortMenu); }}
             className="flex items-center gap-1.5 px-3 py-[6px] bg-[#21262d] border border-[#30363d] rounded-md text-[14px] text-[#c9d1d9] hover:bg-[#30363d] hover:border-[#484f58] transition-colors">
             Sort
             <ChevronDown className="w-4 h-4 text-[#484f58]" />
@@ -342,7 +269,7 @@ export default function AllConfigs({ onNavigate, bearerToken, onTokenExpired, ca
       </div>
 
       {/* Active filter chips */}
-      {(search || hasSummaryFilter || sortBy !== 'newest') && (
+      {(search || sortBy !== 'default') && (
         <div className="flex items-center gap-2 mb-3 flex-wrap">
           {search && (
             <span className="inline-flex items-center gap-1 text-[12px] px-2 py-[2px] rounded-full bg-[#1f6feb]/10 text-[#58a6ff] border border-[#1f6feb]/25">
@@ -350,19 +277,13 @@ export default function AllConfigs({ onNavigate, bearerToken, onTokenExpired, ca
               <button onClick={() => setSearch('')} className="hover:text-white ml-0.5">×</button>
             </span>
           )}
-          {hasSummaryFilter && (
-            <span className="inline-flex items-center gap-1 text-[12px] px-2 py-[2px] rounded-full bg-[#8957e5]/10 text-[#bc8cff] border border-[#8957e5]/25">
-              has summary
-              <button onClick={() => setHasSummaryFilter(false)} className="hover:text-white ml-0.5">×</button>
-            </span>
-          )}
-          {sortBy !== 'newest' && (
+          {sortBy !== 'default' && (
             <span className="inline-flex items-center gap-1 text-[12px] px-2 py-[2px] rounded-full bg-[#21262d] text-[#8b949e] border border-[#30363d]">
               Sort: {SORT_OPTIONS.find(o => o.key === sortBy)?.label}
-              <button onClick={() => setSortBy('newest')} className="hover:text-white ml-0.5">×</button>
+              <button onClick={() => setSortBy('default')} className="hover:text-white ml-0.5">×</button>
             </span>
           )}
-          <button onClick={() => { setSearch(''); setHasSummaryFilter(false); setSortBy('newest'); setTab('all'); }}
+          <button onClick={() => { setSearch(''); setSortBy('default'); }}
             className="text-[12px] text-[#58a6ff] hover:underline">
             Clear all
           </button>
@@ -371,30 +292,16 @@ export default function AllConfigs({ onNavigate, bearerToken, onTokenExpired, ca
 
       {/* Issues-style table */}
       <div className="border border-[#30363d] rounded-md overflow-hidden bg-[#010409]">
-        {/* Tab header — matches GitHub "Open / Closed" bar */}
+        {/* Header bar — total count + refresh */}
         <div className="flex items-center px-4 py-3 bg-[#161b22] border-b border-[#30363d]">
-          <div className="flex items-center gap-4 flex-1">
-            {[
-              { key: 'all', label: 'All', count: allCount, icon: ListUnorderedIcon },
-              { key: 'internal', label: 'Internal', count: internalCount },
-              { key: 'public', label: 'Public', count: publicCount },
-            ].map(t => (
-              <button key={t.key} onClick={() => setTab(t.key)}
-                className={`flex items-center gap-1.5 text-[14px] transition-colors ${
-                  tab === t.key ? 'font-semibold text-[#e6edf3]' : 'text-[#8b949e] hover:text-[#e6edf3]'
-                }`}>
-                {t.icon && <t.icon className="w-4 h-4" />}
-                {t.label}
-                <span className={`text-[12px] px-[6px] py-[1px] rounded-full leading-tight ${
-                  tab === t.key ? 'bg-[#e6edf3] text-[#0d1117] font-semibold' : 'bg-[#21262d] text-[#8b949e]'
-                }`}>{t.count}</span>
-              </button>
-            ))}
+          <div className="flex items-center gap-2 flex-1">
+            <ListUnorderedIcon className="w-4 h-4 text-[#8b949e]" />
+            <span className="text-[14px] font-semibold text-[#e6edf3]">All Templates</span>
+            <span className="text-[12px] px-[6px] py-[1px] rounded-full bg-[#21262d] text-[#8b949e] leading-tight">{total}</span>
           </div>
-          {/* Refresh in header */}
-          <button onClick={handleRefresh} disabled={loading}
+          <button onClick={() => handleRefresh()} disabled={loading}
             data-testid="refresh-configs-btn"
-            title="Refresh configs"
+            title="Refresh"
             className="text-[14px] text-[#8b949e] hover:text-[#e6edf3] transition-colors disabled:opacity-50">
             <svg className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M1 4v6h6" /><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10" />
@@ -413,44 +320,47 @@ export default function AllConfigs({ onNavigate, bearerToken, onTokenExpired, ca
           </>
         )}
 
-        {/* Config rows — GitHub issue row style */}
-        {!loading && !envSwitching && paginated.map(config => {
-          const envVarCount = Object.keys(config.default_env_config || {}).length;
-          const preview = extractSummaryPreview(config.config);
-          const hasSummary = !!config.config?.app_summary;
-
+        {/* Template rows — GitHub issue row style */}
+        {!loading && !envSwitching && paginated.map(t => {
+          const displayName = t.name || t.slug || 'Untitled';
+          const desc = t.description || '';
+          const featureCount = t.features?.length || 0;
+          const pageCount = t.pages?.length || 0;
           return (
-            <div key={config.id}
-              data-testid={`config-row-${config.id}`}
-              className="flex items-start px-4 py-2.5 border-b border-[#21262d] last:border-b-0">
+            <div key={t.id}
+              data-testid={`config-row-${t.id}`}
+              className="flex items-start gap-3 px-4 py-2.5 border-b border-[#21262d] last:border-b-0">
+              {/* Thumbnail */}
+              {t.heroImage ? (
+                <img src={t.heroImage} alt="" loading="lazy"
+                  className="w-12 h-12 rounded-md object-cover bg-[#0d1117] shrink-0 mt-0.5 border border-[#21262d]" />
+              ) : (
+                <div className="w-12 h-12 rounded-md bg-gradient-to-br from-[#161b22] to-[#0d1117] shrink-0 mt-0.5 border border-[#21262d]" />
+              )}
+
               <div className="flex-1 min-w-0">
-                {/* Title line + labels */}
+                {/* Title + labels */}
                 <div className="flex items-center gap-2 flex-wrap">
-                  <button onClick={() => onNavigate('config-detail', config.id)}
-                    className="text-[16px] font-semibold text-[#e6edf3] hover:text-[#58a6ff] hover:underline transition-colors leading-snug text-left">
-                    {config.template_name}
+                  <button onClick={() => onNavigate('config-detail', t.id)}
+                    className="text-[15px] font-semibold text-[#e6edf3] hover:text-[#58a6ff] hover:underline transition-colors leading-snug text-left">
+                    {displayName}
                   </button>
-                  {config.internal && <Label text="internal" color="blue" />}
-                  {config.public && <Label text="public" color="green" />}
-                  {hasSummary && <Label text="has summary" color="purple" />}
-                  {config.summary_source_job_id && <Label text={config.summary_source_job_id} color="gray" />}
+                  {t.categoryLabel && <Label text={t.categoryLabel} color="blue" />}
+                  {t.category && !t.categoryLabel && <Label text={t.category} color="gray" />}
                 </div>
 
-                {/* Summary preview */}
-                {preview && (
-                  <div className="text-[14px] text-[#8b949e] mt-0.5 truncate max-w-[700px] leading-snug">
-                    {preview}
+                {/* Description */}
+                {desc && (
+                  <div className="text-[13px] text-[#8b949e] mt-0.5 truncate max-w-[700px] leading-snug">
+                    {desc}
                   </div>
                 )}
 
-                {/* Meta line — matches GitHub "#1234 · opened 3 days ago" */}
-                <div className="text-[12px] text-[#8b949e] mt-1 leading-snug">
-                  <span>#{config.id}</span>
-                  {config.created_at && <span> · created {timeAgo(config.created_at)}</span>}
-                  {config.updated_at && config.created_at !== config.updated_at && (
-                    <span> · updated {timeAgo(config.updated_at)}</span>
-                  )}
-                  <span> · {envVarCount} env var{envVarCount !== 1 ? 's' : ''}</span>
+                {/* Meta line */}
+                <div className="text-[12px] text-[#8b949e] mt-1 leading-snug truncate">
+                  <span className="font-mono">{t.slug || `#${t.id?.slice(0, 8)}`}</span>
+                  {featureCount > 0 && <span> · {featureCount} feature{featureCount !== 1 ? 's' : ''}</span>}
+                  {pageCount > 0 && <span> · {pageCount} page{pageCount !== 1 ? 's' : ''}</span>}
                 </div>
               </div>
             </div>
@@ -462,55 +372,77 @@ export default function AllConfigs({ onNavigate, bearerToken, onTokenExpired, ca
           <div className="text-center py-16">
             <SearchIcon className="w-6 h-6 text-[#484f58] mx-auto mb-3" />
             <div className="text-[20px] font-semibold text-[#e6edf3] mb-1">No results matched your search.</div>
-            <div className="text-[14px] text-[#8b949e]">Try a different search term or filter.</div>
+            <div className="text-[14px] text-[#8b949e]">Try a different search term or clear the filter.</div>
           </div>
         )}
 
         {!loading && !envSwitching && configs.length === 0 && !error && bearerToken && (
           <div className="text-center py-16">
             <DatabaseIcon className="w-6 h-6 text-[#484f58] mx-auto mb-3" />
-            <div className="text-[20px] font-semibold text-[#e6edf3] mb-1">No configs yet.</div>
-            <div className="text-[14px] text-[#8b949e]">Create your first category config to get started.</div>
+            <div className="text-[20px] font-semibold text-[#e6edf3] mb-1">No templates yet.</div>
+            <div className="text-[14px] text-[#8b949e]">Create your first template to get started.</div>
           </div>
         )}
       </div>
 
-      {!loading && filtered.length > 0 && (
+      {!loading && templates.length > 0 && (
         <div className="mt-4 flex items-center justify-between gap-3 flex-wrap">
           <div className="text-[12px] text-[#8b949e]">
-            Showing <span className="font-semibold text-[#e6edf3]">{startIdx + 1}–{endIdx}</span> of{' '}
-            <span className="font-semibold text-[#e6edf3]">{filtered.length}</span>
-            {filtered.length !== allCount && <span className="text-[#484f58]"> (filtered from {allCount})</span>}
+            {(() => {
+              const start = (currentPage - 1) * pageSize + 1;
+              const end = Math.min(currentPage * pageSize, total);
+              return (
+                <>
+                  Showing <span className="font-semibold text-[#e6edf3]">{start}–{end}</span>{' '}
+                  of <span className="font-semibold text-[#e6edf3]">{total}</span>
+                  {filtered.length !== templates.length && (
+                    <span className="text-[#484f58]"> (filtered to {filtered.length} on this page)</span>
+                  )}
+                </>
+              );
+            })()}
           </div>
 
-          {totalPages > 1 && (
-            <div className="flex items-center gap-1">
-              <button
-                onClick={() => setCurrentPage(safePage - 1)}
-                disabled={safePage === 1}
-                className="px-3 py-[5px] text-[14px] text-[#c9d1d9] bg-[#21262d] border border-[#30363d] rounded-md hover:bg-[#30363d] hover:border-[#484f58] disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-[#21262d] disabled:hover:border-[#30363d] transition-colors">
-                Previous
-              </button>
-              {getPageNumbers(safePage, totalPages).map((p, i) => p === '…' ? (
-                <span key={`ellipsis-${i}`} className="px-2 text-[14px] text-[#484f58] select-none">…</span>
+          <div className="flex items-center gap-1">
+            <button
+              onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+              disabled={currentPage === 1}
+              className="px-3 py-[5px] text-[14px] text-[#c9d1d9] bg-[#21262d] border border-[#30363d] rounded-md hover:bg-[#30363d] hover:border-[#484f58] disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-[#21262d] disabled:hover:border-[#30363d] transition-colors">
+              Previous
+            </button>
+            {(() => {
+              const pages = [];
+              const max = totalPages;
+              const cur = currentPage;
+              if (max <= 7) {
+                for (let p = 1; p <= max; p++) pages.push(p);
+              } else {
+                pages.push(1);
+                if (cur > 3) pages.push('…');
+                for (let p = Math.max(2, cur - 1); p <= Math.min(max - 1, cur + 1); p++) pages.push(p);
+                if (cur < max - 2) pages.push('…');
+                pages.push(max);
+              }
+              return pages.map((p, i) => p === '…' ? (
+                <span key={`e-${i}`} className="px-2 text-[14px] text-[#484f58] select-none">…</span>
               ) : (
                 <button key={p} onClick={() => setCurrentPage(p)}
                   className={`min-w-[32px] px-2 py-[5px] text-[14px] rounded-md border transition-colors ${
-                    p === safePage
+                    p === currentPage
                       ? 'bg-[#1f6feb] text-white border-[#1f6feb] font-semibold'
                       : 'bg-[#21262d] text-[#c9d1d9] border-[#30363d] hover:bg-[#30363d] hover:border-[#484f58]'
                   }`}>
                   {p}
                 </button>
-              ))}
-              <button
-                onClick={() => setCurrentPage(safePage + 1)}
-                disabled={safePage === totalPages}
-                className="px-3 py-[5px] text-[14px] text-[#c9d1d9] bg-[#21262d] border border-[#30363d] rounded-md hover:bg-[#30363d] hover:border-[#484f58] disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-[#21262d] disabled:hover:border-[#30363d] transition-colors">
-                Next
-              </button>
-            </div>
-          )}
+              ));
+            })()}
+            <button
+              onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+              disabled={currentPage >= totalPages}
+              className="px-3 py-[5px] text-[14px] text-[#c9d1d9] bg-[#21262d] border border-[#30363d] rounded-md hover:bg-[#30363d] hover:border-[#484f58] disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-[#21262d] disabled:hover:border-[#30363d] transition-colors">
+              Next
+            </button>
+          </div>
 
           <div className="flex items-center gap-2">
             <span className="text-[12px] text-[#8b949e]">Per page</span>

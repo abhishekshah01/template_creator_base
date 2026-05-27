@@ -1,11 +1,17 @@
 import AllConfigs from './AllConfigs';
 import ConfigDetail from './ConfigDetail';
 import CreateConfig from './CreateConfig';
+import FeaturedTemplates from './FeaturedTemplates';
 import TemplateSummary from '../TemplateSummary';
 
 export function ConfigAll({ onNavigate, bearerToken, onTokenExpired, cachedConfigs, configsStale, configsLoaded, refreshConfigs }) {
   return <AllConfigs onNavigate={onNavigate} bearerToken={bearerToken} onTokenExpired={onTokenExpired}
     cachedConfigs={cachedConfigs} configsStale={configsStale} configsLoaded={configsLoaded} refreshConfigs={refreshConfigs} />;
+}
+
+export function ConfigFeatured({ onNavigate, bearerToken, onTokenExpired, activeEnv }) {
+  return <FeaturedTemplates onNavigate={onNavigate} bearerToken={bearerToken}
+    onTokenExpired={onTokenExpired} activeEnv={activeEnv} />;
 }
 
 export function ConfigCreate({ bearerToken, onTokenExpired, onNavigate, editConfigId, cachedConfigs, refreshConfigs, markConfigsStale }) {

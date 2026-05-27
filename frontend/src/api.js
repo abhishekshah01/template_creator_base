@@ -73,6 +73,8 @@ export const api = {
     request('/template-summary', { template_name: templateName, bearer_token: bearerToken }),
   listCategoryConfigs: (bearerToken) =>
     request('/list-category-configs', { bearer_token: bearerToken }),
+  getTemplateSection: ({ lang = 'en', page = 1, pageSize = 20, bearerToken } = {}) =>
+    request('/v2/template-section', { lang, page, pageSize, bearer_token: bearerToken || '' }),
   getEnvironments: () => fetch('/api/environments').then(r => r.json()),
   switchEnvironment: (envName) => request('/switch-environment', { env_name: envName }),
   getCategoryConfig: (configId, bearerToken) =>
