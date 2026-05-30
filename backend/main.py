@@ -962,3 +962,31 @@ async def asset_upload_url(req: AssetUploadUrlRequest):
         raise HTTPException(resp.status_code, f"upload-url failed: {resp.text[:500]}")
 
     return resp.json()
+
+
+class AssetDeleteRequest(BaseModel):
+    bucket: str
+    key: str
+    bearer_token: str
+
+
+@app.post("/api/asset/delete")
+async def asset_delete(req: AssetDeleteRequest):
+    """Proxy: delete an S3 object via app-service."""
+    try:
+        resp = await _client.post(
+            f"{S3_TEMPLATES_URL}/delete",
+            json={"bucket": req.bucket, "key": req.key},
+            headers={
+                "Content-Type": "application/json",
+                "Authorization": f"Bearer {req.bearer_token}",
+            },
+            timeout=15,
+        )
+    except Exception as e:
+        raise HTTPException(502, f"Failed to reach S3 delete API: {e}")
+
+    if resp.status_code >= 400:
+        raise HTTPException(resp.status_code, f"delete failed: {resp.text[:500]}")
+
+    return resp.json()
