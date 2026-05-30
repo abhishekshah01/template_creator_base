@@ -40,6 +40,62 @@ async function request(path, body) {
 
 export { AuthError };
 
+// ---------------------------------------------------------------------------
+// Admin auth gate (AWS S3 Navigate UI)
+// ---------------------------------------------------------------------------
+
+const ADMIN_TOKEN_KEY = 'admin_auth_token';
+
+export class AdminAuthError extends Error {
+  constructor(message) {
+    super(message);
+    this.name = 'AdminAuthError';
+  }
+}
+
+export const adminAuth = {
+  getToken: () => localStorage.getItem(ADMIN_TOKEN_KEY) || '',
+  setToken: (t) => {
+    if (t) localStorage.setItem(ADMIN_TOKEN_KEY, t);
+    else localStorage.removeItem(ADMIN_TOKEN_KEY);
+  },
+
+  login: async (username, password) => {
+    const resp = await fetch('/api/admin-auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, password }),
+    });
+    const text = await resp.text();
+    let data; try { data = JSON.parse(text); } catch { data = { message: text }; }
+    if (!resp.ok) throw new AdminAuthError(data.detail || data.message || 'Login failed');
+    localStorage.setItem(ADMIN_TOKEN_KEY, data.token);
+    return data;
+  },
+
+  me: async () => {
+    const token = localStorage.getItem(ADMIN_TOKEN_KEY) || '';
+    const resp = await fetch('/api/admin-auth/me', { headers: { 'X-Admin-Token': token } });
+    if (resp.status === 401) {
+      localStorage.removeItem(ADMIN_TOKEN_KEY);
+      throw new AdminAuthError('Session expired');
+    }
+    if (!resp.ok) throw new AdminAuthError(`me failed (${resp.status})`);
+    return resp.json();
+  },
+
+  logout: async () => {
+    const token = localStorage.getItem(ADMIN_TOKEN_KEY) || '';
+    try {
+      await fetch('/api/admin-auth/logout', {
+        method: 'POST',
+        headers: { 'X-Admin-Token': token },
+      });
+    } catch { /* swallow */ }
+    localStorage.removeItem(ADMIN_TOKEN_KEY);
+  },
+};
+
 export const api = {
   getJobInfo: (jobId, bearerToken) => request('/job-info', { job_id: jobId, bearer_token: bearerToken || '' }),
   getCollections: (jobId) => request('/collections', { job_id: jobId }),
