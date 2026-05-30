@@ -919,3 +919,46 @@ async def update_category_config(req: UpdateCategoryConfigRequest):
         data = {"message": resp.text}
 
     return {"status": "success", "response": data}
+
+
+# ---------------------------------------------------------------------------
+# S3 / CloudFront proxies — forward to app-service /internal/s3-templates/*
+# ---------------------------------------------------------------------------
+
+S3_TEMPLATES_URL = f"{config.API_URL}/internal/s3-templates"
+
+
+class AssetUploadUrlRequest(BaseModel):
+    bucket: str
+    key: str
+    content_type: str = "application/octet-stream"
+    expiration_minutes: int = 15
+    bearer_token: str
+
+
+@app.post("/api/asset/upload-url")
+async def asset_upload_url(req: AssetUploadUrlRequest):
+    """Proxy: mint a presigned S3 PUT URL via app-service."""
+    payload = {
+        "bucket": req.bucket,
+        "key": req.key,
+        "content_type": req.content_type,
+        "expiration_minutes": req.expiration_minutes,
+    }
+    try:
+        resp = await _client.post(
+            f"{S3_TEMPLATES_URL}/upload-url",
+            json=payload,
+            headers={
+                "Content-Type": "application/json",
+                "Authorization": f"Bearer {req.bearer_token}",
+            },
+            timeout=15,
+        )
+    except Exception as e:
+        raise HTTPException(502, f"Failed to reach S3 upload-url API: {e}")
+
+    if resp.status_code >= 400:
+        raise HTTPException(resp.status_code, f"upload-url failed: {resp.text[:500]}")
+
+    return resp.json()
