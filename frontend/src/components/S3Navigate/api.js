@@ -40,6 +40,11 @@ export const s3api = {
   // Mutate
   uploadFile: (file, bucket, key) =>
     api.uploadAsset(file, bucket, key, bearer(), CLOUDFRONT_URL),
+  // Mint a raw presigned PUT URL — used by ObjectList's XHR-based upload-with-progress flow.
+  uploadUrl: async (bucket, key, contentType = '') => {
+    const data = await api.getAssetUploadUrl(bucket, key, contentType, bearer());
+    return { url: data.upload_url, headers: data.headers, public_url: data.public_url };
+  },
   deleteObject: (bucket, key) => api.deleteAsset(bucket, key, bearer()),
   invalidateCache: (path) =>
     api.invalidateAsset(CLOUDFRONT_DISTRIBUTION_ID, path, bearer()),
