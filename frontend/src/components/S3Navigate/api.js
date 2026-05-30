@@ -51,3 +51,6 @@ export const s3api = {
 };
 
 export { BUCKET, CLOUDFRONT_URL, CLOUDFRONT_DISTRIBUTION_ID };
+
+// Re-export so existing components can `import { getToken } from './api'`
+export const getToken = () => adminAuth.getToken();
