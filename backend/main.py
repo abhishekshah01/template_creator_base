@@ -1021,3 +1021,21 @@ async def asset_invalidate(req: AssetInvalidateRequest):
         raise HTTPException(resp.status_code, f"invalidate failed: {resp.text[:500]}")
 
     return resp.json()
+
+
+@app.post("/api/asset/buckets")
+async def asset_list_buckets(req: BearerTokenRequest):
+    """Proxy: list all S3 buckets via app-service."""
+    try:
+        resp = await _client.get(
+            f"{S3_TEMPLATES_URL}/buckets",
+            headers={"Authorization": f"Bearer {req.bearer_token}"},
+            timeout=15,
+        )
+    except Exception as e:
+        raise HTTPException(502, f"Failed to reach S3 buckets API: {e}")
+
+    if resp.status_code >= 400:
+        raise HTTPException(resp.status_code, f"list-buckets failed: {resp.text[:500]}")
+
+    return resp.json()
