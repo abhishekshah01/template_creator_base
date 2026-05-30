@@ -990,3 +990,34 @@ async def asset_delete(req: AssetDeleteRequest):
         raise HTTPException(resp.status_code, f"delete failed: {resp.text[:500]}")
 
     return resp.json()
+
+
+class AssetInvalidateRequest(BaseModel):
+    cloudfront_distribution_id: str
+    path: str
+    bearer_token: str
+
+
+@app.post("/api/asset/invalidate")
+async def asset_invalidate(req: AssetInvalidateRequest):
+    """Proxy: create a CloudFront invalidation via app-service."""
+    try:
+        resp = await _client.post(
+            f"{S3_TEMPLATES_URL}/invalidate",
+            json={
+                "cloudfront_distribution_id": req.cloudfront_distribution_id,
+                "path": req.path,
+            },
+            headers={
+                "Content-Type": "application/json",
+                "Authorization": f"Bearer {req.bearer_token}",
+            },
+            timeout=30,
+        )
+    except Exception as e:
+        raise HTTPException(502, f"Failed to reach CloudFront invalidate API: {e}")
+
+    if resp.status_code >= 400:
+        raise HTTPException(resp.status_code, f"invalidate failed: {resp.text[:500]}")
+
+    return resp.json()
