@@ -1039,3 +1039,33 @@ async def asset_list_buckets(req: BearerTokenRequest):
         raise HTTPException(resp.status_code, f"list-buckets failed: {resp.text[:500]}")
 
     return resp.json()
+
+
+class AssetListObjectsRequest(BaseModel):
+    bucket: str
+    prefix: str = ""
+    continuation_token: str | None = None
+    page_size: int = 300
+    bearer_token: str
+
+
+@app.post("/api/asset/objects")
+async def asset_list_objects(req: AssetListObjectsRequest):
+    """Proxy: list folders + files under a bucket/prefix via app-service."""
+    params = {"bucket": req.bucket, "prefix": req.prefix, "page_size": req.page_size}
+    if req.continuation_token:
+        params["continuation_token"] = req.continuation_token
+    try:
+        resp = await _client.get(
+            f"{S3_TEMPLATES_URL}/objects",
+            params=params,
+            headers={"Authorization": f"Bearer {req.bearer_token}"},
+            timeout=15,
+        )
+    except Exception as e:
+        raise HTTPException(502, f"Failed to reach S3 objects API: {e}")
+
+    if resp.status_code >= 400:
+        raise HTTPException(resp.status_code, f"list-objects failed: {resp.text[:500]}")
+
+    return resp.json()
