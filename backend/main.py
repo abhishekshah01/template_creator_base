@@ -9,7 +9,7 @@ clients/, pydantic models in schemas/.
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from routers import asset, category_config, env, job, template
+from routers import admin_auth, asset, category_config, env, job, template
 
 app = FastAPI(title="template-automation-v0")
 
@@ -32,3 +32,4 @@ app.include_router(job.router)
 app.include_router(template.router)
 app.include_router(category_config.router)
 app.include_router(asset.router)
+app.include_router(admin_auth.router)
