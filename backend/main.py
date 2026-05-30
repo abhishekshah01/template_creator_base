@@ -1069,3 +1069,28 @@ async def asset_list_objects(req: AssetListObjectsRequest):
         raise HTTPException(resp.status_code, f"list-objects failed: {resp.text[:500]}")
 
     return resp.json()
+
+
+class AssetObjectMetaRequest(BaseModel):
+    bucket: str
+    key: str
+    bearer_token: str
+
+
+@app.post("/api/asset/object-meta")
+async def asset_object_meta(req: AssetObjectMetaRequest):
+    """Proxy: HeadObject metadata for a single S3 key via app-service."""
+    try:
+        resp = await _client.get(
+            f"{S3_TEMPLATES_URL}/object/meta",
+            params={"bucket": req.bucket, "key": req.key},
+            headers={"Authorization": f"Bearer {req.bearer_token}"},
+            timeout=10,
+        )
+    except Exception as e:
+        raise HTTPException(502, f"Failed to reach S3 object-meta API: {e}")
+
+    if resp.status_code >= 400:
+        raise HTTPException(resp.status_code, f"object-meta failed: {resp.text[:500]}")
+
+    return resp.json()
