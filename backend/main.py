@@ -1094,3 +1094,39 @@ async def asset_object_meta(req: AssetObjectMetaRequest):
         raise HTTPException(resp.status_code, f"object-meta failed: {resp.text[:500]}")
 
     return resp.json()
+
+
+class AssetDownloadUrlRequest(BaseModel):
+    bucket: str
+    key: str
+    expiration_minutes: int = 5
+    download: bool = False
+    bearer_token: str
+
+
+@app.post("/api/asset/download-url")
+async def asset_download_url(req: AssetDownloadUrlRequest):
+    """Proxy: mint a short-lived presigned S3 GET URL via app-service."""
+    payload = {
+        "bucket": req.bucket,
+        "key": req.key,
+        "expiration_minutes": req.expiration_minutes,
+        "download": req.download,
+    }
+    try:
+        resp = await _client.post(
+            f"{S3_TEMPLATES_URL}/download-url",
+            json=payload,
+            headers={
+                "Content-Type": "application/json",
+                "Authorization": f"Bearer {req.bearer_token}",
+            },
+            timeout=15,
+        )
+    except Exception as e:
+        raise HTTPException(502, f"Failed to reach S3 download-url API: {e}")
+
+    if resp.status_code >= 400:
+        raise HTTPException(resp.status_code, f"download-url failed: {resp.text[:500]}")
+
+    return resp.json()
