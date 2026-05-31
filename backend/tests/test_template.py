@@ -1,8 +1,7 @@
 """Tests for the Composer-DAG-backed template flow.
 
-Muted for now — the Composer DAG integration isn't functional in any
-environment yet, so end-to-end exercising would just chase a moving
-target. Re-enable once the DAG is reachable + we settle the contract.
+Mocks composer_client, the template_jobs Mongo collection, and the polling
+background task — no real Composer / Mongo / asyncio.sleep traffic.
 """
 
 from datetime import datetime, timezone
@@ -10,8 +9,6 @@ from types import SimpleNamespace
 from unittest.mock import AsyncMock
 
 import pytest
-
-pytestmark = pytest.mark.skip(reason="Composer DAG flow not yet functional; tests deferred")
 
 
 @pytest.fixture
@@ -22,6 +19,20 @@ def mock_composer(monkeypatch):
     monkeypatch.setattr(composer_client, "get_oidc_token", AsyncMock(return_value="tok-xyz"))
     composer_client.clear_oidc_cache()
     return composer_client
+
+
+@pytest.fixture(autouse=True)
+def stub_poll_background(monkeypatch):
+    """Replace the polling background task with a no-op so TestClient doesn't hang.
+
+    The real `_poll_dag_run` runs `asyncio.sleep(5)` and would block the
+    request handler in TestClient's BackgroundTasks runner.
+    """
+
+    async def _noop(dag_run_id):
+        return None
+
+    monkeypatch.setattr("services.template_service._poll_dag_run", _noop)
 
 
 @pytest.fixture
@@ -135,8 +146,13 @@ def test_composer_4xx_marks_run_failed(client, mock_composer, monkeypatch, patch
     assert "bad payload" in stored["error"]
 
 
-def test_composer_returns_alt_dag_run_id(client, mock_composer, monkeypatch, patch_template_jobs):
-    """If Composer responds with its own dag_run_id, the record gets re-keyed."""
+def test_composer_alt_dag_run_id_stored_in_composer_field(
+    client,
+    mock_composer,
+    monkeypatch,
+    patch_template_jobs,
+):
+    """If Composer responds with its own id, our local key stays stable; composer_dag_run_id is stored alongside."""
     monkeypatch.setattr("config.COMPOSER_DAG_TRIGGER_URL", "http://composer.test/dag")
     monkeypatch.setattr(
         mock_composer,
@@ -149,8 +165,10 @@ def test_composer_returns_alt_dag_run_id(client, mock_composer, monkeypatch, pat
         json={"job_id": "j-1", "user_id": "u-1", "template_name": "lumina"},
     )
     assert resp.status_code == 200
-    assert resp.json()["dag_run_id"] == "manual-id-42"
-    assert "manual-id-42" in patch_template_jobs.docs
+    local_id = resp.json()["dag_run_id"]
+    assert local_id.startswith("tc-")  # NOT "manual-id-42"
+    assert local_id in patch_template_jobs.docs
+    assert patch_template_jobs.docs[local_id]["composer_dag_run_id"] == "manual-id-42"
 
 
 # ---------------------------------------------------------------------------
@@ -179,14 +197,15 @@ def test_get_template_job_404_when_missing(client):
 # ---------------------------------------------------------------------------
 
 
-def test_callback_updates_record_to_success(client, patch_template_jobs):
+def test_callback_with_valid_secret_updates_record(client, patch_template_jobs):
     patch_template_jobs.docs["tc-abc"] = {
         "dag_run_id": "tc-abc",
+        "webhook_secret": "right-secret",
         "status": "running",
         "started_at": datetime.now(timezone.utc),
     }
     resp = client.post(
-        "/api/template-job/tc-abc/callback",
+        "/api/template-job/tc-abc/callback/right-secret",
         json={"state": "success", "gcs_path": "gs://bkt/lumina"},
     )
     assert resp.status_code == 200
@@ -194,9 +213,38 @@ def test_callback_updates_record_to_success(client, patch_template_jobs):
     assert patch_template_jobs.docs["tc-abc"]["gcs_path"] == "gs://bkt/lumina"
 
 
+def test_callback_wrong_secret_returns_403(client, patch_template_jobs):
+    patch_template_jobs.docs["tc-abc"] = {
+        "dag_run_id": "tc-abc",
+        "webhook_secret": "right-secret",
+        "status": "running",
+    }
+    resp = client.post(
+        "/api/template-job/tc-abc/callback/wrong-secret",
+        json={"state": "success"},
+    )
+    assert resp.status_code == 403
+    # State should NOT have been updated
+    assert patch_template_jobs.docs["tc-abc"]["status"] == "running"
+
+
+def test_callback_empty_state_marks_failed_not_success(client, patch_template_jobs):
+    patch_template_jobs.docs["tc-abc"] = {
+        "dag_run_id": "tc-abc",
+        "webhook_secret": "s",
+        "status": "running",
+    }
+    resp = client.post(
+        "/api/template-job/tc-abc/callback/s",
+        json={"state": ""},
+    )
+    assert resp.status_code == 200
+    assert patch_template_jobs.docs["tc-abc"]["status"] == "failed"
+
+
 def test_callback_404_when_record_missing(client):
     resp = client.post(
-        "/api/template-job/never-existed/callback",
+        "/api/template-job/never-existed/callback/whatever",
         json={"state": "success"},
     )
     assert resp.status_code == 404
