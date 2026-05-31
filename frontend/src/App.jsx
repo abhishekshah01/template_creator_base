@@ -5,6 +5,7 @@ import TemplateSummary from './components/TemplateSummary';
 import UpdateCategory from './components/UpdateCategory';
 import { ConfigAll, ConfigCreate, ConfigSummary, ConfigDetailPage } from './components/CategoryConfig';
 import Settings from './components/Settings';
+import S3Navigate from './components/S3Navigate';
 import Banner from './components/Banner';
 import { api } from './api';
 
@@ -169,6 +170,7 @@ export default function App() {
   }, [isDragging, sidebarWidth]);
 
   function renderPage() {
+    if (activePage === 's3') return <S3Navigate />;
     switch (activePage) {
       case 'create-template':
         return <CreateTemplate bearerToken={bearerToken} />;
