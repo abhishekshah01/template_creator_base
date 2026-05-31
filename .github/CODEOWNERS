@@ -1,0 +1,5 @@
+# Every PR auto-requests review from the listed owners.
+# See https://docs.github.com/articles/about-codeowners
+
+# Default owner for everything
+* @abhishekshah01

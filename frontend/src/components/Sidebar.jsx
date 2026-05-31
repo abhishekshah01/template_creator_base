@@ -59,6 +59,14 @@ function ChevronIcon({ className, open }) {
   );
 }
 
+function CloudIcon({ className }) {
+  return (
+    <svg className={className} viewBox="0 0 16 16" fill="currentColor">
+      <path d="M4.5 13.5A3.5 3.5 0 0 1 4 6.566 5 5 0 0 1 13.83 8H14a2.5 2.5 0 0 1 0 5h-1.5a.75.75 0 0 1 0-1.5H14a1 1 0 0 0 0-2h-.872a.75.75 0 0 1-.745-.661 3.5 3.5 0 0 0-6.95-.04.75.75 0 0 1-.668.625A2.001 2.001 0 0 0 4.5 12h1.75a.75.75 0 0 1 0 1.5H4.5Z" />
+    </svg>
+  );
+}
+
 function SettingsIcon({ className }) {
   return (
     <svg className={className} viewBox="0 0 16 16" fill="currentColor">
@@ -82,6 +90,14 @@ const navStructure = [
       { id: 'config-all', label: 'All Configs', icon: ListIcon },
       { id: 'config-create', label: 'Create Config', icon: PlusCircleIcon },
       { id: 'config-summary', label: 'Generate Summary', icon: SparkleIcon },
+    ],
+  },
+  {
+    section: 'Asset Management',
+    icon: CloudIcon,
+    collapsible: true,
+    items: [
+      { id: 's3', label: 'AWS S3 Navigate', icon: CloudIcon },
     ],
   },
   {
