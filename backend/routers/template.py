@@ -25,16 +25,17 @@ async def get_template_job(dag_run_id: str):
     return await template_service.get_template_job(dag_run_id)
 
 
-@router.post("/api/template-job/{dag_run_id}/callback")
-async def template_job_callback(dag_run_id: str, body: TemplateJobCallback):
+@router.post("/api/template-job/{dag_run_id}/callback/{secret}")
+async def template_job_callback(dag_run_id: str, secret: str, body: TemplateJobCallback):
     """Webhook target Composer POSTs to when the DAG finishes.
 
-    Only USED when TEMPLATE_JOB_NOTIFY_MODE includes "webhook" and
-    TEMPLATE_JOB_WEBHOOK_BASE_URL is set; otherwise the poll-mode path
-    already updates the Mongo record.
+    Authenticated via the per-job `secret` in the URL path — minted when the
+    job is created and only known to Composer (via conf.webhook_url) and our
+    Mongo record. Returns 403 if the secret doesn't match.
     """
     await template_service.apply_callback(
         dag_run_id=dag_run_id,
+        secret=secret,
         state=body.state,
         gcs_path=body.gcs_path,
         error=body.error,
