@@ -1,11 +1,11 @@
 """Request/response models for /api/admin-auth/*."""
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class AdminLoginRequest(BaseModel):
-    username: str
-    password: str
+    username: str = Field(min_length=1, max_length=128)
+    password: str = Field(min_length=1, max_length=256)
 
 
 class AdminSessionResponse(BaseModel):

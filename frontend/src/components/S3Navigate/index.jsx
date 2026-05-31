@@ -99,11 +99,12 @@ export default function S3Navigate() {
       let acc = '';
       parts.forEach((part, idx) => {
         acc += part + '/';
+        const targetPrefix = acc; // snapshot so the handler doesn't close over the loop variable
         const isLastBeforeObject = idx === parts.length - 1 && view === 'objects';
         c.push({
           label: part + '/',
           onClick: isLastBeforeObject ? undefined : (() => {
-            setPrefix(acc);
+            setPrefix(targetPrefix);
             setObjectKey(null);
             setView('objects');
           }),

@@ -28,8 +28,26 @@ def _get_creds() -> tuple[str, str]:
     return os.environ.get("ADMIN_USERNAME", ""), os.environ.get("ADMIN_PASSWORD", "")
 
 
+_DEFAULT_TTL_SECONDS = 24 * 60 * 60
+
+
 def _get_ttl_seconds() -> int:
-    return int(os.environ.get("ADMIN_SESSION_TTL_SECONDS", str(24 * 60 * 60)))
+    raw = os.environ.get("ADMIN_SESSION_TTL_SECONDS", "")
+    if not raw:
+        return _DEFAULT_TTL_SECONDS
+    try:
+        value = int(raw)
+    except ValueError:
+        raise HTTPException(
+            500,
+            f"Invalid ADMIN_SESSION_TTL_SECONDS={raw!r}: must be a positive integer.",
+        ) from None
+    if value < 60 or value > 7 * 24 * 60 * 60:
+        raise HTTPException(
+            500,
+            "ADMIN_SESSION_TTL_SECONDS must be between 60 seconds and 7 days.",
+        )
+    return value
 
 
 async def login(username: str, password: str) -> dict:

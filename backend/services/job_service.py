@@ -157,10 +157,15 @@ async def get_job_info(*, job_id: str, bearer_token: str) -> dict:
         except Exception as exc:
             pod_info = {"error": str(exc)}
 
-    pod_status = None
     pod_has_error = "error" in pod_info
-    is_running = pod_status in ("RUNNING", "POD_READY", "POD_RUNNING") and not pod_has_error
-    if pod_status is None and not pod_has_error:
+    pod_status = pod_info.get("status") or pod_info.get("state")
+    running_states = {"RUNNING", "POD_READY", "POD_RUNNING", "READY"}
+    if pod_has_error:
+        is_running = False
+    elif pod_status:
+        is_running = pod_status.upper() in running_states
+    else:
+        # envcore returned info but no explicit status — assume running
         is_running = True
 
     return {
