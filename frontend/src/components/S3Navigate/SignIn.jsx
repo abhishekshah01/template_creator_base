@@ -6,24 +6,30 @@ import AwsAlert from './AwsAlert';
 // Admin sign-in for AWS S3 Navigate. Layout mirrors the AWS IAM user sign-in
 // console: two-column hero, account/username/password fields, orange action.
 // Token is stored in localStorage (sliding 24h TTL on the backend).
+const REMEMBERED_USERNAME_KEY = 's3nav_remembered_username';
+
 export default function SignIn({ onSignedIn }) {
-  const [username, setUsername] = useState('');
+  const [username, setUsername] = useState(() => localStorage.getItem(REMEMBERED_USERNAME_KEY) || '');
   const [password, setPassword] = useState('');
   const [showPw, setShowPw] = useState(false);
-  const [remember, setRemember] = useState(true);
+  const [remember, setRemember] = useState(() => !!localStorage.getItem(REMEMBERED_USERNAME_KEY));
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
 
   async function handleSubmit(e) {
     e.preventDefault();
-    if (!username.trim() || !password) {
+    if (submitting) return;
+    const trimmed = username.trim();
+    if (!trimmed || !password) {
       setError('Username and password are required.');
       return;
     }
     setSubmitting(true);
     setError(null);
     try {
-      const data = await s3api.signIn(username.trim(), password);
+      const data = await s3api.signIn(trimmed, password);
+      if (remember) localStorage.setItem(REMEMBERED_USERNAME_KEY, trimmed);
+      else localStorage.removeItem(REMEMBERED_USERNAME_KEY);
       onSignedIn?.(data);
     } catch (err) {
       setError(err.message);
