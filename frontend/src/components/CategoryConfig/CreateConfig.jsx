@@ -627,7 +627,7 @@ export default function CreateConfig({ bearerToken, onTokenExpired, onNavigate, 
             theme={githubDark}
             extensions={[json(), editorSizingOverlay]}
             editable={false}
-            readOnly={true}
+            readOnly
             basicSetup={{
               lineNumbers: false,
               foldGutter: false,
