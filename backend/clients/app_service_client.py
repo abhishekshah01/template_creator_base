@@ -16,6 +16,12 @@ import config
 _client = httpx.AsyncClient(follow_redirects=True)
 
 
+async def aclose() -> None:
+    """Close the shared AsyncClient. Idempotent; safe to call on app shutdown."""
+    if not _client.is_closed:
+        await _client.aclose()
+
+
 def _headers(bearer_token: str, json_body: bool = True) -> dict:
     h = {"Authorization": f"Bearer {bearer_token}"}
     if json_body:
@@ -46,8 +52,8 @@ async def post(
     url = f"{config.API_URL}{path}"
     try:
         resp = await _client.post(url, json=json, headers=_headers(bearer_token), timeout=timeout)
-    except Exception as exc:
-        raise HTTPException(502, f"Failed to reach app-service ({path}): {exc}")
+    except httpx.HTTPError as exc:
+        raise HTTPException(502, f"Failed to reach app-service ({path}): {exc}") from exc
     _raise_for_status(resp, label or f"POST {path}")
     return resp.json()
 
@@ -68,8 +74,8 @@ async def get(
             headers=_headers(bearer_token, json_body=False),
             timeout=timeout,
         )
-    except Exception as exc:
-        raise HTTPException(502, f"Failed to reach app-service ({path}): {exc}")
+    except httpx.HTTPError as exc:
+        raise HTTPException(502, f"Failed to reach app-service ({path}): {exc}") from exc
     _raise_for_status(resp, label or f"GET {path}")
     return resp.json()
 
@@ -85,7 +91,7 @@ async def put(
     url = f"{config.API_URL}{path}"
     try:
         resp = await _client.put(url, json=json, headers=_headers(bearer_token), timeout=timeout)
-    except Exception as exc:
-        raise HTTPException(502, f"Failed to reach app-service ({path}): {exc}")
+    except httpx.HTTPError as exc:
+        raise HTTPException(502, f"Failed to reach app-service ({path}): {exc}") from exc
     _raise_for_status(resp, label or f"PUT {path}")
     return resp.json()
