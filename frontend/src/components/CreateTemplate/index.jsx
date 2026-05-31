@@ -668,6 +668,15 @@ export default function CreateTemplate({ bearerToken = "" }) {
     }
 
     const dagRunId = triggered.dag_run_id;
+    if (!dagRunId) {
+      setCreateSub({
+        status: 'error',
+        message: 'Trigger response missing dag_run_id — cannot poll for status.',
+        time: now(),
+      });
+      setLoading('');
+      return;
+    }
     setCreateSub({
       status: 'loading',
       message: `Template DAG queued (run ${dagRunId}). Polling for completion...`,

@@ -132,7 +132,7 @@ export default function FAQ({ onNavigate }) {
 
       <H2 id="still-stuck">Still stuck</H2>
       <UL>
-        <LI>Post in <A href="#">#template-creator</A> on Slack with: the job ID, the env, the page you’re on, a screenshot.</LI>
+        <LI>Post in <code className="text-[#58a6ff] font-mono">#template-creator</code> on Slack with: the job ID, the env, the page you’re on, a screenshot.</LI>
         <LI>For urgent production issues, follow the on-call escalation in the runbook.</LI>
       </UL>
       <Note>

@@ -214,7 +214,7 @@ export function Screenshot({ name, caption, aspect = '16/9' }) {
       <figure className="my-5">
         <img
           src={src}
-          alt={caption || ''}
+          alt={caption || name || 'screenshot'}
           className="w-full rounded-[6px] border border-[#30363d] block"
         />
         {caption && (
