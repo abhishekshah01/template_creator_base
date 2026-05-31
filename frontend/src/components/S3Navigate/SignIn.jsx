@@ -1,26 +1,35 @@
 import { useState } from 'react';
 
 import { s3api } from './api';
+import AwsAlert from './AwsAlert';
 
-// Admin sign-in gate for AWS S3 Navigate. Single shared admin credential.
+// Admin sign-in for AWS S3 Navigate. Layout mirrors the AWS IAM user sign-in
+// console: two-column hero, account/username/password fields, orange action.
 // Token is stored in localStorage (sliding 24h TTL on the backend).
+const REMEMBERED_USERNAME_KEY = 's3nav_remembered_username';
+
 export default function SignIn({ onSignedIn }) {
-  const [username, setUsername] = useState('');
+  const [username, setUsername] = useState(() => localStorage.getItem(REMEMBERED_USERNAME_KEY) || '');
   const [password, setPassword] = useState('');
   const [showPw, setShowPw] = useState(false);
+  const [remember, setRemember] = useState(() => !!localStorage.getItem(REMEMBERED_USERNAME_KEY));
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
 
   async function handleSubmit(e) {
     e.preventDefault();
-    if (!username.trim() || !password) {
+    if (submitting) return;
+    const trimmed = username.trim();
+    if (!trimmed || !password) {
       setError('Username and password are required.');
       return;
     }
     setSubmitting(true);
     setError(null);
     try {
-      const data = await s3api.signIn(username.trim(), password);
+      const data = await s3api.signIn(trimmed, password);
+      if (remember) localStorage.setItem(REMEMBERED_USERNAME_KEY, trimmed);
+      else localStorage.removeItem(REMEMBERED_USERNAME_KEY);
       onSignedIn?.(data);
     } catch (err) {
       setError(err.message);
@@ -30,91 +39,201 @@ export default function SignIn({ onSignedIn }) {
   }
 
   return (
-    <div className="min-h-[calc(100vh-4rem)] -mx-6 -my-8 bg-[#0f1419] text-[#e9ecef] flex flex-col items-center justify-center">
-      {/* Emergent "e" mark */}
-      <img
-        src="https://assets.emergent.sh/assets/elogo.gif"
-        alt="Emergent"
-        className="h-[64px] w-auto select-none mb-8"
-        draggable={false}
-      />
+    <div className="min-h-full bg-[#0f1419] text-[#e9ecef] flex flex-col">
+      {/* Top utility bar */}
+      <div className="px-6 py-4 flex items-center justify-end gap-7 text-[13px] text-[#c9d1d9]">
+        <span className="cursor-default">Provide feedback</span>
+        <span className="cursor-default flex items-center gap-1">
+          Multi-session disabled <Chevron />
+        </span>
+        <span className="cursor-default flex items-center gap-1">
+          English <Chevron />
+        </span>
+      </div>
 
-      <div className="w-full max-w-[420px] px-6">
-        {error && (
-          <div className="mb-4 rounded border border-[#da3633]/40 bg-[#da3633]/10 px-4 py-3 text-[14px] text-[#f85149]">
-            {error}
-          </div>
-        )}
+      {/* Centered logo */}
+      <div className="flex justify-center mt-4 mb-10">
+        <img
+          src="https://assets.emergent.sh/assets/elogo.gif"
+          alt="Emergent"
+          className="h-[64px] w-auto select-none"
+          draggable={false}
+        />
+      </div>
 
-        <form onSubmit={handleSubmit}
-          className="bg-[#161b22] border border-[#30363d] rounded-md overflow-hidden">
-          <div className="px-6 pt-5 pb-4 border-b border-[#30363d]">
-            <h2 className="text-[18px] font-bold text-[#e6edf3]">
-              AWS S3 Navigate — Admin sign in
-            </h2>
-            <p className="text-[12px] text-[#8b949e] mt-1">
-              Only admins can browse buckets directly.
+      {/* Two-column hero */}
+      <div className="flex-1 flex justify-center px-6 pb-12">
+        <div className="w-full max-w-[1080px] grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-10">
+          {/* Left: sign-in card */}
+          <div className="max-w-[440px] w-full mx-auto md:mx-0">
+            {error && (
+              <div className="mb-4">
+                <AwsAlert
+                  variant="error"
+                  tone="outlined"
+                  title="Authentication failed"
+                  onDismiss={() => setError(null)}
+                >
+                  Your authentication information is incorrect. Please try again.
+                </AwsAlert>
+              </div>
+            )}
+
+            <form
+              onSubmit={handleSubmit}
+              className="bg-[#161b22] border border-[#30363d] rounded-md overflow-hidden"
+            >
+              <div className="px-6 pt-5 pb-3 border-b border-[#30363d]">
+                <h2 className="text-[18px] font-bold text-[#e6edf3] inline-flex items-center gap-1.5">
+                  Admin sign in <InfoCircle />
+                </h2>
+              </div>
+
+              <div className="px-6 py-5 space-y-4">
+                <Field
+                  label="Username"
+                  accessory={
+                    <button
+                      type="button"
+                      className="text-[12px] text-[#58a6ff] underline decoration-dashed underline-offset-2"
+                      onClick={(e) => e.preventDefault()}
+                    >
+                      (Don't have?)
+                    </button>
+                  }
+                >
+                  <input
+                    type="text"
+                    autoComplete="username"
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                    className={inputCls}
+                    autoFocus
+                  />
+                </Field>
+
+                <label className="flex items-center gap-2 text-[13px] text-[#c9d1d9] select-none">
+                  <input
+                    type="checkbox"
+                    checked={remember}
+                    onChange={(e) => setRemember(e.target.checked)}
+                    className="accent-[#1f6feb] w-4 h-4"
+                  />
+                  Remember this account
+                </label>
+
+                <Field label="Password">
+                  <input
+                    type={showPw ? 'text' : 'password'}
+                    autoComplete="current-password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className={inputCls}
+                  />
+                </Field>
+
+                <div className="flex items-center justify-between text-[13px]">
+                  <label className="flex items-center gap-2 text-[#c9d1d9] select-none">
+                    <input
+                      type="checkbox"
+                      checked={showPw}
+                      onChange={(e) => setShowPw(e.target.checked)}
+                      className="accent-[#1f6feb] w-4 h-4"
+                    />
+                    Show Password
+                  </label>
+                  <button
+                    type="button"
+                    className="text-[#58a6ff] underline decoration-dashed underline-offset-2"
+                    onClick={(e) => e.preventDefault()}
+                  >
+                    Having trouble?
+                  </button>
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={submitting}
+                  className="w-full py-2 rounded-[2px] bg-[#ff9900] hover:bg-[#ec7211] disabled:opacity-50 text-[#16191f] font-bold text-[14px] transition-colors"
+                >
+                  {submitting ? 'Signing in…' : 'Sign in'}
+                </button>
+              </div>
+            </form>
+
+            <p className="mt-6 text-center text-[12px] text-[#8b949e]">
+              Session lasts 24 hours of inactivity. Sign out manually from the top bar.
             </p>
           </div>
 
-          <div className="px-6 py-5 space-y-4">
-            <Field label="Username">
-              <input
-                type="text"
-                autoComplete="username"
-                value={username}
-                onChange={e => setUsername(e.target.value)}
-                className={inputCls}
-                autoFocus
-              />
-            </Field>
-
-            <Field label="Password">
-              <div className="relative">
-                <input
-                  type={showPw ? 'text' : 'password'}
-                  autoComplete="current-password"
-                  value={password}
-                  onChange={e => setPassword(e.target.value)}
-                  className={`${inputCls} pr-10`}
-                />
-                <button type="button"
-                  onClick={() => setShowPw(s => !s)}
-                  tabIndex={-1}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 px-1.5 py-0.5 text-[11px] text-[#8b949e] hover:text-[#e6edf3]">
-                  {showPw ? 'Hide' : 'Show'}
-                </button>
-              </div>
-            </Field>
-
-            <button
-              type="submit"
-              disabled={submitting}
-              className="w-full py-2 rounded bg-[#238636] hover:bg-[#2ea043] disabled:opacity-50 text-white font-semibold text-[14px] transition-colors">
-              {submitting ? 'Signing in…' : 'Sign in'}
-            </button>
-          </div>
-        </form>
-
-        <p className="mt-4 text-center text-[12px] text-[#8b949e]">
-          Session lasts 24 hours of inactivity. Sign out manually from the top bar.
-        </p>
+          {/* Right: promo panel */}
+          <PromoPanel />
+        </div>
       </div>
+
+      <footer className="px-6 py-6 text-center text-[11px] text-[#6e7681]">
+        © {new Date().getFullYear()} Emergent. AWS S3 Navigate is an admin-only
+        view that proxies through app-service. No AWS credentials live in this app.
+      </footer>
     </div>
   );
 }
 
-function Field({ label, children }) {
+function Field({ label, accessory, children }) {
   return (
     <div>
-      <label className="block text-[13px] font-semibold text-[#e6edf3] mb-1">{label}</label>
+      <div className="flex items-baseline justify-between mb-1">
+        <label className="block text-[13px] font-semibold text-[#e6edf3]">{label}</label>
+        {accessory}
+      </div>
       {children}
     </div>
   );
 }
 
+function InfoCircle() {
+  return (
+    <svg className="w-[14px] h-[14px] text-[#58a6ff]" viewBox="0 0 16 16" fill="currentColor">
+      <path d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8Zm8-6.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13ZM6.5 7.75A.75.75 0 0 1 7.25 7h1a.75.75 0 0 1 .75.75v2.75h.25a.75.75 0 0 1 0 1.5h-2a.75.75 0 0 1 0-1.5h.25v-2h-.25a.75.75 0 0 1-.75-.75ZM8 6a1 1 0 1 1 0-2 1 1 0 0 1 0 2Z" />
+    </svg>
+  );
+}
+
+function Chevron() {
+  return (
+    <svg className="w-3 h-3" viewBox="0 0 16 16" fill="currentColor">
+      <path d="M12.78 5.22a.749.749 0 0 1 0 1.06l-4.25 4.25a.749.749 0 0 1-1.06 0L3.22 6.28a.749.749 0 1 1 1.06-1.06L8 8.939l3.72-3.719a.749.749 0 0 1 1.06 0Z" />
+    </svg>
+  );
+}
+
+function PromoPanel() {
+  return (
+    <div className="w-full max-w-[520px] mx-auto md:mx-0 self-center">
+      <div className="relative overflow-hidden rounded-md bg-gradient-to-br from-[#1c1816] via-[#2a1c12] to-[#5b2a0a] aspect-[16/10] flex flex-col justify-between p-7">
+        <div>
+          <h3 className="text-[28px] font-bold text-white leading-tight">
+            Emergent S3 Navigate
+          </h3>
+          <p className="mt-3 text-[14px] text-white/85 max-w-[320px]">
+            Browse, upload, and manage objects across all your buckets —
+            without ever touching an AWS access key.
+          </p>
+        </div>
+        <button
+          type="button"
+          className="self-start px-4 py-1.5 border border-white/70 text-white text-[13px] hover:bg-white/10 transition-colors rounded-[2px]"
+          onClick={(e) => e.preventDefault()}
+        >
+          Learn more »
+        </button>
+      </div>
+    </div>
+  );
+}
+
 const inputCls =
-  'w-full px-3 py-2 bg-[#0d1117] border border-[#30363d] rounded-md ' +
+  'w-full px-3 py-2 bg-[#0d1117] border border-[#30363d] rounded-[2px] ' +
   'text-[14px] text-[#e6edf3] outline-none focus:border-[#1f6feb] ' +
   'focus:shadow-[0_0_0_3px_rgba(31,111,235,0.3)] placeholder:text-[#484f58] ' +
   'transition-shadow';

@@ -39,11 +39,10 @@ export default function BucketList({ onOpenBucket }) {
 
   return (
     <div>
-      <h1 className="text-[28px] font-bold text-[#e6edf3] mb-1">Buckets</h1>
+      <h1 style={{ fontSize: 28, lineHeight: '36px' }} className="font-bold text-[#e6edf3] mb-1">Buckets</h1>
 
       <div className="border-b border-[#30363d] mb-6 flex gap-6">
         <Tab active>General purpose buckets <Pill>All AWS Regions</Pill></Tab>
-        <Tab>Directory buckets</Tab>
       </div>
 
       <div className="border border-[#30363d] rounded-md bg-[#0d1117] p-5">
@@ -56,10 +55,6 @@ export default function BucketList({ onOpenBucket }) {
 
         <div className="flex items-center gap-2 mb-3 flex-wrap">
           <RefreshButton onClick={load} loading={loading} />
-          <SecondaryBtn icon={<CopyIcon />} disabled>Copy ARN</SecondaryBtn>
-          <SecondaryBtn disabled>Empty</SecondaryBtn>
-          <SecondaryBtn disabled>Delete</SecondaryBtn>
-          <PrimaryBtn>Create bucket</PrimaryBtn>
         </div>
 
         <p className="text-[13px] text-[#8b949e] mb-3">Buckets are containers for data stored in S3.</p>

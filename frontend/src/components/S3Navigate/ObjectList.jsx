@@ -1,19 +1,27 @@
-import { useEffect, useMemo, useState, useRef } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { s3api } from './api';
 import { bytesToHuman, formatAwsDate, fileExt } from './format';
 import {
   PrimaryBtn, SecondaryBtn, RefreshButton, CopyIcon,
-  SearchIcon, InfoIcon, SortArrows, FilterTriangle, Pager,
+  SearchIcon, SortArrows, FilterTriangle,
 } from './BucketList';
 
-export default function ObjectList({ bucket, prefix, onOpenObject, onOpenPrefix, onCopyToast }) {
+export default function ObjectList({
+  bucket,
+  prefix,
+  refreshTick = 0,
+  onOpenObject,
+  onOpenPrefix,
+  onCopyToast,
+  onOpenUpload,
+  onOpenCreateFolder,
+  onOpenDelete,
+}) {
   const [data, setData] = useState({ folders: [], files: [], is_truncated: false, next_continuation_token: null });
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState(null);
   const [filter, setFilter] = useState('');
   const [selected, setSelected] = useState(new Set()); // set of keys (full key, with prefix)
-  const [showUpload, setShowUpload] = useState(false);
-  const [confirmDelete, setConfirmDelete] = useState(null);
   const [pageStack, setPageStack] = useState([]); // tokens of pages we navigated FROM (for back nav)
   const [currentToken, setCurrentToken] = useState(null); // token that loaded the current page
 
@@ -34,7 +42,7 @@ export default function ObjectList({ bucket, prefix, onOpenObject, onOpenPrefix,
   }
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  useEffect(() => { setPageStack([]); setCurrentToken(null); load(null); }, [bucket, prefix]);
+  useEffect(() => { setPageStack([]); setCurrentToken(null); load(null); }, [bucket, prefix, refreshTick]);
 
   const filteredFolders = useMemo(() => {
     const q = filter.trim().toLowerCase();
@@ -97,16 +105,19 @@ export default function ObjectList({ bucket, prefix, onOpenObject, onOpenPrefix,
       window.open(url, '_blank', 'noopener');
     } catch (e) { setErr(e.message); }
   }
-  async function deleteSel() {
-    setConfirmDelete(selectedKeys);
-  }
-  async function confirmDeleteAction() {
-    const keys = confirmDelete || [];
-    for (const k of keys) {
-      try { await s3api.deleteObject(bucket, k); } catch (e) { setErr(e.message); }
-    }
-    setConfirmDelete(null);
-    load();
+  function deleteSel() {
+    if (selected.size === 0) return;
+    // Build a richer payload for the Delete page (size, last_modified, isFolder)
+    const fileMeta = new Map(filteredFiles.map(f => [f.key, f]));
+    const folderMeta = new Map(filteredFolders.map(f => [f.prefix, f]));
+    const payload = selectedKeys.map(k => {
+      const f = fileMeta.get(k);
+      if (f) return { key: k, size: f.size, last_modified: f.last_modified, isFolder: false };
+      const fd = folderMeta.get(k);
+      if (fd) return { key: k, isFolder: true };
+      return { key: k };
+    });
+    onOpenDelete?.(payload);
   }
 
   // selection-count label like "Objects (1/333)"
@@ -117,13 +128,12 @@ export default function ObjectList({ bucket, prefix, onOpenObject, onOpenPrefix,
   return (
     <div>
       <div className="flex items-start justify-between mb-4">
-        <h1 className="text-[28px] font-bold text-[#e6edf3]">{prefix ? prefix : bucket + '/'}</h1>
+        <h1 style={{ fontSize: 28, lineHeight: '36px' }} className="font-bold text-[#e6edf3]">{prefix ? prefix : bucket + '/'}</h1>
         <SecondaryBtn icon={<CopyIcon />} onClick={() => copy(`s3://${bucket}/${prefix || ''}`)}>Copy S3 URI</SecondaryBtn>
       </div>
 
       <div className="border-b border-[#30363d] mb-6 flex gap-6">
         <Tab active>Objects</Tab>
-        <Tab>Properties</Tab>
       </div>
 
       <div className="border border-[#30363d] rounded-md bg-[#0d1117] p-5">
@@ -139,7 +149,8 @@ export default function ObjectList({ bucket, prefix, onOpenObject, onOpenPrefix,
           <SecondaryBtn disabled={!singleSelected} onClick={openSel}>Open <ExtLinkIcon /></SecondaryBtn>
           <SecondaryBtn disabled={selected.size === 0} onClick={deleteSel}>Delete</SecondaryBtn>
           <ActionsDropdown disabled={selected.size === 0} />
-          <PrimaryBtn onClick={() => setShowUpload(true)}>
+          <SecondaryBtn onClick={() => onOpenCreateFolder?.()}>Create folder</SecondaryBtn>
+          <PrimaryBtn onClick={() => onOpenUpload?.()}>
             <span className="inline-flex items-center gap-1.5"><UploadIcon /> Upload</span>
           </PrimaryBtn>
         </div>
@@ -160,13 +171,6 @@ export default function ObjectList({ bucket, prefix, onOpenObject, onOpenPrefix,
               className="w-full pl-9 pr-3 py-2 bg-[#0d1117] border border-[#30363d] rounded-[4px] text-[14px] text-[#e6edf3] outline-none focus:border-[#1f6feb]"
             />
           </div>
-          <label className="flex items-center gap-2 text-[14px] text-[#c9d1d9]">
-            <span className="inline-block w-9 h-5 rounded-full bg-[#30363d] relative">
-              <span className="absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-[#8b949e]" />
-            </span>
-            <span>Show versions</span>
-          </label>
-
           <PagerWrap>
             <button
               disabled={!pageStack.length}
@@ -283,13 +287,6 @@ export default function ObjectList({ bucket, prefix, onOpenObject, onOpenPrefix,
         </div>
       </div>
 
-      {showUpload && (
-        <UploadModal bucket={bucket} prefix={prefix} onClose={() => setShowUpload(false)} onDone={() => { setShowUpload(false); load(); }} />
-      )}
-      {confirmDelete && (
-        <ConfirmDeleteModal keys={confirmDelete} bucket={bucket}
-          onCancel={() => setConfirmDelete(null)} onConfirm={confirmDeleteAction} />
-      )}
     </div>
   );
 }
@@ -369,136 +366,3 @@ function prettyStorageClass(s) {
   return s.split('_').map(w => w.charAt(0) + w.slice(1).toLowerCase()).join(' ');
 }
 
-// ---------- Upload / Create folder / Delete modals ----------
-
-function ModalShell({ title, children, onClose, footer }) {
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60" onClick={onClose}>
-      <div className="bg-[#161b22] border border-[#30363d] rounded-md w-full max-w-[520px] mx-4" onClick={e => e.stopPropagation()}>
-        <div className="flex items-center justify-between px-5 py-3 border-b border-[#30363d]">
-          <h3 className="text-[16px] font-bold text-[#e6edf3]">{title}</h3>
-          <button onClick={onClose} className="text-[#8b949e] hover:text-[#e6edf3]">
-            <svg className="w-4 h-4" viewBox="0 0 16 16" fill="currentColor"><path d="M3.72 3.72a.75.75 0 0 1 1.06 0L8 6.94l3.22-3.22a.749.749 0 0 1 1.275.326.749.749 0 0 1-.215.734L9.06 8l3.22 3.22a.749.749 0 0 1-.326 1.275.749.749 0 0 1-.734-.215L8 9.06l-3.22 3.22a.751.751 0 0 1-1.042-.018.751.751 0 0 1-.018-1.042L6.94 8 3.72 4.78a.75.75 0 0 1 0-1.06Z" /></svg>
-          </button>
-        </div>
-        <div className="px-5 py-4">{children}</div>
-        <div className="px-5 py-3 border-t border-[#30363d] flex justify-end gap-2">{footer}</div>
-      </div>
-    </div>
-  );
-}
-
-function UploadModal({ bucket, prefix, onClose, onDone }) {
-  const inputRef = useRef(null);
-  const [files, setFiles] = useState([]);
-  const [progress, setProgress] = useState({}); // filename -> {pct, status}
-  const [running, setRunning] = useState(false);
-  const [err, setErr] = useState(null);
-
-  function pick() { inputRef.current?.click(); }
-  function onPicked(e) {
-    setFiles(Array.from(e.target.files || []));
-  }
-
-  async function uploadAll() {
-    setRunning(true);
-    setErr(null);
-    for (const file of files) {
-      const key = (prefix || '') + file.name;
-      setProgress(p => ({ ...p, [file.name]: { pct: 0, status: 'starting' } }));
-      try {
-        const { url } = await s3api.uploadUrl(bucket, key, file.type || 'application/octet-stream');
-        await new Promise((resolve, reject) => {
-          const xhr = new XMLHttpRequest();
-          xhr.open('PUT', url);
-          if (file.type) xhr.setRequestHeader('Content-Type', file.type);
-          xhr.upload.onprogress = (ev) => {
-            if (ev.lengthComputable) {
-              const pct = Math.round((ev.loaded / ev.total) * 100);
-              setProgress(p => ({ ...p, [file.name]: { pct, status: 'uploading' } }));
-            }
-          };
-          xhr.onload = () => {
-            if (xhr.status >= 200 && xhr.status < 300) {
-              setProgress(p => ({ ...p, [file.name]: { pct: 100, status: 'done' } }));
-              resolve();
-            } else {
-              reject(new Error(`HTTP ${xhr.status}`));
-            }
-          };
-          xhr.onerror = () => reject(new Error('Network error (check bucket CORS)'));
-          xhr.send(file);
-        });
-      } catch (e) {
-        setProgress(p => ({ ...p, [file.name]: { pct: 0, status: 'failed', err: e.message } }));
-        setErr(e.message);
-      }
-    }
-    setRunning(false);
-  }
-
-  const allDone = files.length > 0 && files.every(f => progress[f.name]?.status === 'done');
-
-  return (
-    <ModalShell title="Upload"
-      onClose={onClose}
-      footer={
-        <>
-          <button onClick={onClose} className="px-3 py-1.5 rounded border border-[#30363d] text-[#c9d1d9] hover:bg-[#21262d]">Cancel</button>
-          {allDone ? (
-            <PrimaryBtn onClick={onDone}>Done</PrimaryBtn>
-          ) : (
-            <PrimaryBtn onClick={uploadAll} disabled={running || files.length === 0}>
-              {running ? 'Uploading…' : `Upload ${files.length || ''}`}
-            </PrimaryBtn>
-          )}
-        </>
-      }>
-      <p className="text-[13px] text-[#8b949e] mb-3">Destination: <span className="text-[#c9d1d9] font-mono">s3://{bucket}/{prefix || ''}</span></p>
-      <input ref={inputRef} type="file" multiple className="hidden" onChange={onPicked} />
-      <button onClick={pick}
-        className="w-full py-6 border border-dashed border-[#30363d] hover:border-[#58a6ff] rounded text-[14px] text-[#c9d1d9]">
-        Click to pick files
-      </button>
-      {files.length > 0 && (
-        <ul className="mt-3 space-y-1.5 text-[13px]">
-          {files.map(f => {
-            const p = progress[f.name];
-            return (
-              <li key={f.name} className="flex items-center justify-between gap-2">
-                <span className="text-[#c9d1d9] truncate">{f.name}</span>
-                <span className="text-[#8b949e] shrink-0">
-                  {p?.status === 'done' && <span className="text-[#3fb950]">100%</span>}
-                  {p?.status === 'uploading' && <span>{p.pct}%</span>}
-                  {p?.status === 'failed' && <span className="text-[#f85149]">failed</span>}
-                  {!p && <span>queued</span>}
-                </span>
-              </li>
-            );
-          })}
-        </ul>
-      )}
-      {err && <div className="mt-3 text-[12px] text-[#f85149]">{err}</div>}
-    </ModalShell>
-  );
-}
-
-function ConfirmDeleteModal({ keys, bucket, onCancel, onConfirm }) {
-  return (
-    <ModalShell title={`Delete ${keys.length} object${keys.length === 1 ? '' : 's'}`}
-      onClose={onCancel}
-      footer={
-        <>
-          <button onClick={onCancel} className="px-3 py-1.5 rounded border border-[#30363d] text-[#c9d1d9] hover:bg-[#21262d]">Cancel</button>
-          <button onClick={onConfirm} className="px-3 py-1.5 rounded bg-[#da3633] hover:bg-[#b62324] text-white text-[14px] font-semibold">
-            Delete permanently
-          </button>
-        </>
-      }>
-      <p className="text-[13px] text-[#c9d1d9] mb-3">This permanently deletes the following object(s) from <span className="font-mono">s3://{bucket}/</span>:</p>
-      <ul className="text-[13px] text-[#8b949e] font-mono space-y-1 max-h-[200px] overflow-auto">
-        {keys.map(k => <li key={k} className="break-all">• {k}</li>)}
-      </ul>
-    </ModalShell>
-  );
-}

@@ -5,7 +5,7 @@ import { useState } from 'react';
 // Vector buckets, Access management, Storage Lens, Marketplace, etc.) is stripped.
 export default function Shell({ children, username, onSignOut, onHome, sidebarCollapsed, onToggleSidebar }) {
   return (
-    <div className="flex min-h-[calc(100vh-4rem)] -mx-6 -my-8">
+    <div className="flex min-h-full">
       {/* Sub-sidebar */}
       {!sidebarCollapsed && (
         <aside className="w-[240px] shrink-0 border-r border-[#30363d] bg-[#0d1117] py-5 px-4">
