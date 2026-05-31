@@ -64,7 +64,16 @@ export default function SignIn({ onSignedIn }) {
   }
 
   return (
-    <div className="min-h-full bg-[#0f1419] text-[#e9ecef] flex flex-col">
+    <div
+      className="min-h-full bg-[#0f1419] text-[#e9ecef] flex flex-col"
+      style={{
+        backgroundImage:
+          'url(https://assets.emergent.sh/assets/template-automation/aws_s3_navigate_signin_background-left.png), url(https://assets.emergent.sh/assets/template-automation/aws_s3_navigate_signin_background-right.png)',
+        backgroundPosition: 'left center, right center',
+        backgroundRepeat: 'no-repeat, no-repeat',
+        backgroundSize: 'auto 100%, auto 100%',
+      }}
+    >
       {/* Top utility bar */}
       <div className="flex items-center justify-end gap-6 px-8 py-3 text-[14px] text-[#bfc7cf]">
         <span className="hover:text-white cursor-pointer">Provide feedback</span>
