@@ -71,7 +71,16 @@ def test_job_info_handles_envcore_error_as_paused(client, app_service_base, envc
 
 
 def test_env_variables_parses_env_file(client, app_service_base, envcore_base):
-    env_file = "MONGO_URL=mongodb://localhost:27017/mydb\nDB_NAME=mydb\n# a comment\nAPI_KEY='abc123'"
+    """Non-sensitive keys come through; secret-looking keys are redacted."""
+    env_file = (
+        "MONGO_URL=mongodb://localhost:27017/mydb\n"
+        "DB_NAME=mydb\n"
+        "NODE_ENV=production\n"
+        "# a comment\n"
+        "API_KEY='abc123'\n"
+        "DB_PASSWORD=hunter2\n"
+        "GITHUB_TOKEN=ghp_zzz\n"
+    )
     with respx.mock(assert_all_called=True) as mock:
         _mock_env_id(mock, app_service_base)
         mock.post(f"{envcore_base}/api/v1/env/run-command").mock(
@@ -79,11 +88,16 @@ def test_env_variables_parses_env_file(client, app_service_base, envcore_base):
         )
         resp = client.post("/api/env-variables", json={"job_id": "j-1"})
     assert resp.status_code == 200
-    body = resp.json()
-    assert body["env_variables"]["MONGO_URL"] == "mongodb://localhost:27017/mydb"
-    assert body["env_variables"]["DB_NAME"] == "mydb"
-    assert body["env_variables"]["API_KEY"] == "abc123"
-    assert "# a comment" not in body["env_variables"]
+    env_vars = resp.json()["env_variables"]
+    # Non-sensitive keys pass through
+    assert env_vars["MONGO_URL"] == "mongodb://localhost:27017/mydb"
+    assert env_vars["DB_NAME"] == "mydb"
+    assert env_vars["NODE_ENV"] == "production"
+    # Sensitive keys are redacted
+    assert env_vars["API_KEY"] == "REDACTED"
+    assert env_vars["DB_PASSWORD"] == "REDACTED"
+    assert env_vars["GITHUB_TOKEN"] == "REDACTED"
+    assert "# a comment" not in env_vars
 
 
 def test_env_variables_404_for_unknown_job(client, app_service_base):

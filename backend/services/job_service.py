@@ -17,7 +17,8 @@ import config
 _client = httpx.AsyncClient(follow_redirects=True)
 
 
-# Read-only commands allowed in the mongosh terminal
+# Mongo operations that mutate state or exfiltrate via aggregation/eval.
+# Matched case-insensitively as substrings against the lowercased command.
 _BLOCKED_MONGOSH_COMMANDS = [
     "drop",
     "delete",
@@ -26,9 +27,63 @@ _BLOCKED_MONGOSH_COMMANDS = [
     "update",
     "replace",
     "rename",
-    "createIndex",
-    "dropIndex",
+    "createindex",
+    "dropindex",
+    "bulkwrite",
+    "findandmodify",
+    "runcommand",
+    "mapreduce",
+    "eval",
+    # aggregation stages that write data
+    "$out",
+    "$merge",
 ]
+
+# Env-var keys whose values get masked before returning to the client.
+# Matched case-insensitively as substrings of the key.
+_SENSITIVE_KEY_PATTERNS = (
+    "key",
+    "secret",
+    "password",
+    "passwd",
+    "token",
+    "dsn",
+    "credential",
+    "private",
+    "auth",
+)
+_REDACTED = "REDACTED"
+
+# Strict allowlist for db_name when interpolated into mongosh commands.
+_DB_NAME_PATTERN = re.compile(r"^[a-zA-Z0-9_\-]{1,64}$")
+# Same shape as collection names — keep them aligned.
+_COLLECTION_PATTERN = re.compile(r"^[a-zA-Z0-9_]+$")
+
+
+def _validate_db_name(db_name: str) -> str:
+    """Reject db names that aren't safe to interpolate into a mongosh command."""
+    if not _DB_NAME_PATTERN.match(db_name or ""):
+        raise HTTPException(400, f"Invalid db_name: must match {_DB_NAME_PATTERN.pattern}")
+    return db_name
+
+
+def _validate_collection_name(name: str) -> str:
+    """Reject collection names that aren't safe to interpolate into a mongosh command."""
+    if not _COLLECTION_PATTERN.match(name or ""):
+        raise HTTPException(400, f"Invalid collection name: must match {_COLLECTION_PATTERN.pattern}")
+    return name
+
+
+def _redact_env_values(env_vars: dict[str, str]) -> dict[str, str]:
+    """Replace values of secret-looking keys with a fixed placeholder."""
+    redacted: dict[str, str] = {}
+    for key, value in env_vars.items():
+        key_lower = key.lower()
+        if any(pat in key_lower for pat in _SENSITIVE_KEY_PATTERNS):
+            redacted[key] = _REDACTED
+        else:
+            redacted[key] = value
+    return redacted
 
 
 # ---------------------------------------------------------------------------
@@ -74,6 +129,54 @@ async def get_user_id_for_job(job_id: str, bearer_token: str = "") -> str | None
         return (resp.json() or {}).get("created_by") or None
     except Exception:
         return None
+
+
+async def pod_exec_argv(env_id: str, argv: list[str], timeout: int = 30) -> dict:
+    """Run an exec-form command in the job's pod (no shell).
+
+    Use this for any command whose arguments come from user input — the array
+    form prevents single-quote breakouts and shell-metacharacter injection
+    that `sh -c <command>` is vulnerable to.
+    """
+    if config.ENVCORE_URL:
+        try:
+            resp = await _client.post(
+                f"{config.ENVCORE_URL}/api/v1/env/run-command",
+                json={
+                    "commands": argv,
+                    "env": {"env_key": env_id},
+                    "timeout": timeout,
+                },
+                timeout=min(timeout + 5, 30),
+            )
+            resp.raise_for_status()
+            return resp.json()
+        except httpx.HTTPStatusError as exc:
+            raise HTTPException(
+                exc.response.status_code,
+                f"Pod exec failed (is the job running?): {exc.response.text[:300]}",
+            ) from exc
+        except httpx.HTTPError as exc:
+            raise HTTPException(502, f"Pod exec failed: {exc}") from exc
+
+    # Local dev fallback
+    result = subprocess.run(
+        [
+            "kubectl",
+            "exec",
+            "-n",
+            "emergent-agents-env",
+            "-c",
+            "agent-env",
+            f"agent-env-{env_id}",
+            "--",
+            *argv,
+        ],
+        capture_output=True,
+        text=True,
+        timeout=timeout,
+    )
+    return {"stdout": result.stdout, "stderr": result.stderr, "return_code": result.returncode}
 
 
 async def pod_exec(env_id: str, command: str, timeout: int = 30) -> dict:
@@ -220,9 +323,10 @@ async def list_collections(*, job_id: str) -> dict:
         "|| grep -E '(MONGO|DB_NAME)' /app/.env 2>/dev/null || echo ''",
     )
     db_name, mongo_url = _parse_db_name(env_result.get("stdout", "").strip())
+    _validate_db_name(db_name)
 
-    cmd = f"mongosh --quiet --eval 'JSON.stringify(db.getSiblingDB(\"{db_name}\").getCollectionNames())'"
-    result = await pod_exec(env_id, cmd)
+    js = f'JSON.stringify(db.getSiblingDB("{db_name}").getCollectionNames())'
+    result = await pod_exec_argv(env_id, ["mongosh", "--quiet", "--eval", js])
     collections = _parse_first_json_array(result.get("stdout", "").strip())
 
     return {
@@ -235,14 +339,14 @@ async def list_collections(*, job_id: str) -> dict:
 
 async def delete_collections(*, job_id: str, db_name: str, collections: list[str]) -> dict:
     env_id = await _require_env_id(job_id)
+    _validate_db_name(db_name)
     results = []
     for coll_name in collections:
-        safe_name = re.sub(r"[^a-zA-Z0-9_]", "", coll_name)
-        if safe_name != coll_name:
+        if not _COLLECTION_PATTERN.match(coll_name or ""):
             results.append({"collection": coll_name, "status": "skipped", "reason": "invalid name"})
             continue
-        cmd = f"mongosh --quiet --eval 'print(db.getSiblingDB(\"{db_name}\").{safe_name}.drop())'"
-        result = await pod_exec(env_id, cmd)
+        js = f'print(db.getSiblingDB("{db_name}").{coll_name}.drop())'
+        result = await pod_exec_argv(env_id, ["mongosh", "--quiet", "--eval", js])
         stdout = result.get("stdout", "").strip()
         success = stdout == "true"
         results.append(
@@ -260,25 +364,22 @@ async def delete_collections(*, job_id: str, db_name: str, collections: list[str
 
 async def get_collection_data(*, job_id: str, db_name: str, collection_name: str, limit: int) -> dict:
     env_id = await _require_env_id(job_id)
-    safe_name = re.sub(r"[^a-zA-Z0-9_]", "", collection_name)
-    if safe_name != collection_name:
-        raise HTTPException(400, "Invalid collection name")
+    _validate_db_name(db_name)
+    _validate_collection_name(collection_name)
     capped = min(limit, 100)
 
-    count_cmd = f"mongosh --quiet --eval 'print(db.getSiblingDB(\"{db_name}\").{safe_name}.countDocuments())'"
-    count_result = await pod_exec(env_id, count_cmd)
+    count_js = f'print(db.getSiblingDB("{db_name}").{collection_name}.countDocuments())'
+    count_result = await pod_exec_argv(env_id, ["mongosh", "--quiet", "--eval", count_js])
     count_str = count_result.get("stdout", "0").strip()
     try:
         doc_count = int(count_str.split("\n")[-1])
     except (ValueError, IndexError):
         doc_count = 0
 
-    find_cmd = (
-        f"mongosh --quiet --eval 'JSON.stringify("
-        f'db.getSiblingDB("{db_name}").{safe_name}.find().limit({capped}).toArray()'
-        f")'"
+    find_js = (
+        f'JSON.stringify(db.getSiblingDB("{db_name}").{collection_name}.find().limit({capped}).toArray())'
     )
-    result = await pod_exec(env_id, find_cmd, timeout=30)
+    result = await pod_exec_argv(env_id, ["mongosh", "--quiet", "--eval", find_js], timeout=30)
     documents = _parse_first_json_array(result.get("stdout", "").strip())
 
     return {
@@ -292,12 +393,16 @@ async def get_collection_data(*, job_id: str, db_name: str, collection_name: str
 
 async def run_mongosh(*, job_id: str, db_name: str, command: str) -> dict:
     env_id = await _require_env_id(job_id)
+    _validate_db_name(db_name)
 
     cmd_lower = command.lower().strip()
     for blocked in _BLOCKED_MONGOSH_COMMANDS:
         if blocked in cmd_lower:
             return {
-                "output": f"Error: '{blocked}' commands are blocked in the terminal. Use the UI controls for destructive operations.",
+                "output": (
+                    f"Error: '{blocked}' commands are blocked in the terminal. "
+                    "Use the UI controls for destructive operations."
+                ),
                 "error": True,
             }
 
@@ -313,9 +418,10 @@ async def run_mongosh(*, job_id: str, db_name: str, command: str) -> dict:
     else:
         js_command = f'db = db.getSiblingDB("{db_name}"); {command}'
 
-    full_cmd = f"mongosh --quiet --eval '{js_command}'"
     try:
-        result = await pod_exec(env_id, full_cmd, timeout=15)
+        # Array-form exec: `command` is passed as a discrete --eval argument,
+        # so single quotes / shell metacharacters in the payload can't break out.
+        result = await pod_exec_argv(env_id, ["mongosh", "--quiet", "--eval", js_command], timeout=15)
         stdout = result.get("stdout", "").strip()
         stderr = result.get("stderr", "").strip()
         if stderr and not stdout:
@@ -339,7 +445,7 @@ async def get_env_variables(*, job_id: str) -> dict:
         key = key.strip()
         if key:
             env_vars[key] = value.strip().strip('"').strip("'")
-    return {"job_id": job_id, "env_variables": env_vars}
+    return {"job_id": job_id, "env_variables": _redact_env_values(env_vars)}
 
 
 # ---------------------------------------------------------------------------
