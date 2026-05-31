@@ -227,7 +227,10 @@ export default function App() {
       >
         <div className={`w-[2px] h-full mx-auto transition-colors ${isDragging ? 'bg-[#1f6feb]' : 'bg-transparent group-hover:bg-[#1f6feb]'}`} />
       </div>
-      <main style={{ marginLeft: sidebarWidth }} className="flex-1 min-h-screen flex flex-col">
+      <main
+        style={{ marginLeft: sidebarWidth, ...(activePage === 's3' ? { background: '#0f1419' } : null) }}
+        className="flex-1 min-h-screen flex flex-col"
+      >
         {activePage === 's3' ? (
           <>
             {/* S3 page banners — own padded zone, in flow above the full-bleed page */}

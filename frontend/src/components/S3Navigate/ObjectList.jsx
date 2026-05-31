@@ -128,16 +128,16 @@ export default function ObjectList({
   return (
     <div>
       <div className="flex items-start justify-between mb-4">
-        <h1 style={{ fontSize: 28, lineHeight: '36px' }} className="font-bold text-[#e6edf3]">{prefix ? prefix : bucket + '/'}</h1>
+        <h1 style={{ fontSize: 28, lineHeight: '36px' }} className="font-bold text-[#ffffff]">{prefix ? prefix : bucket + '/'}</h1>
         <SecondaryBtn icon={<CopyIcon />} onClick={() => copy(`s3://${bucket}/${prefix || ''}`)}>Copy S3 URI</SecondaryBtn>
       </div>
 
-      <div className="border-b border-[#30363d] mb-6 flex gap-6">
+      <div className="border-b border-[#3c4451] mb-6 flex gap-6">
         <Tab active>Objects</Tab>
       </div>
 
-      <div className="border border-[#30363d] rounded-md bg-[#0d1117] p-5">
-        <h2 className="text-[18px] font-bold text-[#e6edf3] mb-3">
+      <div className="border border-[#3c4451] rounded-md bg-[#1a212d] p-5">
+        <h2 className="text-[18px] font-bold text-[#ffffff] mb-3">
           Objects <span className="text-[#8b949e] font-normal">({countLabel})</span>
         </h2>
 
@@ -157,7 +157,7 @@ export default function ObjectList({
 
         <p className="text-[13px] text-[#8b949e] mb-3">
           Objects are the fundamental entities stored in Amazon S3. You can use{' '}
-          <span className="text-[#58a6ff] underline decoration-dotted underline-offset-2 cursor-help">Amazon S3 inventory</span> to get a list of all objects in your bucket. For others to access your objects, you'll need to explicitly grant them permissions. <span className="text-[#58a6ff] underline decoration-dotted underline-offset-2 cursor-help">Learn more</span>
+          <span className="text-[#88c4ff] underline decoration-dotted underline-offset-2 cursor-help">Amazon S3 inventory</span> to get a list of all objects in your bucket. For others to access your objects, you'll need to explicitly grant them permissions. <span className="text-[#88c4ff] underline decoration-dotted underline-offset-2 cursor-help">Learn more</span>
         </p>
 
         <div className="flex items-center gap-3 mb-3">
@@ -168,7 +168,7 @@ export default function ObjectList({
               onChange={e => setFilter(e.target.value)}
               placeholder="Find objects by prefix"
               data-testid="s3-object-search"
-              className="w-full pl-9 pr-3 py-2 bg-[#0d1117] border border-[#30363d] rounded-[4px] text-[14px] text-[#e6edf3] outline-none focus:border-[#1f6feb]"
+              className="w-full pl-9 pr-3 py-2 bg-[#1a212d] border border-[#3c4451] rounded-[4px] text-[14px] text-[#ffffff] outline-none focus:border-[#88c4ff]"
             />
           </div>
           <PagerWrap>
@@ -180,19 +180,19 @@ export default function ObjectList({
                 setPageStack(next);
                 load(prevToken || null);
               }}
-              className="px-2 py-1 rounded text-[#58a6ff] hover:bg-[#161b22] disabled:opacity-40">
+              className="px-2 py-1 rounded text-[#88c4ff] hover:bg-[#232c3a] disabled:opacity-40">
               <svg className="w-3 h-3" viewBox="0 0 16 16" fill="currentColor">
                 <path d="M9.78 12.78a.75.75 0 0 1-1.06 0L4.47 8.53a.75.75 0 0 1 0-1.06l4.25-4.25a.751.751 0 0 1 1.275.326.749.749 0 0 1-.215.734L6.06 8l3.72 3.72a.75.75 0 0 1 0 1.06Z" />
               </svg>
             </button>
-            <span className="text-[13px] font-bold text-[#e6edf3] px-2">{pageStack.length + 1}</span>
+            <span className="text-[13px] font-bold text-[#ffffff] px-2">{pageStack.length + 1}</span>
             <button
               disabled={!data.is_truncated}
               onClick={() => {
                 setPageStack(prev => [...prev, currentToken]);
                 load(data.next_continuation_token);
               }}
-              className="px-2 py-1 rounded text-[#58a6ff] hover:bg-[#161b22] disabled:opacity-40">
+              className="px-2 py-1 rounded text-[#88c4ff] hover:bg-[#232c3a] disabled:opacity-40">
               <svg className="w-3 h-3" viewBox="0 0 16 16" fill="currentColor">
                 <path d="M6.22 3.22a.75.75 0 0 1 1.06 0l4.25 4.25a.75.75 0 0 1 0 1.06l-4.25 4.25a.749.749 0 0 1-1.275-.326.749.749 0 0 1 .215-.734L9.94 8 6.22 4.28a.75.75 0 0 1 0-1.06Z" />
               </svg>
@@ -201,15 +201,15 @@ export default function ObjectList({
         </div>
 
         {/* Table */}
-        <div className="border border-[#30363d] rounded-[4px] overflow-hidden">
+        <div className="border border-[#3c4451] rounded-[4px] overflow-hidden">
           <table className="w-full text-[14px]">
             <thead>
-              <tr className="bg-[#0d1117] border-b border-[#30363d] text-[#e6edf3]">
+              <tr className="bg-[#1a212d] border-b border-[#3c4451] text-[#ffffff]">
                 <th className="w-10 px-3 py-2">
                   <input type="checkbox"
                     checked={filteredFiles.length > 0 && selected.size === filteredFiles.length}
                     onChange={toggleAll}
-                    className="accent-[#1f6feb] w-4 h-4" />
+                    className="accent-[#88c4ff] w-4 h-4" />
                 </th>
                 <th className="text-left px-3 py-2 font-semibold">
                   <span className="inline-flex items-center gap-1">Name <SortArrows /></span>
@@ -241,17 +241,17 @@ export default function ObjectList({
 
               {/* Folders first */}
               {!loading && filteredFolders.map(f => (
-                <tr key={f.prefix} className="border-b border-[#21262d] hover:bg-[#161b22] transition-colors">
+                <tr key={f.prefix} className="border-b border-[#2c3340] hover:bg-[#232c3a] transition-colors">
                   <td className="px-3 py-2.5"></td>
                   <td className="px-3 py-2.5">
                     <button onClick={() => onOpenPrefix(f.prefix)}
                       data-testid={`s3-folder-${f.name}`}
-                      className="inline-flex items-center gap-2 text-[#58a6ff] hover:underline decoration-1 underline-offset-2">
+                      className="inline-flex items-center gap-2 text-[#88c4ff] hover:underline decoration-1 underline-offset-2">
                       <FolderIcon />
                       <span className="truncate">{f.name}/</span>
                     </button>
                   </td>
-                  <td className="px-3 py-2.5 text-[#c9d1d9]">Folder</td>
+                  <td className="px-3 py-2.5 text-[#d4d8db]">Folder</td>
                   <td className="px-3 py-2.5 text-[#6e7681]">-</td>
                   <td className="px-3 py-2.5 text-[#6e7681]">-</td>
                   <td className="px-3 py-2.5 text-[#6e7681]">-</td>
@@ -262,23 +262,23 @@ export default function ObjectList({
               {!loading && filteredFiles.map(f => {
                 const isSel = selected.has(f.key);
                 return (
-                  <tr key={f.key} className={`border-b border-[#21262d] hover:bg-[#161b22] transition-colors ${isSel ? 'bg-[#1f6feb]/10' : ''}`}>
+                  <tr key={f.key} className={`border-b border-[#2c3340] hover:bg-[#232c3a] transition-colors ${isSel ? 'bg-[#88c4ff]/10' : ''}`}>
                     <td className="px-3 py-2.5">
                       <input type="checkbox" checked={isSel} onChange={() => toggleSelect(f.key)}
-                        className="accent-[#1f6feb] w-4 h-4" />
+                        className="accent-[#88c4ff] w-4 h-4" />
                     </td>
                     <td className="px-3 py-2.5 max-w-[420px]">
                       <button onClick={() => onOpenObject(f)}
                         data-testid={`s3-object-${f.name}`}
-                        className="inline-flex items-center gap-2 text-[#58a6ff] hover:underline decoration-1 underline-offset-2 text-left">
+                        className="inline-flex items-center gap-2 text-[#88c4ff] hover:underline decoration-1 underline-offset-2 text-left">
                         <FileIcon16 />
                         <span className="break-all">{f.name}</span>
                       </button>
                     </td>
-                    <td className="px-3 py-2.5 text-[#c9d1d9]">{fileExt(f.name) || '-'}</td>
-                    <td className="px-3 py-2.5 text-[#c9d1d9] whitespace-nowrap">{formatAwsDate(f.last_modified)}</td>
-                    <td className="px-3 py-2.5 text-[#c9d1d9]">{bytesToHuman(f.size)}</td>
-                    <td className="px-3 py-2.5 text-[#c9d1d9]">{prettyStorageClass(f.storage_class)}</td>
+                    <td className="px-3 py-2.5 text-[#d4d8db]">{fileExt(f.name) || '-'}</td>
+                    <td className="px-3 py-2.5 text-[#d4d8db] whitespace-nowrap">{formatAwsDate(f.last_modified)}</td>
+                    <td className="px-3 py-2.5 text-[#d4d8db]">{bytesToHuman(f.size)}</td>
+                    <td className="px-3 py-2.5 text-[#d4d8db]">{prettyStorageClass(f.storage_class)}</td>
                   </tr>
                 );
               })}
@@ -292,21 +292,21 @@ export default function ObjectList({
 }
 
 function PagerWrap({ children }) {
-  return <div className="inline-flex items-center text-[14px] text-[#c9d1d9]">{children}</div>;
+  return <div className="inline-flex items-center text-[14px] text-[#d4d8db]">{children}</div>;
 }
 
 function Tab({ active, children }) {
   return (
-    <button className={`relative py-2 text-[15px] font-semibold ${active ? 'text-[#58a6ff]' : 'text-[#c9d1d9] hover:text-[#e6edf3]'}`}>
+    <button className={`relative py-2 text-[15px] font-semibold ${active ? 'text-[#88c4ff]' : 'text-[#d4d8db] hover:text-[#ffffff]'}`}>
       {children}
-      {active && <span className="absolute left-0 right-0 -bottom-px h-[2px] bg-[#58a6ff]" />}
+      {active && <span className="absolute left-0 right-0 -bottom-px h-[2px] bg-[#88c4ff]" />}
     </button>
   );
 }
 
 function FolderIcon() {
   return (
-    <svg className="w-4 h-4 text-[#58a6ff]" viewBox="0 0 16 16" fill="currentColor">
+    <svg className="w-4 h-4 text-[#88c4ff]" viewBox="0 0 16 16" fill="currentColor">
       <path d="M1.75 1A1.75 1.75 0 0 0 0 2.75v10.5C0 14.216.784 15 1.75 15h12.5A1.75 1.75 0 0 0 16 13.25v-8.5A1.75 1.75 0 0 0 14.25 3H7.5a.25.25 0 0 1-.2-.1l-.9-1.2C6.07 1.26 5.55 1 5 1H1.75Z" />
     </svg>
   );
@@ -351,7 +351,7 @@ function ActionsDropdown({ disabled }) {
   return (
     <button disabled={disabled}
       className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-[4px] border text-[14px] transition-colors ${
-        disabled ? 'border-[#30363d] text-[#6e7681] cursor-not-allowed' : 'border-[#58a6ff] text-[#58a6ff] hover:bg-[#58a6ff]/10'
+        disabled ? 'border-[#3c4451] text-[#6e7681] cursor-not-allowed' : 'border-[#88c4ff] text-[#88c4ff] hover:bg-[#88c4ff]/10'
       }`}>
       Actions
       <svg className="w-3 h-3" viewBox="0 0 16 16" fill="currentColor">

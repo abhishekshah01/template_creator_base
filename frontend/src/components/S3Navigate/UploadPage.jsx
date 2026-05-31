@@ -70,7 +70,7 @@ export default function UploadPage({ bucket, prefix, onCancel, onDone }) {
 
   return (
     <div>
-      <h1 style={{ fontSize: 28, lineHeight: '36px' }} className="font-bold text-[#e6edf3] mb-1">
+      <h1 style={{ fontSize: 28, lineHeight: '36px' }} className="font-bold text-[#ffffff] mb-1">
         Upload <InfoIcon />
       </h1>
       <p className="text-[13px] text-[#8b949e] mb-5 max-w-[820px]">
@@ -91,23 +91,23 @@ export default function UploadPage({ bucket, prefix, onCancel, onDone }) {
       <div
         onDragOver={(e) => e.preventDefault()}
         onDrop={onDrop}
-        className="border border-dashed border-[#30363d] rounded-[4px] bg-[#0d1117] px-6 py-8 mb-4 text-center text-[14px] text-[#c9d1d9]"
+        className="border border-dashed border-[#3c4451] rounded-[4px] bg-[#1a212d] px-6 py-8 mb-4 text-center text-[14px] text-[#d4d8db]"
       >
         Drag and drop files and folders you want to upload here, or choose{' '}
-        <button onClick={() => inputRef.current?.click()} className="text-[#58a6ff] underline">
+        <button onClick={() => inputRef.current?.click()} className="text-[#88c4ff] underline">
           Add files
         </button>
         {' '}or{' '}
-        <button onClick={() => folderInputRef.current?.click()} className="text-[#58a6ff] underline">
+        <button onClick={() => folderInputRef.current?.click()} className="text-[#88c4ff] underline">
           Add folder
         </button>
         .
       </div>
 
       {/* Files table */}
-      <div className="border border-[#30363d] rounded-md bg-[#0d1117] p-5 mb-4">
+      <div className="border border-[#3c4451] rounded-md bg-[#1a212d] p-5 mb-4">
         <div className="flex items-center justify-between mb-3">
-          <h2 className="text-[16px] font-bold text-[#e6edf3]">
+          <h2 className="text-[16px] font-bold text-[#ffffff]">
             Files and folders <span className="text-[#8b949e] font-normal">({items.length})</span>
           </h2>
           <div className="flex items-center gap-2">
@@ -133,10 +133,10 @@ export default function UploadPage({ bucket, prefix, onCancel, onDone }) {
           onChange={(e) => { addFiles(e.target.files, { isFolder: true }); e.target.value = ''; }}
         />
 
-        <div className="border border-[#30363d] rounded-[4px] overflow-hidden">
+        <div className="border border-[#3c4451] rounded-[4px] overflow-hidden">
           <table className="w-full text-[14px]">
             <thead>
-              <tr className="bg-[#0d1117] border-b border-[#30363d] text-[#e6edf3]">
+              <tr className="bg-[#1a212d] border-b border-[#3c4451] text-[#ffffff]">
                 <th className="text-left px-3 py-2 font-semibold">Name</th>
                 <th className="text-left px-3 py-2 font-semibold">Folder</th>
                 <th className="text-left px-3 py-2 font-semibold">Type</th>
@@ -149,7 +149,7 @@ export default function UploadPage({ bucket, prefix, onCancel, onDone }) {
               {items.length === 0 && (
                 <tr>
                   <td colSpan={6} className="px-3 py-8 text-center text-[13px] text-[#8b949e]">
-                    <div className="font-semibold text-[#c9d1d9]">No files or folders</div>
+                    <div className="font-semibold text-[#d4d8db]">No files or folders</div>
                     <div className="mt-1">You have not chosen any files or folders to upload.</div>
                   </td>
                 </tr>
@@ -160,21 +160,21 @@ export default function UploadPage({ bucket, prefix, onCancel, onDone }) {
                 const folder = parts.slice(0, -1).join('/') || '-';
                 const p = progress[it.relPath];
                 return (
-                  <tr key={it.relPath + i} className="border-b border-[#21262d]">
-                    <td className="px-3 py-2.5 text-[#c9d1d9] break-all">{name}</td>
+                  <tr key={it.relPath + i} className="border-b border-[#2c3340]">
+                    <td className="px-3 py-2.5 text-[#d4d8db] break-all">{name}</td>
                     <td className="px-3 py-2.5 text-[#8b949e]">{folder}</td>
-                    <td className="px-3 py-2.5 text-[#c9d1d9]">{fileExt(name) || '-'}</td>
-                    <td className="px-3 py-2.5 text-[#c9d1d9]">{bytesToHuman(it.file.size)}</td>
+                    <td className="px-3 py-2.5 text-[#d4d8db]">{fileExt(name) || '-'}</td>
+                    <td className="px-3 py-2.5 text-[#d4d8db]">{bytesToHuman(it.file.size)}</td>
                     <td className="px-3 py-2.5">
                       {!p && <span className="text-[#8b949e]">queued</span>}
                       {p?.status === 'starting' && <span className="text-[#8b949e]">starting…</span>}
-                      {p?.status === 'uploading' && <span className="text-[#c9d1d9]">{p.pct}%</span>}
+                      {p?.status === 'uploading' && <span className="text-[#d4d8db]">{p.pct}%</span>}
                       {p?.status === 'done' && <span className="text-[#3fb950]">done</span>}
                       {p?.status === 'failed' && <span className="text-[#f85149]" title={p.err}>failed</span>}
                     </td>
                     <td className="px-3 py-2.5 text-right">
                       {!running && (
-                        <button onClick={() => removeAt(i)} className="text-[12px] text-[#58a6ff] hover:underline">
+                        <button onClick={() => removeAt(i)} className="text-[12px] text-[#88c4ff] hover:underline">
                           Remove
                         </button>
                       )}
@@ -188,11 +188,11 @@ export default function UploadPage({ bucket, prefix, onCancel, onDone }) {
       </div>
 
       {/* Destination */}
-      <div className="border border-[#30363d] rounded-md bg-[#0d1117] p-5 mb-6">
-        <h2 className="text-[16px] font-bold text-[#e6edf3] mb-0.5">Destination <InfoIcon /></h2>
-        <div className="mt-3 text-[13px] text-[#c9d1d9]">
+      <div className="border border-[#3c4451] rounded-md bg-[#1a212d] p-5 mb-6">
+        <h2 className="text-[16px] font-bold text-[#ffffff] mb-0.5">Destination <InfoIcon /></h2>
+        <div className="mt-3 text-[13px] text-[#d4d8db]">
           <div className="font-bold mb-1">Destination</div>
-          <div className="font-mono text-[#58a6ff] break-all">
+          <div className="font-mono text-[#88c4ff] break-all">
             s3://{bucket}/{prefix || ''}
           </div>
         </div>
@@ -200,7 +200,7 @@ export default function UploadPage({ bucket, prefix, onCancel, onDone }) {
 
       {/* Footer actions */}
       <div className="flex items-center justify-end gap-3 mt-6">
-        <button onClick={onCancel} className="px-4 py-1.5 text-[14px] text-[#58a6ff] hover:underline">
+        <button onClick={onCancel} className="px-4 py-1.5 text-[14px] text-[#88c4ff] hover:underline">
           {allDone ? 'Close' : 'Cancel'}
         </button>
         {allDone ? (

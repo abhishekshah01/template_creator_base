@@ -33,7 +33,7 @@ export default function ObjectDetail({ bucket, objKey, onCopyToast }) {
   return (
     <div>
       <div className="flex items-start justify-between mb-4 gap-4">
-        <h1 style={{ fontSize: 28, lineHeight: '36px' }} className="font-bold text-[#e6edf3] break-all">
+        <h1 style={{ fontSize: 28, lineHeight: '36px' }} className="font-bold text-[#ffffff] break-all">
           {name} <InfoIcon />
         </h1>
         <div className="flex items-center gap-2 shrink-0">
@@ -44,12 +44,12 @@ export default function ObjectDetail({ bucket, objKey, onCopyToast }) {
         </div>
       </div>
 
-      <div className="border-b border-[#30363d] mb-6 flex gap-6">
+      <div className="border-b border-[#3c4451] mb-6 flex gap-6">
         <Tab active>Properties</Tab>
       </div>
 
-      <div className="border border-[#30363d] rounded-md bg-[#0d1117] p-6 mb-6">
-        <h2 className="text-[18px] font-bold text-[#e6edf3] mb-5">Object overview</h2>
+      <div className="border border-[#3c4451] rounded-md bg-[#1a212d] p-6 mb-6">
+        <h2 className="text-[18px] font-bold text-[#ffffff] mb-5">Object overview</h2>
 
         {loading && <div className="text-[14px] text-[#8b949e]">Loading…</div>}
         {err && <div className="text-[14px] text-[#f85149]">{err}</div>}
@@ -97,8 +97,8 @@ export default function ObjectDetail({ bucket, objKey, onCopyToast }) {
 function Field({ label, children }) {
   return (
     <div>
-      <div className="text-[14px] font-bold text-[#e6edf3] mb-1">{label}</div>
-      <div className="text-[14px] text-[#c9d1d9]">{children}</div>
+      <div className="text-[14px] font-bold text-[#ffffff] mb-1">{label}</div>
+      <div className="text-[14px] text-[#d4d8db]">{children}</div>
     </div>
   );
 }
@@ -106,10 +106,10 @@ function Field({ label, children }) {
 function CopyableMono({ value, onCopy }) {
   return (
     <div className="flex items-start gap-1.5">
-      <button onClick={onCopy} className="shrink-0 mt-0.5 text-[#58a6ff] hover:opacity-80" title="Copy">
+      <button onClick={onCopy} className="shrink-0 mt-0.5 text-[#88c4ff] hover:opacity-80" title="Copy">
         <CopyIcon />
       </button>
-      <span className="font-mono text-[13px] text-[#c9d1d9] break-all">{value}</span>
+      <span className="font-mono text-[13px] text-[#d4d8db] break-all">{value}</span>
     </div>
   );
 }
@@ -117,19 +117,19 @@ function CopyableMono({ value, onCopy }) {
 function CopyableLink({ value, onCopy }) {
   return (
     <div className="flex items-start gap-1.5">
-      <button onClick={onCopy} className="shrink-0 mt-0.5 text-[#58a6ff] hover:opacity-80" title="Copy">
+      <button onClick={onCopy} className="shrink-0 mt-0.5 text-[#88c4ff] hover:opacity-80" title="Copy">
         <CopyIcon />
       </button>
-      <a href={value} target="_blank" rel="noreferrer" className="text-[#58a6ff] hover:underline break-all text-[13px]">{value}</a>
+      <a href={value} target="_blank" rel="noreferrer" className="text-[#88c4ff] hover:underline break-all text-[13px]">{value}</a>
     </div>
   );
 }
 
 function Tab({ active, children }) {
   return (
-    <button className={`relative py-2 text-[15px] font-semibold ${active ? 'text-[#58a6ff]' : 'text-[#c9d1d9] hover:text-[#e6edf3]'}`}>
+    <button className={`relative py-2 text-[15px] font-semibold ${active ? 'text-[#88c4ff]' : 'text-[#d4d8db] hover:text-[#ffffff]'}`}>
       {children}
-      {active && <span className="absolute left-0 right-0 -bottom-px h-[2px] bg-[#58a6ff]" />}
+      {active && <span className="absolute left-0 right-0 -bottom-px h-[2px] bg-[#88c4ff]" />}
     </button>
   );
 }

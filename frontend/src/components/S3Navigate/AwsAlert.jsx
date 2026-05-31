@@ -5,19 +5,19 @@
 const VARIANTS = {
   success: {
     solid:    { bg: '#1f7a3f', border: '#1f7a3f', icon: '#ffffff', text: '#ffffff' },
-    outlined: { bg: 'rgba(31,122,63,0.12)', border: '#1f7a3f', icon: '#3fb950', text: '#e6edf3' },
+    outlined: { bg: 'rgba(31,122,63,0.12)', border: '#1f7a3f', icon: '#3fb950', text: '#ffffff' },
   },
   error: {
     solid:    { bg: '#b00f1f', border: '#b00f1f', icon: '#ffffff', text: '#ffffff' },
-    outlined: { bg: 'rgba(176,15,31,0.15)', border: '#e35b66', icon: '#e35b66', text: '#e6edf3' },
+    outlined: { bg: 'rgba(176,15,31,0.15)', border: '#e35b66', icon: '#e35b66', text: '#ffffff' },
   },
   warning: {
     solid:    { bg: '#946800', border: '#946800', icon: '#ffffff', text: '#ffffff' },
-    outlined: { bg: 'rgba(148,104,0,0.15)', border: '#d4a017', icon: '#d4a017', text: '#e6edf3' },
+    outlined: { bg: 'rgba(148,104,0,0.15)', border: '#d4a017', icon: '#d4a017', text: '#ffffff' },
   },
   info: {
     solid:    { bg: '#0b5cad', border: '#0b5cad', icon: '#ffffff', text: '#ffffff' },
-    outlined: { bg: 'rgba(11,92,173,0.15)', border: '#58a6ff', icon: '#58a6ff', text: '#e6edf3' },
+    outlined: { bg: 'rgba(11,92,173,0.15)', border: '#88c4ff', icon: '#88c4ff', text: '#ffffff' },
   },
 };
 

@@ -28,10 +28,10 @@ export default function DeleteStatusPage({ source, results, onClose }) {
       )}
 
       <div className="flex items-center justify-between mb-4">
-        <h1 style={{ fontSize: 28, lineHeight: '36px' }} className="font-bold text-[#e6edf3]">Delete objects: status</h1>
+        <h1 style={{ fontSize: 28, lineHeight: '36px' }} className="font-bold text-[#ffffff]">Delete objects: status</h1>
         <button
           onClick={onClose}
-          className="px-4 py-1.5 rounded-[4px] bg-[#ff9900] hover:bg-[#ec7211] text-[#16191f] text-[14px] font-bold transition-colors"
+          className="px-4 py-1.5 rounded-[4px] bg-[#ff9900] hover:bg-[#ec7211] text-[#000000] text-[14px] font-bold transition-colors"
         >
           Close
         </button>
@@ -44,20 +44,20 @@ export default function DeleteStatusPage({ source, results, onClose }) {
       </div>
 
       {/* Summary card */}
-      <div className="border border-[#30363d] rounded-md bg-[#0d1117] p-5 mb-6">
-        <h2 className="text-[16px] font-bold text-[#e6edf3] mb-4">Summary</h2>
+      <div className="border border-[#3c4451] rounded-md bg-[#1a212d] p-5 mb-6">
+        <h2 className="text-[16px] font-bold text-[#ffffff] mb-4">Summary</h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-y-4 gap-x-12 text-[14px]">
           <div>
-            <div className="font-bold text-[#e6edf3]">Source</div>
-            <div className="text-[#58a6ff] font-mono break-all">{source}</div>
+            <div className="font-bold text-[#ffffff]">Source</div>
+            <div className="text-[#88c4ff] font-mono break-all">{source}</div>
           </div>
           <div>
-            <div className="font-bold text-[#e6edf3]">Successfully deleted</div>
-            <div className="text-[#c9d1d9]">{ok.length} object{ok.length === 1 ? '' : 's'}</div>
+            <div className="font-bold text-[#ffffff]">Successfully deleted</div>
+            <div className="text-[#d4d8db]">{ok.length} object{ok.length === 1 ? '' : 's'}</div>
           </div>
           <div>
-            <div className="font-bold text-[#e6edf3]">Failed to delete</div>
-            <div className={failed.length ? 'text-[#f85149]' : 'text-[#c9d1d9]'}>
+            <div className="font-bold text-[#ffffff]">Failed to delete</div>
+            <div className={failed.length ? 'text-[#f85149]' : 'text-[#d4d8db]'}>
               {failed.length === 0
                 ? '0 objects'
                 : <span className="inline-flex items-center gap-1">✘ {failed.length} object{failed.length === 1 ? '' : 's'}</span>}
@@ -67,23 +67,23 @@ export default function DeleteStatusPage({ source, results, onClose }) {
       </div>
 
       {/* Tabs */}
-      <div className="border-b border-[#30363d] mb-4 flex gap-6">
+      <div className="border-b border-[#3c4451] mb-4 flex gap-6">
         <TabBtn active={tab === 'failed'} onClick={() => setTab('failed')}>Failed to delete</TabBtn>
         <TabBtn active={tab === 'configuration'} onClick={() => setTab('configuration')}>Configuration</TabBtn>
       </div>
 
       {tab === 'failed' && (
-        <div className="border border-[#30363d] rounded-md bg-[#0d1117] p-5">
-          <h2 className="text-[16px] font-bold text-[#e6edf3] mb-3">
+        <div className="border border-[#3c4451] rounded-md bg-[#1a212d] p-5">
+          <h2 className="text-[16px] font-bold text-[#ffffff] mb-3">
             <span className="text-[#f85149]">✘</span> Failed to delete{' '}
             <span className="text-[#8b949e] font-normal">
               ({failed.length} object{failed.length === 1 ? '' : 's'}, {bytesToHuman(failedBytes)})
             </span>
           </h2>
-          <div className="border border-[#30363d] rounded-[4px] overflow-hidden">
+          <div className="border border-[#3c4451] rounded-[4px] overflow-hidden">
             <table className="w-full text-[14px]">
               <thead>
-                <tr className="bg-[#0d1117] border-b border-[#30363d] text-[#e6edf3]">
+                <tr className="bg-[#1a212d] border-b border-[#3c4451] text-[#ffffff]">
                   <th className="text-left px-3 py-2 font-semibold">Name</th>
                   <th className="text-left px-3 py-2 font-semibold">Folder</th>
                   <th className="text-left px-3 py-2 font-semibold">Type</th>
@@ -101,12 +101,12 @@ export default function DeleteStatusPage({ source, results, onClose }) {
                   const name = parts[parts.length - 1] || r.key;
                   const folder = parts.slice(0, -1).join('/') || '-';
                   return (
-                    <tr key={r.key} className="border-b border-[#21262d]">
-                      <td className="px-3 py-2.5 text-[#c9d1d9] break-all">{name || r.key}</td>
+                    <tr key={r.key} className="border-b border-[#2c3340]">
+                      <td className="px-3 py-2.5 text-[#d4d8db] break-all">{name || r.key}</td>
                       <td className="px-3 py-2.5 text-[#8b949e]">{folder}</td>
-                      <td className="px-3 py-2.5 text-[#c9d1d9]">{r.isFolder ? 'Folder' : (fileExt(name) || '-')}</td>
-                      <td className="px-3 py-2.5 text-[#c9d1d9]">{r.last_modified ? formatAwsDate(r.last_modified) : '-'}</td>
-                      <td className="px-3 py-2.5 text-[#c9d1d9]">{r.size != null ? bytesToHuman(r.size) : '-'}</td>
+                      <td className="px-3 py-2.5 text-[#d4d8db]">{r.isFolder ? 'Folder' : (fileExt(name) || '-')}</td>
+                      <td className="px-3 py-2.5 text-[#d4d8db]">{r.last_modified ? formatAwsDate(r.last_modified) : '-'}</td>
+                      <td className="px-3 py-2.5 text-[#d4d8db]">{r.size != null ? bytesToHuman(r.size) : '-'}</td>
                       <td className="px-3 py-2.5 text-[#f85149]">✘ {r.error || 'Access denied'}</td>
                     </tr>
                   );
@@ -118,8 +118,8 @@ export default function DeleteStatusPage({ source, results, onClose }) {
       )}
 
       {tab === 'configuration' && (
-        <div className="border border-[#30363d] rounded-md bg-[#0d1117] p-5 text-[13px] text-[#8b949e]">
-          Bypass governance retention: <span className="text-[#c9d1d9]">No</span> · Quiet mode: <span className="text-[#c9d1d9]">No</span>
+        <div className="border border-[#3c4451] rounded-md bg-[#1a212d] p-5 text-[13px] text-[#8b949e]">
+          Bypass governance retention: <span className="text-[#d4d8db]">No</span> · Quiet mode: <span className="text-[#d4d8db]">No</span>
         </div>
       )}
     </div>
@@ -130,10 +130,10 @@ function TabBtn({ active, children, onClick }) {
   return (
     <button
       onClick={onClick}
-      className={`relative py-2 text-[15px] font-semibold ${active ? 'text-[#58a6ff]' : 'text-[#c9d1d9] hover:text-[#e6edf3]'}`}
+      className={`relative py-2 text-[15px] font-semibold ${active ? 'text-[#88c4ff]' : 'text-[#d4d8db] hover:text-[#ffffff]'}`}
     >
       {children}
-      {active && <span className="absolute left-0 right-0 -bottom-px h-[2px] bg-[#58a6ff]" />}
+      {active && <span className="absolute left-0 right-0 -bottom-px h-[2px] bg-[#88c4ff]" />}
     </button>
   );
 }
