@@ -54,10 +54,9 @@ _SENSITIVE_KEY_PATTERNS = (
 )
 _REDACTED = "REDACTED"
 
-# Strict allowlist for db_name when interpolated into mongosh commands.
+# Hyphens allowed; access via getCollection() so digit-prefixed / hyphenated names stay valid JS.
 _DB_NAME_PATTERN = re.compile(r"^[a-zA-Z0-9_\-]{1,64}$")
-# Same shape as collection names — keep them aligned.
-_COLLECTION_PATTERN = re.compile(r"^[a-zA-Z0-9_]+$")
+_COLLECTION_PATTERN = re.compile(r"^[a-zA-Z0-9_\-]{1,120}$")
 
 
 def _validate_db_name(db_name: str) -> str:
@@ -345,7 +344,8 @@ async def delete_collections(*, job_id: str, db_name: str, collections: list[str
         if not _COLLECTION_PATTERN.match(coll_name or ""):
             results.append({"collection": coll_name, "status": "skipped", "reason": "invalid name"})
             continue
-        js = f'print(db.getSiblingDB("{db_name}").{coll_name}.drop())'
+        coll_expr = json.dumps(coll_name)
+        js = f'print(db.getSiblingDB("{db_name}").getCollection({coll_expr}).drop())'
         result = await pod_exec_argv(env_id, ["mongosh", "--quiet", "--eval", js])
         stdout = result.get("stdout", "").strip()
         success = stdout == "true"
@@ -368,7 +368,8 @@ async def get_collection_data(*, job_id: str, db_name: str, collection_name: str
     _validate_collection_name(collection_name)
     capped = min(limit, 100)
 
-    count_js = f'print(db.getSiblingDB("{db_name}").{collection_name}.countDocuments())'
+    coll_expr = json.dumps(collection_name)
+    count_js = f'print(db.getSiblingDB("{db_name}").getCollection({coll_expr}).countDocuments())'
     count_result = await pod_exec_argv(env_id, ["mongosh", "--quiet", "--eval", count_js])
     count_str = count_result.get("stdout", "0").strip()
     try:
@@ -377,7 +378,8 @@ async def get_collection_data(*, job_id: str, db_name: str, collection_name: str
         doc_count = 0
 
     find_js = (
-        f'JSON.stringify(db.getSiblingDB("{db_name}").{collection_name}.find().limit({capped}).toArray())'
+        f'JSON.stringify(db.getSiblingDB("{db_name}").getCollection({coll_expr})'
+        f".find().limit({capped}).toArray())"
     )
     result = await pod_exec_argv(env_id, ["mongosh", "--quiet", "--eval", find_js], timeout=30)
     documents = _parse_first_json_array(result.get("stdout", "").strip())
