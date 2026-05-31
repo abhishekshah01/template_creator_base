@@ -134,7 +134,13 @@ OIDC_AUDIENCE = os.environ.get("OIDC_AUDIENCE", "") or _default_oidc_audience()
 #   "poll"    – backend polls Composer's dagRuns endpoint (default, works locally)
 #   "webhook" – Composer POSTs back to TEMPLATE_JOB_WEBHOOK_BASE_URL (needs public URL)
 #   "both"    – send webhook_url AND poll as fallback
+_VALID_NOTIFY_MODES = {"poll", "webhook", "both"}
 TEMPLATE_JOB_NOTIFY_MODE = os.environ.get("TEMPLATE_JOB_NOTIFY_MODE", "poll")
+if TEMPLATE_JOB_NOTIFY_MODE not in _VALID_NOTIFY_MODES:
+    raise ValueError(
+        f"TEMPLATE_JOB_NOTIFY_MODE must be one of {sorted(_VALID_NOTIFY_MODES)}; "
+        f"got {TEMPLATE_JOB_NOTIFY_MODE!r}"
+    )
 TEMPLATE_JOB_WEBHOOK_BASE_URL = os.environ.get("TEMPLATE_JOB_WEBHOOK_BASE_URL", "")
 
 # --- MongoDB (template-job status persistence) ---

@@ -51,7 +51,16 @@ async def get_oidc_token() -> str:
                 stdout=asyncio.subprocess.PIPE,
                 stderr=asyncio.subprocess.PIPE,
             )
-            stdout, stderr = await proc.communicate()
+            try:
+                stdout, stderr = await asyncio.wait_for(proc.communicate(), timeout=15)
+            except asyncio.TimeoutError:
+                proc.kill()
+                await proc.wait()
+                raise HTTPException(
+                    500,
+                    "gcloud auth print-identity-token did not return within 15s. "
+                    "Check gcloud CLI health on this host.",
+                ) from None
         except FileNotFoundError:
             raise HTTPException(
                 500,
