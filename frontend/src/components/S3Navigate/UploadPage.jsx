@@ -207,7 +207,11 @@ export default function UploadPage({ bucket, prefix, onCancel, onDone }) {
 
       {/* Footer actions */}
       <div className="flex items-center justify-end gap-3 mt-6">
-        <button onClick={onCancel} className="px-4 py-1.5 text-[14px] text-[#58a6ff] hover:underline">
+        <button
+          onClick={onCancel}
+          disabled={running}
+          className="px-4 py-1.5 text-[14px] text-[#58a6ff] hover:underline disabled:opacity-50 disabled:cursor-not-allowed disabled:no-underline"
+        >
           {allDone ? 'Close' : 'Cancel'}
         </button>
         {allDone ? (
