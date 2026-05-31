@@ -36,6 +36,7 @@ jobs:
       - name: Run pytest
         env:
           DEPLOYMENT_SCOPE: dev
+          TEMPLATE_ENV: dev
           DEV_API_URL: http://app-service.test
         run: |
           pytest tests/ -v --tb=short

@@ -11,9 +11,12 @@ BACKEND_DIR = Path(__file__).resolve().parent.parent
 if str(BACKEND_DIR) not in sys.path:
     sys.path.insert(0, str(BACKEND_DIR))
 
-# Stub minimal env so config.py loads without raising.
-os.environ.setdefault("DEPLOYMENT_SCOPE", "dev")
-os.environ.setdefault("DEV_API_URL", "http://app-service.test")
+# Stub minimal env so config.py loads with a usable API_URL.
+# These need to be set BEFORE any module reads them; force-set so a local .env
+# can't accidentally point tests at a real upstream.
+os.environ["DEPLOYMENT_SCOPE"] = "dev"
+os.environ["TEMPLATE_ENV"] = "dev"
+os.environ["DEV_API_URL"] = "http://app-service.test"
 
 
 @pytest.fixture
