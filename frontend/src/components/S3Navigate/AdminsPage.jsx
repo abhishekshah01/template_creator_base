@@ -1,19 +1,32 @@
 import { useEffect, useMemo, useState } from 'react';
 
 import AwsAlert from './AwsAlert';
+import { AwsButton, AwsSearchInput, ColumnDivider, RefreshIcon, SortTriangle } from './AwsControls';
 import { s3api } from './api';
-import { formatAwsDateCompact } from './format';
+import { formatAwsDate } from './format';
+import { colors } from './theme';
 
-// Settings -> Admin users. Lists every admin in the admin_users collection,
-// lets the signed-in admin create, edit, reset password, and (de)activate
-// peers (including themselves — see ConfirmDestructive flow + auto-logout).
+// Settings -> Admin users. Action buttons live in the toolbar above the table
+// and become available only when exactly one row is selected (AWS S3 console
+// pattern). Default sort is Account ID ASC; click any header triangle to
+// re-sort.
+const COLUMNS = [
+  { key: 'account_id', label: 'Account ID',  width: '15%' },
+  { key: 'email',       label: 'Email',       width: '24%' },
+  { key: 'username',    label: 'Username',    width: '18%' },
+  { key: 'created_at',  label: 'Created',     width: '17%' },
+  { key: 'last_login_at', label: 'Last login', width: '17%' },
+  { key: 'is_active',   label: 'Status',      width: '9%'  },
+];
+
 export default function AdminsPage({ currentUsername, onSelfDeactivated, onCopyToast }) {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [filter, setFilter] = useState('');
+  const [selectedId, setSelectedId] = useState(null);
+  const [sort, setSort] = useState({ key: 'account_id', dir: 'asc' });
   const [modal, setModal] = useState(null);
-  // ^ {kind: 'create' | 'edit' | 'reset' | 'confirm', target?, intent?, copy?}
 
   async function load() {
     setLoading(true);
@@ -32,15 +45,40 @@ export default function AdminsPage({ currentUsername, onSelfDeactivated, onCopyT
 
   const filtered = useMemo(() => {
     const q = filter.trim().toLowerCase();
-    if (!q) return items;
-    return items.filter(u =>
-      u.account_id.includes(q) ||
-      u.email.toLowerCase().includes(q) ||
-      u.username.toLowerCase().includes(q),
-    );
-  }, [items, filter]);
+    let rows = items;
+    if (q) {
+      rows = rows.filter(u =>
+        u.account_id.includes(q) ||
+        u.email.toLowerCase().includes(q) ||
+        u.username.toLowerCase().includes(q),
+      );
+    }
+    const { key, dir } = sort;
+    const mult = dir === 'asc' ? 1 : -1;
+    return [...rows].sort((a, b) => {
+      const av = a[key];
+      const bv = b[key];
+      if (av == null && bv == null) return 0;
+      if (av == null) return 1;   // nulls always at bottom
+      if (bv == null) return -1;
+      if (av < bv) return -1 * mult;
+      if (av > bv) return  1 * mult;
+      return 0;
+    });
+  }, [items, filter, sort]);
 
   const activeCount = items.filter(u => u.is_active).length;
+  const selected = filtered.find(u => u.id === selectedId) || null;
+  const singleSelected = !!selected;
+  const isSelfSelected = selected?.username === currentUsername;
+  const isLastActive = selected?.is_active && activeCount === 1;
+
+  function toggleSort(key) {
+    setSort(prev => {
+      if (prev.key !== key) return { key, dir: 'asc' };
+      return { key, dir: prev.dir === 'asc' ? 'desc' : 'asc' };
+    });
+  }
 
   function copy(text) {
     navigator.clipboard.writeText(text).then(
@@ -50,126 +88,176 @@ export default function AdminsPage({ currentUsername, onSelfDeactivated, onCopyT
   }
 
   async function applyUpdate(id, patches, opts = {}) {
-    const target = items.find(u => u.id === id);
-    const isSelfDeactivate = opts.isSelfDeactivate;
     await s3api.updateAdmin(id, patches);
-    if (isSelfDeactivate) {
+    if (opts.isSelfDeactivate) {
       onSelfDeactivated?.();
       return;
     }
+    setSelectedId(null);
     await load();
-    return target;
   }
 
   return (
     <div>
-      <div className="flex items-start justify-between mb-1">
-        <div>
-          <h1 className="text-[24px] font-bold text-[#e6edf3]">Admin users</h1>
-          <p className="text-[13px] text-[#8b949e] mt-1">
-            {items.length} total · {activeCount} active. Anyone listed here can sign in to AWS S3 Navigate.
-          </p>
-        </div>
-        <button
-          onClick={() => setModal({ kind: 'create' })}
-          className="px-4 h-[36px] rounded-[2px] bg-[#ec7211] hover:bg-[#eb5f07] text-[#16191f] text-[14px] font-bold"
+      <div className="mb-4">
+        <h1 className="text-[24px] font-bold" style={{ color: colors.text.primary }}>
+          Admin users {selected
+            ? <span style={{ color: colors.text.info }}>(1/{items.length})</span>
+            : <span style={{ color: colors.text.info }}>({items.length})</span>}
+        </h1>
+        <p className="mt-1 text-[13px]" style={{ color: colors.text.info }}>
+          {activeCount} active. Anyone listed here can sign in to AWS S3 Navigate.
+        </p>
+      </div>
+
+      <div className="flex items-center gap-2 mb-4 flex-wrap">
+        <AwsButton variant="icon" title="Refresh" onClick={load} icon={<RefreshIcon />} />
+        <AwsButton disabled={!singleSelected} onClick={() => setModal({ kind: 'edit', target: selected })}>
+          Edit
+        </AwsButton>
+        <AwsButton disabled={!singleSelected} onClick={() => setModal({ kind: 'reset', target: selected })}>
+          Reset password
+        </AwsButton>
+        <AwsButton
+          disabled={!singleSelected || (selected.is_active && isLastActive)}
+          title={isLastActive ? 'Cannot deactivate the last active admin' : undefined}
+          onClick={() => {
+            if (!selected) return;
+            if (selected.is_active) {
+              setModal({
+                kind: 'confirm',
+                target: selected,
+                copy: {
+                  title: 'Deactivate admin?',
+                  destructiveLabel: 'Deactivate admin',
+                  warningTitle: isSelfSelected
+                    ? 'This will sign you out immediately'
+                    : `This will sign out ${selected.username} immediately`,
+                  body: isSelfSelected
+                    ? <>You're deactivating your own account. Your current session will be deleted, you'll be returned to the sign-in page, and you won't be able to sign in until another admin reactivates you.</>
+                    : <><span className="font-mono">{selected.username}</span> ({selected.email}) will lose access to AWS S3 Navigate. Their existing sessions will be revoked. Reactivate from this page later if needed.</>,
+                  confirmPrompt: selected.username,
+                },
+              });
+            } else {
+              applyUpdate(selected.id, { is_active: true }).catch(e => setError(e.message));
+            }
+          }}
         >
-          Create admin
-        </button>
+          {selected?.is_active === false ? 'Reactivate' : 'Deactivate'}
+        </AwsButton>
+        <div className="ml-auto">
+          <AwsButton variant="primary" onClick={() => setModal({ kind: 'create' })}>
+            Create admin
+          </AwsButton>
+        </div>
       </div>
 
       {error && (
-        <div className="mt-4">
+        <div className="mb-4">
           <AwsAlert variant="error" tone="outlined" title="Couldn’t load admins" onDismiss={() => setError(null)}>
             {error}
           </AwsAlert>
         </div>
       )}
 
-      <div className="mt-5 mb-3">
-        <input
+      <div className="mb-4 max-w-[460px]">
+        <AwsSearchInput
           value={filter}
-          onChange={(e) => setFilter(e.target.value)}
-          placeholder="Filter by account ID, email, or username"
-          className="w-full max-w-[420px] h-[36px] px-3 bg-[#0d1117] border border-[#687077] rounded-[2px] text-[14px] text-[#e6edf3] outline-none focus:border-[#1f6feb] focus:shadow-[0_0_0_2px_rgba(31,111,235,0.3)]"
+          onChange={setFilter}
+          placeholder="Find admins by account ID, email, or username"
         />
       </div>
 
-      <div className="rounded-[4px] bg-[#0d1117] overflow-x-auto">
-        <table className="w-full min-w-[860px] text-[13px] text-left">
-          <thead className="text-[#c9d1d9] border-b border-[#30363d]">
+      <div className="rounded-[4px] overflow-x-auto" style={{ backgroundColor: colors.bg.card }}>
+        <table className="w-full min-w-[920px] text-[14px] text-left border-collapse">
+          <thead>
             <tr>
-              <Th>Account ID</Th>
-              <Th>Email</Th>
-              <Th>Username</Th>
-              <Th>Created</Th>
-              <Th>Last login</Th>
-              <Th>Status</Th>
-              <Th className="text-right pr-4">Actions</Th>
+              <th style={{ width: 44, padding: '10px 12px' }} aria-hidden="true" />
+              {COLUMNS.map((col, idx) => {
+                const isSorted = sort.key === col.key;
+                return (
+                  <th
+                    key={col.key}
+                    style={{ width: col.width, padding: '10px 12px', color: colors.text.primary }}
+                    className="font-bold"
+                  >
+                    <button
+                      type="button"
+                      onClick={() => toggleSort(col.key)}
+                      className="inline-flex items-center gap-2"
+                      style={{ color: colors.text.primary }}
+                    >
+                      <span>{col.label}</span>
+                      <SortTriangle
+                        active={isSorted}
+                        direction={isSorted ? sort.dir : null}
+                      />
+                    </button>
+                    {idx < COLUMNS.length - 1 && <ColumnDivider />}
+                  </th>
+                );
+              })}
             </tr>
           </thead>
           <tbody>
             {loading && (
-              <tr><td className="p-4 text-[#8b949e]" colSpan={7}>Loading admins…</td></tr>
+              <tr><td colSpan={COLUMNS.length + 1} className="px-3 py-6" style={{ color: colors.text.info }}>Loading admins…</td></tr>
             )}
             {!loading && filtered.length === 0 && (
-              <tr><td className="p-4 text-[#8b949e]" colSpan={7}>No admins match this filter.</td></tr>
+              <tr><td colSpan={COLUMNS.length + 1} className="px-3 py-6" style={{ color: colors.text.info }}>No admins match this filter.</td></tr>
             )}
-            {filtered.map(u => {
+            {!loading && filtered.map(u => {
+              const isSel = u.id === selectedId;
               const isSelf = u.username === currentUsername;
-              const lastActive = u.is_active && activeCount === 1;
               return (
-                <tr key={u.id} className="border-b border-[#21262d] last:border-b-0 hover:bg-[#161b22]">
+                <tr
+                  key={u.id}
+                  style={{
+                    backgroundColor: isSel ? colors.bg.rowSelected : 'transparent',
+                    color: isSel ? colors.text.selectedRow : colors.text.primary,
+                    borderTop: `1px solid ${isSel ? colors.border.rowSelected : colors.border.rowSeparator}`,
+                    borderBottom: `1px solid ${isSel ? colors.border.rowSelected : colors.border.rowSeparator}`,
+                  }}
+                >
                   <Td>
-                    <button onClick={() => copy(u.account_id)} className="font-mono text-[#e6edf3] hover:text-[#58a6ff]" title="Copy">
+                    <input
+                      type="checkbox"
+                      checked={isSel}
+                      onChange={() => setSelectedId(isSel ? null : u.id)}
+                      className="w-[16px] h-[16px] accent-[#016ce0] cursor-pointer"
+                      aria-label={`Select ${u.username}`}
+                    />
+                  </Td>
+                  <Td>
+                    <button
+                      onClick={() => copy(u.account_id)}
+                      className="font-mono"
+                      style={{ color: 'inherit' }}
+                      title="Copy account ID"
+                    >
                       {u.account_id}
                     </button>
                   </Td>
-                  <Td className="text-[#c9d1d9]">{u.email}</Td>
-                  <Td className="text-[#c9d1d9]">
+                  <Td className="break-words">{u.email}</Td>
+                  <Td className="break-words">
                     {u.username}
-                    {isSelf && <span className="ml-2 text-[11px] text-[#8b949e] uppercase tracking-wider">you</span>}
+                    {isSelf && (
+                      <span className="ml-2 text-[11px] uppercase tracking-wider" style={{ color: colors.text.info }}>
+                        you
+                      </span>
+                    )}
                   </Td>
-                  <Td className="text-[#8b949e]">{formatAwsDateCompact(u.created_at)}</Td>
-                  <Td className="text-[#8b949e]">{u.last_login_at ? formatAwsDateCompact(u.last_login_at) : '—'}</Td>
+                  <Td className="break-words" style={{ color: isSel ? colors.text.selectedRow : colors.text.info }}>
+                    {formatAwsDate(u.created_at)}
+                  </Td>
+                  <Td className="break-words" style={{ color: isSel ? colors.text.selectedRow : colors.text.info }}>
+                    {u.last_login_at ? formatAwsDate(u.last_login_at) : '—'}
+                  </Td>
                   <Td>
                     {u.is_active
-                      ? <Badge color="#3fb950" bg="rgba(63,185,80,0.12)">Active</Badge>
-                      : <Badge color="#8b949e" bg="rgba(139,148,158,0.12)">Inactive</Badge>}
-                  </Td>
-                  <Td className="text-right pr-4 whitespace-nowrap">
-                    <div className="inline-flex gap-3 text-[13px]">
-                      <RowAction onClick={() => setModal({ kind: 'edit', target: u })}>Edit</RowAction>
-                      <RowAction onClick={() => setModal({ kind: 'reset', target: u })}>Reset password</RowAction>
-                      {u.is_active ? (
-                        <RowAction
-                          danger
-                          disabled={lastActive}
-                          title={lastActive ? 'Cannot deactivate the last active admin' : undefined}
-                          onClick={() => setModal({
-                            kind: 'confirm',
-                            target: u,
-                            intent: 'deactivate',
-                            copy: {
-                              title: 'Deactivate admin?',
-                              destructiveLabel: 'Deactivate admin',
-                              warningTitle: isSelf
-                                ? 'This will sign you out immediately'
-                                : `This will sign out ${u.username} immediately`,
-                              body: isSelf
-                                ? <>You're deactivating your own account. Your current session will be deleted, you'll be returned to the sign-in page, and you won't be able to sign in until another admin reactivates you.</>
-                                : <><span className="font-mono">{u.username}</span> ({u.email}) will lose access to AWS S3 Navigate. Their existing sessions will be revoked. Reactivate from this page later if needed.</>,
-                              confirmPrompt: u.username,
-                            },
-                          })}
-                        >Deactivate</RowAction>
-                      ) : (
-                        <RowAction onClick={async () => {
-                          try { await applyUpdate(u.id, { is_active: true }); }
-                          catch (e) { setError(e.message); }
-                        }}>Reactivate</RowAction>
-                      )}
-                    </div>
+                      ? <Badge color="#7af0a0" bg="rgba(0,90,40,0.25)">Active</Badge>
+                      : <Badge color={colors.text.info} bg="rgba(139,148,158,0.18)">Inactive</Badge>}
                   </Td>
                 </tr>
               );
@@ -188,7 +276,7 @@ export default function AdminsPage({ currentUsername, onSelfDeactivated, onCopyT
         <EditAdminModal
           target={modal.target}
           onCancel={() => setModal(null)}
-          onDone={async () => { setModal(null); await load(); }}
+          onDone={async () => { setModal(null); setSelectedId(null); await load(); }}
         />
       )}
       {modal?.kind === 'reset' && modal.target && (
@@ -204,9 +292,9 @@ export default function AdminsPage({ currentUsername, onSelfDeactivated, onCopyT
           {...modal.copy}
           onCancel={() => setModal(null)}
           onConfirm={async () => {
-            const isSelf = modal.target.username === currentUsername;
+            const isSelfTarget = modal.target.username === currentUsername;
             try {
-              await applyUpdate(modal.target.id, { is_active: false }, { isSelfDeactivate: isSelf });
+              await applyUpdate(modal.target.id, { is_active: false }, { isSelfDeactivate: isSelfTarget });
               setModal(null);
             } catch (e) {
               setError(e.message);
@@ -219,11 +307,10 @@ export default function AdminsPage({ currentUsername, onSelfDeactivated, onCopyT
   );
 }
 
-function Th({ children, className = '' }) {
-  return <th className={`px-3 py-2 font-semibold ${className}`}>{children}</th>;
-}
-function Td({ children, className = '' }) {
-  return <td className={`px-3 py-3 align-middle ${className}`}>{children}</td>;
+function Td({ children, className = '', style }) {
+  return (
+    <td className={`align-middle ${className}`} style={{ padding: '12px', ...style }}>{children}</td>
+  );
 }
 
 function Badge({ color, bg, children }) {
@@ -235,43 +322,46 @@ function Badge({ color, bg, children }) {
   );
 }
 
-function RowAction({ onClick, children, danger = false, disabled = false, title }) {
-  const base = 'underline decoration-dotted underline-offset-2 transition-colors';
-  const color = disabled
-    ? 'text-[#484f58] cursor-not-allowed'
-    : danger
-      ? 'text-[#e35b66] hover:text-[#fe6b58]'
-      : 'text-[#58a6ff] hover:text-[#79b8ff]';
-  return (
-    <button
-      type="button"
-      title={title}
-      onClick={disabled ? undefined : onClick}
-      className={`${base} ${color}`}
-    >
-      {children}
-    </button>
-  );
-}
-
 function ModalShell({ title, body, footer, onCancel, wide = false }) {
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4"
-      onClick={onCancel}
-    >
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4" onClick={onCancel}>
       <div
         onClick={(e) => e.stopPropagation()}
-        className={`bg-[#161b22] rounded-[4px] shadow-[0_24px_64px_rgba(0,0,0,0.6)] ${wide ? 'w-full max-w-[560px]' : 'w-full max-w-[440px]'}`}
+        className={`rounded-[4px] shadow-[0_24px_64px_rgba(0,0,0,0.6)] ${wide ? 'w-full max-w-[560px]' : 'w-full max-w-[440px]'}`}
+        style={{ backgroundColor: colors.bg.card }}
       >
-        <div className="px-5 pt-4 pb-3 border-b border-[#30363d]">
-          <h2 className="text-[18px] font-bold text-[#e6edf3]">{title}</h2>
+        <div className="px-5 pt-4 pb-3" style={{ borderBottom: `1px solid ${colors.border.buttonInactive}` }}>
+          <h2 className="text-[18px] font-bold" style={{ color: colors.text.primary }}>{title}</h2>
         </div>
         <div className="px-5 py-4">{body}</div>
-        <div className="px-5 py-3 border-t border-[#30363d] flex items-center justify-end gap-2">
+        <div className="px-5 py-3 flex items-center justify-end gap-2" style={{ borderTop: `1px solid ${colors.border.buttonInactive}` }}>
           {footer}
         </div>
       </div>
+    </div>
+  );
+}
+
+function FormField({ label, value, onChange, type = 'text', hint, placeholder, disabled, mono, maxLength }) {
+  return (
+    <div>
+      <label className="block text-[13px] font-bold mb-1" style={{ color: colors.text.primary }}>{label}</label>
+      <input
+        type={type}
+        value={value}
+        disabled={disabled}
+        maxLength={maxLength}
+        placeholder={placeholder}
+        onChange={onChange ? (e) => onChange(e.target.value) : undefined}
+        className={`w-full h-[34px] px-3 text-[14px] outline-none disabled:opacity-60 focus:shadow-[0_0_0_2px_rgba(31,111,235,0.3)] ${mono ? 'font-mono' : ''}`}
+        style={{
+          backgroundColor: '#0d1117',
+          border: `1px solid ${colors.border.inputDefault}`,
+          borderRadius: '4px',
+          color: colors.text.primary,
+        }}
+      />
+      {hint && <div className="mt-1 text-[12px]" style={{ color: colors.text.info }}>{hint}</div>}
     </div>
   );
 }
@@ -306,19 +396,15 @@ function CreateAdminModal({ onCancel, onDone }) {
           <FormField label="Email (@emergent.sh)" value={email} onChange={setEmail} placeholder="user@emergent.sh" type="email" />
           <FormField label="Username" value={username} onChange={setUsername} placeholder="alice" />
           <FormField label="Password" value={password} onChange={setPassword} type="password" hint="Min 8 chars · upper · lower · digit" />
-          {err && <div className="text-[13px] text-[#e35b66]">{err}</div>}
+          {err && <div className="text-[13px]" style={{ color: '#e35b66' }}>{err}</div>}
         </div>
       }
       footer={
         <>
-          <button onClick={onCancel} className="px-4 h-[34px] rounded-[2px] text-[14px] text-[#c9d1d9] hover:bg-[#21262d]">Cancel</button>
-          <button
-            disabled={submitting}
-            onClick={submit}
-            className="px-4 h-[34px] rounded-[2px] bg-[#ec7211] hover:bg-[#eb5f07] text-[#16191f] text-[14px] font-bold disabled:opacity-60"
-          >
+          <AwsButton onClick={onCancel}>Cancel</AwsButton>
+          <AwsButton variant="primary" disabled={submitting} onClick={submit}>
             {submitting ? 'Creating…' : 'Create admin'}
-          </button>
+          </AwsButton>
         </>
       }
       onCancel={onCancel}
@@ -352,25 +438,21 @@ function EditAdminModal({ target, onCancel, onDone }) {
 
   return (
     <ModalShell
-      title={<>Edit admin <span className="text-[#8b949e] font-normal text-[14px] ml-1">({target.account_id})</span></>}
+      title={<>Edit admin <span className="font-normal text-[14px] ml-1" style={{ color: colors.text.info }}>({target.account_id})</span></>}
       body={
         <div className="space-y-3">
           <FormField label="Account ID" value={target.account_id} disabled mono hint="Account ID is immutable." />
           <FormField label="Email" value={email} onChange={setEmail} type="email" />
           <FormField label="Username" value={username} onChange={setUsername} />
-          {err && <div className="text-[13px] text-[#e35b66]">{err}</div>}
+          {err && <div className="text-[13px]" style={{ color: '#e35b66' }}>{err}</div>}
         </div>
       }
       footer={
         <>
-          <button onClick={onCancel} className="px-4 h-[34px] rounded-[2px] text-[14px] text-[#c9d1d9] hover:bg-[#21262d]">Cancel</button>
-          <button
-            disabled={!dirty || submitting}
-            onClick={submit}
-            className="px-4 h-[34px] rounded-[2px] bg-[#ec7211] hover:bg-[#eb5f07] text-[#16191f] text-[14px] font-bold disabled:opacity-50"
-          >
+          <AwsButton onClick={onCancel}>Cancel</AwsButton>
+          <AwsButton variant="primary" disabled={!dirty || submitting} onClick={submit}>
             {submitting ? 'Saving…' : 'Save changes'}
-          </button>
+          </AwsButton>
         </>
       }
       onCancel={onCancel}
@@ -400,29 +482,25 @@ function ResetPasswordModal({ target, isSelf, onCancel, onDone }) {
 
   return (
     <ModalShell
-      title={<>Reset password <span className="text-[#8b949e] font-normal text-[14px] ml-1">for {target.username}</span></>}
+      title={<>Reset password <span className="font-normal text-[14px] ml-1" style={{ color: colors.text.info }}>for {target.username}</span></>}
       body={
         <div className="space-y-3">
           {!isSelf && (
-            <p className="text-[13px] text-[#c9d1d9]">
+            <p className="text-[13px]" style={{ color: colors.text.info }}>
               This will replace <span className="font-mono">{target.username}</span>'s password and sign them out of every device.
             </p>
           )}
           <FormField label="New password" value={pw} onChange={setPw} type="password" hint="Min 8 chars · upper · lower · digit" />
           <FormField label="Confirm new password" value={pw2} onChange={setPw2} type="password" />
-          {err && <div className="text-[13px] text-[#e35b66]">{err}</div>}
+          {err && <div className="text-[13px]" style={{ color: '#e35b66' }}>{err}</div>}
         </div>
       }
       footer={
         <>
-          <button onClick={onCancel} className="px-4 h-[34px] rounded-[2px] text-[14px] text-[#c9d1d9] hover:bg-[#21262d]">Cancel</button>
-          <button
-            disabled={!pw || submitting}
-            onClick={submit}
-            className="px-4 h-[34px] rounded-[2px] bg-[#ec7211] hover:bg-[#eb5f07] text-[#16191f] text-[14px] font-bold disabled:opacity-50"
-          >
+          <AwsButton onClick={onCancel}>Cancel</AwsButton>
+          <AwsButton variant="primary" disabled={!pw || submitting} onClick={submit}>
             {submitting ? 'Resetting…' : 'Reset password'}
-          </button>
+          </AwsButton>
         </>
       }
       onCancel={onCancel}
@@ -430,7 +508,6 @@ function ResetPasswordModal({ target, isSelf, onCancel, onDone }) {
   );
 }
 
-// AWS-style "type the value to confirm" destructive modal.
 function ConfirmDestructiveModal({
   title,
   warningTitle,
@@ -460,24 +537,30 @@ function ConfirmDestructiveModal({
             className="flex items-start gap-3 p-3 rounded-[2px]"
             style={{ backgroundColor: 'rgba(176,15,31,0.12)', border: '1px solid #e35b66' }}
           >
-            <svg className="w-5 h-5 mt-0.5 shrink-0 text-[#e35b66]" viewBox="0 0 16 16" fill="currentColor">
+            <svg className="w-5 h-5 mt-0.5 shrink-0" style={{ color: '#e35b66' }} viewBox="0 0 16 16" fill="currentColor">
               <path d="M6.457 1.047c.659-1.234 2.427-1.234 3.086 0l6.082 11.378A1.75 1.75 0 0 1 14.082 15H1.918a1.75 1.75 0 0 1-1.543-2.575Zm.53 4.996v2.5a.75.75 0 0 1-1.5 0v-2.5a.75.75 0 0 1 1.5 0ZM9 11a1 1 0 1 1-2 0 1 1 0 0 1 2 0Z" />
             </svg>
-            <div className="text-[13px] text-[#e6edf3]">
+            <div className="text-[13px]" style={{ color: colors.text.primary }}>
               <div className="font-semibold mb-1">{warningTitle}</div>
-              <div className="text-[#c9d1d9]">{body}</div>
+              <div style={{ color: colors.text.info }}>{body}</div>
             </div>
           </div>
 
           {confirmPrompt && (
             <>
-              <p className="text-[13px] text-[#c9d1d9]">
-                To confirm, type <span className="font-mono text-[#e6edf3]">{confirmPrompt}</span> in the field below.
+              <p className="text-[13px]" style={{ color: colors.text.info }}>
+                To confirm, type <span className="font-mono" style={{ color: colors.text.primary }}>{confirmPrompt}</span> in the field below.
               </p>
               <input
                 value={typed}
                 onChange={(e) => setTyped(e.target.value)}
-                className="w-full h-[36px] px-3 bg-[#0d1117] border border-[#687077] rounded-[2px] text-[14px] text-[#e6edf3] outline-none focus:border-[#1f6feb] focus:shadow-[0_0_0_2px_rgba(31,111,235,0.3)]"
+                className="w-full h-[36px] px-3 text-[14px] outline-none focus:shadow-[0_0_0_2px_rgba(31,111,235,0.3)]"
+                style={{
+                  backgroundColor: '#0d1117',
+                  border: `1px solid ${colors.border.inputDefault}`,
+                  borderRadius: '4px',
+                  color: colors.text.primary,
+                }}
                 autoFocus
               />
             </>
@@ -486,17 +569,12 @@ function ConfirmDestructiveModal({
       }
       footer={
         <>
-          <button
-            disabled={busy}
-            onClick={onCancel}
-            className="px-4 h-[34px] rounded-[2px] text-[14px] text-[#c9d1d9] hover:bg-[#21262d] disabled:opacity-50"
-          >
-            Cancel
-          </button>
+          <AwsButton disabled={busy} onClick={onCancel}>Cancel</AwsButton>
           <button
             disabled={!matches || busy}
             onClick={go}
-            className="px-4 h-[34px] rounded-[2px] bg-[#b00f1f] hover:bg-[#8a0a16] text-white text-[14px] font-bold disabled:opacity-40 disabled:cursor-not-allowed"
+            className="px-4 h-[32px] rounded-[20px] text-[14px] font-bold disabled:opacity-40 disabled:cursor-not-allowed"
+            style={{ backgroundColor: '#b00f1f', color: '#ffffff', border: '1px solid #b00f1f' }}
           >
             {busy ? 'Working…' : destructiveLabel}
           </button>
@@ -504,23 +582,5 @@ function ConfirmDestructiveModal({
       }
       onCancel={onCancel}
     />
-  );
-}
-
-function FormField({ label, value, onChange, type = 'text', hint, placeholder, disabled, mono, maxLength }) {
-  return (
-    <div>
-      <label className="block text-[13px] font-bold text-[#e6edf3] mb-1">{label}</label>
-      <input
-        type={type}
-        value={value}
-        disabled={disabled}
-        maxLength={maxLength}
-        placeholder={placeholder}
-        onChange={onChange ? (e) => onChange(e.target.value) : undefined}
-        className={`w-full h-[34px] px-3 bg-[#0d1117] border border-[#687077] rounded-[2px] text-[14px] text-[#e6edf3] outline-none focus:border-[#1f6feb] focus:shadow-[0_0_0_2px_rgba(31,111,235,0.3)] disabled:opacity-60 ${mono ? 'font-mono' : ''}`}
-      />
-      {hint && <div className="mt-1 text-[12px] text-[#8b949e]">{hint}</div>}
-    </div>
   );
 }

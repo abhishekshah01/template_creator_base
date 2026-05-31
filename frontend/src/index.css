@@ -72,3 +72,41 @@ body {
 .animate-shiny-text {
   animation: shiny-text 5s linear infinite;
 }
+
+/* Amazon Ember — used by the AWS S3 Navigate section only.
+ * Files live under /public/fonts/ so Vite serves them as static assets.
+ * Drop AmazonEmber_Rg.woff2 + AmazonEmber_Bd.woff2 (and optionally _It / _BdIt)
+ * into frontend/public/fonts/ and these declarations pick them up automatically. */
+@font-face {
+  font-family: 'Amazon Ember';
+  src: url('/fonts/AmazonEmber_Rg.woff2') format('woff2'),
+       url('/fonts/AmazonEmber_Rg.ttf')  format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Amazon Ember';
+  src: url('/fonts/AmazonEmber_Bd.woff2') format('woff2'),
+       url('/fonts/AmazonEmber_Bd.ttf')  format('truetype');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Amazon Ember';
+  src: url('/fonts/AmazonEmber_It.woff2') format('woff2'),
+       url('/fonts/AmazonEmber_It.ttf')  format('truetype');
+  font-weight: 400;
+  font-style: italic;
+  font-display: swap;
+}
+
+/* Section wrapper: scopes the Amazon Ember stack + base page bg so the rest
+ * of the app keeps its GitHub-dark look. Applied to the S3Navigate root. */
+.aws-s3-section {
+  font-family: 'Amazon Ember', 'Helvetica Neue', system-ui, -apple-system, sans-serif;
+  font-size: 14px;
+  background-color: #1a1c1d;
+  color: #ffffff;
+}

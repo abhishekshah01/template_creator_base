@@ -7,7 +7,7 @@ export default function Shell({ children, username, onSignOut, onHome, onOpenAdm
   const onAdmins = activeView === 'admins';
   const onBuckets = !onAdmins;
   return (
-    <div className="flex min-h-full">
+    <div className="aws-s3-section flex min-h-full">
       {/* Sub-sidebar */}
       {!sidebarCollapsed && (
         <aside className="w-[240px] shrink-0 border-r border-[#30363d] bg-[#0d1117] py-5 px-4">
