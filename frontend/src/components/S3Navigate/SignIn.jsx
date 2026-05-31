@@ -7,11 +7,13 @@ import { s3api } from './api';
 //   Email · Username · Password   →   POST to backend
 // AWS-only chrome (Account ID alias, root user email, "Create AWS account",
 // Having trouble?) is dropped.
-const REMEMBERED_EMAIL_KEY = 's3nav_remembered_email';
+const REMEMBERED_ACCOUNT_KEY = 's3nav_remembered_account';
 const REMEMBERED_USERNAME_KEY = 's3nav_remembered_username';
 
 export default function SignIn({ onSignedIn }) {
-  const [email, setEmail] = useState(() => localStorage.getItem(REMEMBERED_EMAIL_KEY) || '');
+  // "account" holds either an Account ID or an email — backend will figure
+  // out which when we wire this up against the MongoDB admin users collection.
+  const [account, setAccount] = useState(() => localStorage.getItem(REMEMBERED_ACCOUNT_KEY) || '');
   const [username, setUsername] = useState(
     () => localStorage.getItem(REMEMBERED_USERNAME_KEY) || '',
   );
@@ -28,10 +30,10 @@ export default function SignIn({ onSignedIn }) {
     e.preventDefault();
     if (submitting) return;
 
-    const trimmedEmail = email.trim();
+    const trimmedAccount = account.trim();
     const trimmedUser = username.trim();
     const fe = {};
-    if (!trimmedEmail) fe.email = 'Email is required';
+    if (!trimmedAccount) fe.account = 'Account ID or email is required';
     if (!trimmedUser) fe.username = 'Username is required';
     if (!password) fe.password = 'Password is required';
     setFieldErrors(fe);
@@ -42,10 +44,10 @@ export default function SignIn({ onSignedIn }) {
     try {
       const data = await s3api.signIn(trimmedUser, password);
       if (remember) {
-        localStorage.setItem(REMEMBERED_EMAIL_KEY, trimmedEmail);
+        localStorage.setItem(REMEMBERED_ACCOUNT_KEY, trimmedAccount);
         localStorage.setItem(REMEMBERED_USERNAME_KEY, trimmedUser);
       } else {
-        localStorage.removeItem(REMEMBERED_EMAIL_KEY);
+        localStorage.removeItem(REMEMBERED_ACCOUNT_KEY);
         localStorage.removeItem(REMEMBERED_USERNAME_KEY);
       }
       onSignedIn?.(data);
@@ -100,9 +102,9 @@ export default function SignIn({ onSignedIn }) {
             <form
               onSubmit={handleSubmit}
               noValidate
-              className="bg-[#161b22] border border-[#30363d] rounded-[4px] overflow-hidden"
+              className="bg-[#161b22] border border-[#5f6b7a] rounded-[4px] overflow-hidden"
             >
-              <div className="px-5 pt-4 pb-3 border-b border-[#30363d]">
+              <div className="px-5 pt-4 pb-3 border-b border-[#5f6b7a]">
                 <h2 className="text-[20px] font-bold text-[#e6edf3] inline-flex items-center gap-1.5">
                   Admin sign in
                   <InfoCircle />
@@ -110,19 +112,19 @@ export default function SignIn({ onSignedIn }) {
               </div>
 
               <div className="px-5 py-4">
-                {/* Email */}
-                <label className="block text-[14px] font-bold text-[#e6edf3] mb-1">Email</label>
+                {/* Account ID or email */}
+                <label className="block text-[14px] font-bold text-[#e6edf3] mb-1">Account ID or email</label>
                 <input
-                  type="email"
-                  value={email}
+                  type="text"
+                  value={account}
                   onChange={(e) => {
-                    setEmail(e.target.value);
-                    if (fieldErrors.email) setFieldErrors((p) => ({ ...p, email: undefined }));
+                    setAccount(e.target.value);
+                    if (fieldErrors.account) setFieldErrors((p) => ({ ...p, account: undefined }));
                   }}
-                  autoComplete="email"
-                  className={inputCls(!!fieldErrors.email)}
+                  autoComplete="username"
+                  className={inputCls(!!fieldErrors.account)}
                 />
-                {fieldErrors.email ? <FieldError message={fieldErrors.email} /> : <Gap />}
+                {fieldErrors.account ? <FieldError message={fieldErrors.account} /> : <Gap />}
 
                 <label className="flex items-center gap-2 text-[14px] text-[#c9d1d9] cursor-pointer mb-4 select-none">
                   <input
@@ -182,13 +184,13 @@ export default function SignIn({ onSignedIn }) {
             </form>
           </div>
 
-          {/* Right: promo card — shorter, gradient adjusted to feel intentional at the new height */}
-          <div className="bg-[#0d1117] border border-[#30363d] rounded-[4px] overflow-hidden flex flex-col">
+          {/* Right: promo card — taller, gradient retuned for the new size */}
+          <div className="bg-[#0d1117] border border-[#5f6b7a] rounded-[4px] overflow-hidden flex flex-col">
             <div
-              className="relative h-[280px]"
+              className="relative h-[320px]"
               style={{
                 background:
-                  'radial-gradient(140% 110% at 95% 15%, #f9b400 0%, #ec7211 22%, #6b1d05 55%, #0d1117 85%)',
+                  'radial-gradient(130% 100% at 95% 12%, #f9b400 0%, #ec7211 24%, #6b1d05 58%, #0d1117 88%)',
               }}
             >
               <div className="absolute inset-0 p-6 flex flex-col justify-start">
@@ -236,7 +238,7 @@ function inputCls(hasError = false) {
     'focus:shadow-[0_0_0_2px_rgba(31,111,235,0.3)] transition-shadow';
   return hasError
     ? `${base} border-[#e35b66] focus:border-[#e35b66] focus:shadow-[0_0_0_2px_rgba(227,91,102,0.3)]`
-    : `${base} border-[#30363d] focus:border-[#1f6feb]`;
+    : `${base} border-[#5f6b7a] focus:border-[#1f6feb]`;
 }
 
 function Gap({ small = false }) {
