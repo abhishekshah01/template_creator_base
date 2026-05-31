@@ -63,7 +63,14 @@ export default function UploadPage({ bucket, prefix, onCancel, onDone }) {
       }
     }
     setRunning(false);
-    if (done > 0) onDone?.(done);
+    const failed = items.length - done;
+    if (failed === 0 && done > 0) {
+      // All succeeded — bubble up so the parent banner + listing refresh.
+      onDone?.(done);
+    } else if (failed > 0) {
+      // Keep the user on the page so they can see which rows failed and retry.
+      setErr(`${failed} file${failed === 1 ? '' : 's'} failed to upload. Remove or retry the failed rows.`);
+    }
   }
 
   const allDone = items.length > 0 && items.every(it => progress[it.relPath]?.status === 'done');
