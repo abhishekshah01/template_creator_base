@@ -87,7 +87,7 @@ export default function CreateFolderPage({ bucket, prefix, onCancel, onDone }) {
           <span className="text-[14px] text-[#8b949e]">/</span>
         </div>
         <p className="mt-2 text-[12px] text-[#8b949e]">
-          Folder names can't contain "/". <button type="button" className="text-[#58a6ff] underline decoration-dashed underline-offset-2" onClick={(e) => e.preventDefault()}>See rules for naming</button>
+          Folder names can't contain "/" and are limited to 200 characters.
         </p>
       </form>
 
