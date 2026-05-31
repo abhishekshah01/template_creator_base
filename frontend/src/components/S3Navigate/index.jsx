@@ -10,11 +10,13 @@ import CreateFolderPage from './CreateFolderPage';
 import DeletePage from './DeletePage';
 import DeleteStatusPage from './DeleteStatusPage';
 import AwsAlert from './AwsAlert';
+import AdminsPage from './AdminsPage';
 import { s3api, getToken, GateError } from './api';
 
 // Top-level state machine for AWS S3 Navigate.
 // view: 'signin' | 'buckets' | 'objects' | 'object'
 //     | 'upload' | 'createFolder' | 'deleteObjects' | 'deleteStatus'
+//     | 'admins'
 export default function S3Navigate() {
   const [view, setView] = useState('signin');
   const [session, setSession] = useState(null); // {username, expires_at}
@@ -99,6 +101,16 @@ export default function S3Navigate() {
     setPageBanner(null);
     setView('buckets');
   }
+  function openAdmins() {
+    setPageBanner(null);
+    setView('admins');
+  }
+  function onSelfDeactivated() {
+    s3api.signOut().finally(() => {
+      setSession(null);
+      setView('signin');
+    });
+  }
   function backToObjects() {
     setObjectKey(null);
     setView('objects');
@@ -144,6 +156,7 @@ export default function S3Navigate() {
     if (view === 'createFolder') c.push({ label: 'Create folder' });
     if (view === 'deleteObjects') c.push({ label: 'Delete objects' });
     if (view === 'deleteStatus') c.push({ label: 'Delete objects' });
+    if (view === 'admins') return [{ label: 'AWS S3 Navigate', onClick: goHome }, { label: 'Admin users' }];
     return c;
   }
 
@@ -160,11 +173,13 @@ export default function S3Navigate() {
       username={session?.username}
       onSignOut={onSignOut}
       onHome={goHome}
+      onOpenAdmins={openAdmins}
+      activeView={view === 'admins' ? 'admins' : 'buckets'}
       sidebarCollapsed={sidebarCollapsed}
       onToggleSidebar={() => setSidebarCollapsed(v => !v)}
     >
       {/* AWS hides the breadcrumb on the root bucket-list view — the h1 "Buckets" already names it. */}
-      {view !== 'buckets' && <Breadcrumb crumbs={crumbs()} />}
+      {view !== 'buckets' && view !== 'admins' && <Breadcrumb crumbs={crumbs()} />}
 
       {pageBanner && (
         <div className="mb-4">
@@ -180,6 +195,13 @@ export default function S3Navigate() {
       )}
 
       <ErrorBoundary onAuth={handleGateError}>
+        {view === 'admins' && (
+          <AdminsPage
+            currentUsername={session?.username}
+            onSelfDeactivated={onSelfDeactivated}
+            onCopyToast={showToast}
+          />
+        )}
         {view === 'buckets' && (
           <BucketList onOpenBucket={openBucket} />
         )}

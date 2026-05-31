@@ -3,7 +3,9 @@ import { useState } from 'react';
 // AWS S3 Navigate sub-nav, mirrors the AWS console layout. Only the routes
 // we actually use are kept; the rest of the AWS sidebar (Directory/Table/
 // Vector buckets, Access management, Storage Lens, Marketplace, etc.) is stripped.
-export default function Shell({ children, username, onSignOut, onHome, sidebarCollapsed, onToggleSidebar }) {
+export default function Shell({ children, username, onSignOut, onHome, onOpenAdmins, activeView, sidebarCollapsed, onToggleSidebar }) {
+  const onAdmins = activeView === 'admins';
+  const onBuckets = !onAdmins;
   return (
     <div className="flex min-h-full">
       {/* Sub-sidebar */}
@@ -20,7 +22,11 @@ export default function Shell({ children, username, onSignOut, onHome, sidebarCo
           </div>
 
           <SidebarSection label="Buckets" defaultOpen>
-            <SidebarLink active label="General purpose buckets" onClick={onHome} />
+            <SidebarLink active={onBuckets} label="General purpose buckets" onClick={onHome} />
+          </SidebarSection>
+
+          <SidebarSection label="Settings" defaultOpen>
+            <SidebarLink active={onAdmins} label="Admin users" onClick={onOpenAdmins} />
           </SidebarSection>
         </aside>
       )}

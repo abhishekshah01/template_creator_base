@@ -36,9 +36,12 @@ def _new_expiry() -> datetime:
 
 
 def _serialize(session: dict, *, fresh_token: Optional[str] = None) -> dict:
-    """Shape the response used by /login and /me."""
+    """Shape returned to callers of login()/require(). Includes admin_id (ObjectId)
+    for downstream handlers; the wire response schema strips it before send.
+    """
     return {
         "token": fresh_token or session["token"],
+        "admin_id": session["admin_id"],
         "username": session["username"],
         "account_id": session["account_id"],
         "email": session["email"],
