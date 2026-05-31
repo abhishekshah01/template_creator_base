@@ -60,7 +60,6 @@ export function AwsButton({
     );
   }
 
-  // default: outlined pill
   return (
     <button
       type={type}
@@ -82,29 +81,103 @@ export function AwsButton({
   );
 }
 
+// All section icons use the same stroke-based recipe: 16x16 viewBox, fill=none,
+// stroke=currentColor (so they inherit from the button text color), 1.4 stroke,
+// rounded caps + joins. Paths transcribed verbatim from AWS Cloudscape where
+// available — anything that diverges is noted on the function.
+
+const ICON_BASE_PROPS = {
+  viewBox: '0 0 16 16',
+  fill: 'none',
+  stroke: 'currentColor',
+  strokeWidth: 1.4,
+  strokeLinecap: 'round',
+  strokeLinejoin: 'round',
+};
+
 export function RefreshIcon({ className = 'w-[14px] h-[14px]' }) {
+  // Cloudscape "refresh" — open arrow at 1-o'clock, sweeping clockwise.
   return (
-    <svg className={className} viewBox="0 0 16 16" fill="currentColor">
-      <path d="M14.95 7.16a.75.75 0 0 0-1.49.18A5.5 5.5 0 1 1 8 2.5c1.612 0 3.083.694 4.106 1.806L11.06 5.354A.25.25 0 0 0 11.237 5.78h3.013c.138 0 .25-.112.25-.25V2.518a.25.25 0 0 0-.427-.177l-1.092 1.092A6.97 6.97 0 0 0 8 1.5a7 7 0 1 0 6.95 5.66Z" />
+    <svg className={className} {...ICON_BASE_PROPS}>
+      <path d="M14 6.5V2l-1.39 1.39A6 6 0 1 0 14 8M14 6.5H9.5" />
     </svg>
   );
 }
 
-// Sort-direction triangles used in column headers. The "default" variant is
-// the muted ▽ shown on inactive columns as an affordance.
-export function SortTriangle({ direction, active }) {
-  // direction: 'asc' | 'desc' | null
-  const fill = active ? colors.text.primary : '#5e6166';
-  if (direction === 'asc') {
-    return (
-      <svg className="w-[10px] h-[10px]" viewBox="0 0 10 10">
-        <path d="M5 1.5 9 8H1Z" fill={fill} />
-      </svg>
-    );
-  }
+export function SettingsIcon({ className = 'w-[14px] h-[14px]' }) {
   return (
-    <svg className="w-[10px] h-[10px]" viewBox="0 0 10 10">
-      <path d="M5 8.5 1 2h8Z" fill={fill} />
+    <svg className={className} {...ICON_BASE_PROPS}>
+      <path d="M6.11 1.729c-.07-.42.44-.729.86-.729h2.02c.43 0 .79.31.86.729l.17.999c.05.29.24.529.5.679.06.03.11.06.17.1.25.15.56.2.84.1l.95-.35c.4-.15.85 0 1.07.38l1.01 1.747c.21.37.13.839-.2 1.108l-.78.64c-.23.189-.34.479-.33.768v.2c0 .29.11.579.33.769l.78.639c.33.27.42.739.2 1.108l-1.01 1.748c-.21.37-.66.529-1.06.38l-.95-.35a.966.966 0 0 0-.84.1c-.06.03-.11.07-.17.1-.26.14-.45.389-.5.679l-.17.998A.878.878 0 0 1 9 15H6.98a.87.87 0 0 1-.86-.729l-.17-.998a.988.988 0 0 0-.5-.68c-.06-.03-.11-.06-.17-.1a.996.996 0 0 0-.84-.1l-.95.35c-.4.15-.85 0-1.06-.38l-1.01-1.747a.873.873 0 0 1 .2-1.108l.78-.64c.23-.189.34-.479.33-.768v-.2c0-.3-.11-.579-.33-.769l-.78-.639a.861.861 0 0 1-.2-1.108l1.01-1.748c.21-.37.66-.529 1.07-.38l.95.35c.28.1.58.06.84-.1.06-.03.11-.07.17-.1.26-.14.45-.379.5-.678l.15-1Z" />
+      <path d="M10 8c0 1.1-.9 2-2 2s-2-.9-2-2 .9-2 2-2 2 .9 2 2Z" />
+    </svg>
+  );
+}
+
+export function CopyIcon({ className = 'w-[14px] h-[14px]' }) {
+  return (
+    <svg className={className} {...ICON_BASE_PROPS}>
+      <path d="M15 5H5v10h10V5Z" />
+      <path d="M13 1H1v11" />
+    </svg>
+  );
+}
+
+export function DownloadIcon({ className = 'w-[14px] h-[14px]' }) {
+  return (
+    <svg className={className} {...ICON_BASE_PROPS}>
+      <path d="M1 15h14M13 6l-5 5-5-5M8 10V1" />
+    </svg>
+  );
+}
+
+export function OpenExternalIcon({ className = 'w-[14px] h-[14px]' }) {
+  // AWS "external-link" — top-right corner L + diagonal slash from origin.
+  return (
+    <svg className={className} {...ICON_BASE_PROPS}>
+      <path d="M13 9.012v-6H7" />
+      <path d="M13 3 7 9" />
+    </svg>
+  );
+}
+
+export function UploadIcon({ className = 'w-[14px] h-[14px]' }) {
+  return (
+    <svg className={className} {...ICON_BASE_PROPS}>
+      <path d="M1 1h14M13 6 8 1 3 6M8 5v10" />
+    </svg>
+  );
+}
+
+// Filled rounded triangle used as the column-header sort marker. Path
+// matches AWS Cloudscape "down" exactly; "up" is the vertical mirror.
+// Rounded vertices come from stroke-linejoin=round with stroke=fill so the
+// outline thickens the shape symmetrically.
+export function SortTriangle({ direction, active }) {
+  const color = active ? colors.text.primary : '#5e6166';
+  const d = direction === 'asc'
+    ? 'm8 5 4 6H4l4-6Z'
+    : 'm8 11 4-6H4l4 6Z';
+  return (
+    <svg
+      width="12"
+      height="12"
+      viewBox="0 0 16 16"
+      fill={color}
+      stroke={color}
+      strokeWidth="1.2"
+      strokeLinejoin="round"
+    >
+      <path d={d} />
+    </svg>
+  );
+}
+
+// Magnifying glass for AwsSearchInput. Stroked, rounded caps.
+function MagnifierIcon({ className = 'w-[14px] h-[14px]' }) {
+  return (
+    <svg className={className} {...ICON_BASE_PROPS}>
+      <circle cx="7" cy="7" r="4.5" />
+      <path d="m11 11 3 3" />
     </svg>
   );
 }
@@ -114,14 +187,9 @@ export function SortTriangle({ direction, active }) {
 export function AwsSearchInput({ value, onChange, placeholder, className = '' }) {
   return (
     <div className={`relative ${className}`}>
-      <svg
-        className="absolute left-3 top-1/2 -translate-y-1/2 w-[14px] h-[14px]"
-        style={{ color: colors.icon.search }}
-        viewBox="0 0 16 16"
-        fill="currentColor"
-      >
-        <path d="M10.5 1a5.5 5.5 0 0 1 4.383 8.823l3.147 3.146a.75.75 0 1 1-1.061 1.06l-3.146-3.146A5.5 5.5 0 1 1 10.5 1Zm0 1.5a4 4 0 1 0 0 8 4 4 0 0 0 0-8Z" />
-      </svg>
+      <div className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: colors.icon.search }}>
+        <MagnifierIcon />
+      </div>
       <input
         type="text"
         value={value}
@@ -138,21 +206,5 @@ export function AwsSearchInput({ value, onChange, placeholder, className = '' })
         .aws-s3-section input::placeholder { color: ${colors.text.placeholder}; }
       `}</style>
     </div>
-  );
-}
-
-// Optional thin column separator used between header cells. Mirrors AWS S3
-// where the column dividers are short vertical lines flanked by whitespace.
-export function ColumnDivider() {
-  return (
-    <span
-      aria-hidden="true"
-      className="inline-block align-middle mx-3"
-      style={{
-        width: '1px',
-        height: '20px',
-        backgroundColor: '#3d4145',
-      }}
-    />
   );
 }
