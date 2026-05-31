@@ -121,10 +121,21 @@ function SettingsIcon({ className }) {
   );
 }
 
-function CloudIcon({ className }) {
+// Asset Management (section header) — package / box icon
+function PackageIcon({ className }) {
   return (
     <svg className={className} viewBox="0 0 16 16" fill="currentColor">
-      <path d="M4.5 13.5A3.5 3.5 0 0 1 4 6.566 5 5 0 0 1 13.83 8H14a2.5 2.5 0 0 1 0 5h-1.5a.75.75 0 0 1 0-1.5H14a1 1 0 0 0 0-2h-.872a.75.75 0 0 1-.745-.661 3.5 3.5 0 0 0-6.95-.04.75.75 0 0 1-.668.625A2.001 2.001 0 0 0 4.5 12h1.75a.75.75 0 0 1 0 1.5H4.5Z" />
+      <path d="M8.878.392a1.75 1.75 0 0 0-1.756 0L2.617 3.04A1.75 1.75 0 0 0 1.75 4.557v6.886a1.75 1.75 0 0 0 .867 1.517l4.505 2.647a1.75 1.75 0 0 0 1.756 0l4.505-2.647a1.75 1.75 0 0 0 .867-1.517V4.557a1.75 1.75 0 0 0-.867-1.517L8.878.392ZM3.376 4.336a.25.25 0 0 1-.001-.432l4.5-2.643a.25.25 0 0 1 .25 0l4.5 2.643a.25.25 0 0 1-.001.432L8.252 6.91a.5.5 0 0 1-.504 0L3.376 4.336ZM3.25 11.694V5.677l4.25 2.493v6.092l-4.122-2.422a.25.25 0 0 1-.128-.146Zm5.75 2.568V8.17l3.75-2.2v5.724a.25.25 0 0 1-.128.146L9 14.262Z" />
+    </svg>
+  );
+}
+
+// AWS S3 Navigate (item) — cylindrical bucket, AWS-style
+function BucketIcon({ className }) {
+  return (
+    <svg className={className} viewBox="0 0 16 16" fill="currentColor">
+      <ellipse cx="8" cy="3" rx="5.5" ry="1.75" />
+      <path d="M2.5 4.5v8c0 1 2.46 1.75 5.5 1.75s5.5-.75 5.5-1.75v-8c-1.05.99-3.36 1.5-5.5 1.5s-4.45-.51-5.5-1.5Zm5.5 4.25c1.66 0 3-.34 3-.75s-1.34-.75-3-.75-3 .34-3 .75 1.34.75 3 .75Z" />
     </svg>
   );
 }
@@ -163,10 +174,10 @@ const navStructure = [
   },
   {
     section: 'Asset Management',
-    icon: CloudIcon,
+    icon: PackageIcon,
     collapsible: true,
     items: [
-      { id: 's3', label: 'AWS S3 Navigate', icon: CloudIcon },
+      { id: 's3', label: 'AWS S3 Navigate', icon: BucketIcon },
     ],
   },
 ];
