@@ -14,7 +14,8 @@ export default function ObjectList({ bucket, prefix, onOpenObject, onOpenPrefix,
   const [selected, setSelected] = useState(new Set()); // set of keys (full key, with prefix)
   const [showUpload, setShowUpload] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(null);
-  const [pageStack, setPageStack] = useState([]); // continuation tokens to support back
+  const [pageStack, setPageStack] = useState([]); // tokens of pages we navigated FROM (for back nav)
+  const [currentToken, setCurrentToken] = useState(null); // token that loaded the current page
 
   async function load(token = null) {
     setLoading(true);
@@ -22,16 +23,18 @@ export default function ObjectList({ bucket, prefix, onOpenObject, onOpenPrefix,
     try {
       const d = await s3api.listObjects(bucket, prefix, token);
       setData(d);
+      setCurrentToken(token);
       setSelected(new Set());
     } catch (e) {
       setErr(e.message);
+      setData({ folders: [], files: [], is_truncated: false, next_continuation_token: null });
     } finally {
       setLoading(false);
     }
   }
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  useEffect(() => { setPageStack([]); load(null); }, [bucket, prefix]);
+  useEffect(() => { setPageStack([]); setCurrentToken(null); load(null); }, [bucket, prefix]);
 
   const filteredFolders = useMemo(() => {
     const q = filter.trim().toLowerCase();
@@ -182,7 +185,7 @@ export default function ObjectList({ bucket, prefix, onOpenObject, onOpenPrefix,
             <button
               disabled={!data.is_truncated}
               onClick={() => {
-                setPageStack(prev => [...prev, /* current token */ null]);
+                setPageStack(prev => [...prev, currentToken]);
                 load(data.next_continuation_token);
               }}
               className="px-2 py-1 rounded text-[#58a6ff] hover:bg-[#161b22] disabled:opacity-40">
