@@ -8,10 +8,17 @@ from fastapi import HTTPException
 import config
 
 
+# All three identifiers below are interpolated into a shell command, so reject
+# anything that isn't a simple slug. job_id is a UUID in practice; user_id is
+# typically a UUID or a short alphanum handle.
+_SAFE_SLUG = re.compile(r"^[a-zA-Z0-9_-]+$")
+
+
 def create_template(*, job_id: str, user_id: str, template_name: str) -> dict:
     """Trigger create_template_gcs.sh on the dev VM. Requires local gcloud auth."""
-    if not re.match(r"^[a-zA-Z0-9_-]+$", template_name):
-        raise HTTPException(400, "Template name must be alphanumeric with hyphens/underscores only")
+    for label, value in (("template_name", template_name), ("job_id", job_id), ("user_id", user_id)):
+        if not _SAFE_SLUG.match(value or ""):
+            raise HTTPException(400, f"Invalid {label}: only letters, digits, '-', '_' allowed")
 
     script_command = (
         f"sudo docker run --rm --network=host "
