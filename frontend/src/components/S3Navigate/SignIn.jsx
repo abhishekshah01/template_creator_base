@@ -2,18 +2,16 @@ import { useState } from 'react';
 
 import { s3api } from './api';
 
-// Admin sign-in for the S3 Navigate tab. Renders the AWS-IAM-style hero
-// (rotating Emergent "e", two-column layout, AWS-orange Sign in, Lightsail-
-// style promo card). Functionally still admin-only — Account ID is
-// cosmetic; only username + password are sent to the backend.
+// Admin sign-in for the S3 Navigate tab. AWS IAM-style hero, trimmed to
+// only the fields that actually mean something to us:
+//   Email · Username · Password   →   POST to backend
+// AWS-only chrome (Account ID alias, root user email, "Create AWS account",
+// Having trouble?) is dropped.
+const REMEMBERED_EMAIL_KEY = 's3nav_remembered_email';
 const REMEMBERED_USERNAME_KEY = 's3nav_remembered_username';
-const REMEMBERED_ACCOUNT_KEY = 's3nav_remembered_account_id';
-const DEFAULT_ACCOUNT_ID = '897729110403';
 
 export default function SignIn({ onSignedIn }) {
-  const [accountId, setAccountId] = useState(
-    () => localStorage.getItem(REMEMBERED_ACCOUNT_KEY) || DEFAULT_ACCOUNT_ID,
-  );
+  const [email, setEmail] = useState(() => localStorage.getItem(REMEMBERED_EMAIL_KEY) || '');
   const [username, setUsername] = useState(
     () => localStorage.getItem(REMEMBERED_USERNAME_KEY) || '',
   );
@@ -23,15 +21,17 @@ export default function SignIn({ onSignedIn }) {
     () => !!localStorage.getItem(REMEMBERED_USERNAME_KEY),
   );
   const [submitting, setSubmitting] = useState(false);
-  const [authError, setAuthError] = useState(null); // top-of-card alert
-  const [fieldErrors, setFieldErrors] = useState({}); // { username?, password? }
+  const [authError, setAuthError] = useState(null);
+  const [fieldErrors, setFieldErrors] = useState({});
 
   async function handleSubmit(e) {
     e.preventDefault();
     if (submitting) return;
 
+    const trimmedEmail = email.trim();
     const trimmedUser = username.trim();
     const fe = {};
+    if (!trimmedEmail) fe.email = 'Email is required';
     if (!trimmedUser) fe.username = 'Username is required';
     if (!password) fe.password = 'Password is required';
     setFieldErrors(fe);
@@ -42,11 +42,11 @@ export default function SignIn({ onSignedIn }) {
     try {
       const data = await s3api.signIn(trimmedUser, password);
       if (remember) {
+        localStorage.setItem(REMEMBERED_EMAIL_KEY, trimmedEmail);
         localStorage.setItem(REMEMBERED_USERNAME_KEY, trimmedUser);
-        localStorage.setItem(REMEMBERED_ACCOUNT_KEY, accountId.trim());
       } else {
+        localStorage.removeItem(REMEMBERED_EMAIL_KEY);
         localStorage.removeItem(REMEMBERED_USERNAME_KEY);
-        localStorage.removeItem(REMEMBERED_ACCOUNT_KEY);
       }
       onSignedIn?.(data);
     } catch (err) {
@@ -62,7 +62,7 @@ export default function SignIn({ onSignedIn }) {
   }
 
   return (
-    <div className="min-h-[calc(100vh-4rem)] -mx-6 -my-8 bg-[#0f1419] text-[#e9ecef] flex flex-col">
+    <div className="min-h-full bg-[#0f1419] text-[#e9ecef] flex flex-col">
       {/* Top utility bar */}
       <div className="flex items-center justify-end gap-6 px-8 py-3 text-[14px] text-[#bfc7cf]">
         <span className="hover:text-white cursor-pointer">Provide feedback</span>
@@ -75,7 +75,7 @@ export default function SignIn({ onSignedIn }) {
       </div>
 
       {/* Spinning Emergent "e" — same animated GIF used by the desktop app */}
-      <div className="mt-6 mb-10 flex justify-center">
+      <div className="mt-6 mb-8 flex justify-center">
         <img
           src="https://assets.emergent.sh/assets/elogo.gif"
           alt="Emergent"
@@ -84,9 +84,9 @@ export default function SignIn({ onSignedIn }) {
         />
       </div>
 
-      {/* Two-card layout — equal widths, side by side */}
+      {/* Two-card layout — slimmer cards, side by side */}
       <div className="flex justify-center px-6 pb-10">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full max-w-[900px]">
+        <div className="grid grid-cols-1 md:grid-cols-[360px_360px] gap-5 items-start">
           {/* Left column: error alert (if any) + sign-in card */}
           <div className="flex flex-col">
             {authError && (
@@ -102,29 +102,29 @@ export default function SignIn({ onSignedIn }) {
               noValidate
               className="bg-[#161b22] border border-[#30363d] rounded-[4px] overflow-hidden"
             >
-              <div className="px-6 pt-5 pb-4 border-b border-[#30363d]">
-                <h2 className="text-[22px] font-bold text-[#e6edf3] inline-flex items-center gap-1.5">
-                  IAM user sign in
+              <div className="px-5 pt-4 pb-3 border-b border-[#30363d]">
+                <h2 className="text-[20px] font-bold text-[#e6edf3] inline-flex items-center gap-1.5">
+                  Admin sign in
                   <InfoCircle />
                 </h2>
               </div>
 
-              <div className="px-6 py-5">
-                {/* Account ID — cosmetic, not sent to backend */}
-                <label className="block text-[14px] font-bold text-[#e6edf3] mb-1">
-                  Account ID or alias{' '}
-                  <a className="text-[#58a6ff] font-normal underline decoration-dotted underline-offset-2 cursor-help">
-                    (Don&apos;t have?)
-                  </a>
-                </label>
+              <div className="px-5 py-4">
+                {/* Email */}
+                <label className="block text-[14px] font-bold text-[#e6edf3] mb-1">Email</label>
                 <input
-                  value={accountId}
-                  onChange={(e) => setAccountId(e.target.value)}
-                  autoComplete="off"
-                  className={inputCls()}
+                  type="email"
+                  value={email}
+                  onChange={(e) => {
+                    setEmail(e.target.value);
+                    if (fieldErrors.email) setFieldErrors((p) => ({ ...p, email: undefined }));
+                  }}
+                  autoComplete="email"
+                  className={inputCls(!!fieldErrors.email)}
                 />
+                {fieldErrors.email ? <FieldError message={fieldErrors.email} /> : <Gap />}
 
-                <label className="flex items-center gap-2 text-[14px] text-[#c9d1d9] cursor-pointer mt-3 mb-5 select-none">
+                <label className="flex items-center gap-2 text-[14px] text-[#c9d1d9] cursor-pointer mb-4 select-none">
                   <input
                     type="checkbox"
                     checked={remember}
@@ -134,22 +134,18 @@ export default function SignIn({ onSignedIn }) {
                   Remember this account
                 </label>
 
-                {/* IAM username */}
-                <label className="block text-[14px] font-bold text-[#e6edf3] mb-1">IAM username</label>
+                {/* Username */}
+                <label className="block text-[14px] font-bold text-[#e6edf3] mb-1">Username</label>
                 <input
                   value={username}
                   onChange={(e) => {
                     setUsername(e.target.value);
-                    if (fieldErrors.username) {
-                      setFieldErrors((p) => ({ ...p, username: undefined }));
-                    }
+                    if (fieldErrors.username) setFieldErrors((p) => ({ ...p, username: undefined }));
                   }}
                   autoComplete="username"
-                  autoFocus
                   className={inputCls(!!fieldErrors.username)}
                 />
-                {fieldErrors.username && <FieldError message={fieldErrors.username} />}
-                {!fieldErrors.username && <div className="mb-4" />}
+                {fieldErrors.username ? <FieldError message={fieldErrors.username} /> : <Gap />}
 
                 {/* Password */}
                 <label className="block text-[14px] font-bold text-[#e6edf3] mb-1">Password</label>
@@ -158,29 +154,22 @@ export default function SignIn({ onSignedIn }) {
                   value={password}
                   onChange={(e) => {
                     setPassword(e.target.value);
-                    if (fieldErrors.password) {
-                      setFieldErrors((p) => ({ ...p, password: undefined }));
-                    }
+                    if (fieldErrors.password) setFieldErrors((p) => ({ ...p, password: undefined }));
                   }}
                   autoComplete="current-password"
                   className={inputCls(!!fieldErrors.password)}
                 />
-                {fieldErrors.password && <FieldError message={fieldErrors.password} />}
+                {fieldErrors.password ? <FieldError message={fieldErrors.password} /> : <Gap small />}
 
-                <div className={`flex items-center justify-between mt-${fieldErrors.password ? 2 : 2} mb-5`}>
-                  <label className="flex items-center gap-2 text-[14px] text-[#c9d1d9] cursor-pointer select-none">
-                    <input
-                      type="checkbox"
-                      checked={showPw}
-                      onChange={(e) => setShowPw(e.target.checked)}
-                      className="accent-[#1f6feb] w-[18px] h-[18px]"
-                    />
-                    Show Password
-                  </label>
-                  <a className="text-[14px] text-[#58a6ff] underline decoration-dotted underline-offset-2 cursor-help">
-                    Having trouble?
-                  </a>
-                </div>
+                <label className="flex items-center gap-2 text-[14px] text-[#c9d1d9] cursor-pointer mb-4 select-none">
+                  <input
+                    type="checkbox"
+                    checked={showPw}
+                    onChange={(e) => setShowPw(e.target.checked)}
+                    className="accent-[#1f6feb] w-[18px] h-[18px]"
+                  />
+                  Show Password
+                </label>
 
                 <button
                   type="submit"
@@ -189,47 +178,33 @@ export default function SignIn({ onSignedIn }) {
                 >
                   {submitting ? 'Signing in…' : 'Sign in'}
                 </button>
-
-                <button
-                  type="button"
-                  onClick={(e) => e.preventDefault()}
-                  className="w-full h-[38px] mt-3 rounded-[2px] border border-[#30363d] hover:border-[#58a6ff] hover:text-[#58a6ff] text-[#e6edf3] text-[14px] font-bold transition-colors"
-                >
-                  Sign in using root user email
-                </button>
-
-                <div className="mt-4 text-center">
-                  <a className="text-[14px] text-[#58a6ff] hover:underline cursor-pointer">
-                    Create a new AWS account
-                  </a>
-                </div>
               </div>
             </form>
           </div>
 
-          {/* Right: Lightsail-style promo card */}
+          {/* Right: promo card — shorter, gradient adjusted to feel intentional at the new height */}
           <div className="bg-[#0d1117] border border-[#30363d] rounded-[4px] overflow-hidden flex flex-col">
             <div
-              className="relative flex-1 min-h-[340px]"
+              className="relative h-[280px]"
               style={{
                 background:
-                  'radial-gradient(120% 80% at 90% 10%, #f9b400 0%, #ec7211 25%, #6b1d05 55%, #0d1117 80%)',
+                  'radial-gradient(140% 110% at 95% 15%, #f9b400 0%, #ec7211 22%, #6b1d05 55%, #0d1117 85%)',
               }}
             >
-              <div className="absolute inset-0 p-8 flex flex-col justify-start">
-                <h3 className="text-[32px] font-bold text-white leading-tight mb-2">Amazon S3</h3>
-                <p className="text-[15px] text-white/90 max-w-[260px] leading-snug">
+              <div className="absolute inset-0 p-6 flex flex-col justify-start">
+                <h3 className="text-[26px] font-bold text-white leading-tight mb-1.5">Amazon S3</h3>
+                <p className="text-[14px] text-white/90 max-w-[240px] leading-snug">
                   Browse buckets and objects directly from the Template Creator dashboard
                 </p>
                 <button
                   type="button"
                   onClick={(e) => e.preventDefault()}
-                  className="mt-5 self-start px-4 py-1.5 text-[13px] font-medium border border-white text-white rounded-[2px] hover:bg-white/10"
+                  className="mt-4 self-start px-3.5 py-1.5 text-[13px] font-medium border border-white text-white rounded-[2px] hover:bg-white/10"
                 >
                   Learn more »
                 </button>
               </div>
-              <div className="absolute right-6 bottom-2 opacity-70 hidden sm:block">
+              <div className="absolute right-4 bottom-1 opacity-70 hidden sm:block">
                 <RobotMascot />
               </div>
             </div>
@@ -238,25 +213,18 @@ export default function SignIn({ onSignedIn }) {
       </div>
 
       {/* Footer */}
-      <div className="px-6 pb-10 mx-auto max-w-[900px] w-full text-[12px] text-[#8b949e] leading-relaxed">
-        <div>
-          By continuing, you agree to{' '}
-          <a className="text-[#58a6ff] hover:underline">AWS Customer Agreement</a> or other
-          agreement for AWS services, and the{' '}
-          <a className="text-[#58a6ff] hover:underline">Privacy Notice</a>. This site uses
-          essential cookies. See our <a className="text-[#58a6ff] hover:underline">Cookie Notice</a>{' '}
-          for more information.
+      <div className="px-6 pb-10 mx-auto w-full max-w-[740px] text-[12px] text-[#8b949e] leading-relaxed">
+        <div className="text-center">
+          AWS S3 Navigate is an admin-only view that proxies through app-service. No AWS credentials live in this app.
         </div>
-        <div className="mt-6 text-center">
-          © {new Date().getFullYear()} Amazon Web Services, Inc. or its affiliates. All rights reserved.
+        <div className="mt-3 text-center">
+          © {new Date().getFullYear()} Emergent. All rights reserved.
         </div>
       </div>
     </div>
   );
 }
 
-// Map the backend's 401 string to AWS's standard copy. Anything else (config
-// missing, network, 5xx) surfaces its real message with a generic title.
 function isAuthFailure(message) {
   if (!message) return false;
   return /invalid|incorrect|wrong\s+(?:credentials|password|username)/i.test(message);
@@ -271,9 +239,13 @@ function inputCls(hasError = false) {
     : `${base} border-[#30363d] focus:border-[#1f6feb]`;
 }
 
+function Gap({ small = false }) {
+  return <div className={small ? 'mb-2' : 'mb-3'} />;
+}
+
 function FieldError({ message }) {
   return (
-    <div className="mt-1.5 mb-3 flex items-center gap-1.5 text-[13px] text-[#e35b66]">
+    <div className="mt-1 mb-2 flex items-center gap-1.5 text-[13px] text-[#e35b66]">
       <svg className="w-[14px] h-[14px] shrink-0" viewBox="0 0 16 16" fill="currentColor">
         <path d="M8 0a8 8 0 1 1 0 16A8 8 0 0 1 8 0Zm3.28 4.72a.75.75 0 0 0-1.06 0L8 6.94 5.78 4.72a.749.749 0 1 0-1.06 1.06L6.94 8 4.72 10.22a.749.749 0 1 0 1.06 1.06L8 9.06l2.22 2.22a.749.749 0 1 0 1.06-1.06L9.06 8l2.22-2.22a.749.749 0 0 0 0-1.06Z" />
       </svg>
@@ -334,8 +306,8 @@ function InfoCircle() {
 function RobotMascot() {
   return (
     <svg
-      width="120"
-      height="140"
+      width="96"
+      height="112"
       viewBox="0 0 120 140"
       fill="none"
       stroke="white"
