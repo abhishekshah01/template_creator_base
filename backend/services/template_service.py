@@ -70,6 +70,10 @@ async def _poll_dag_run(dag_run_id: str) -> None:
         doc = await template_jobs.find_one({"dag_run_id": dag_run_id})
         if doc is None:
             return
+        # In `both` mode a webhook may have already terminal-fed the record.
+        # Stop polling so we don't write an older Composer state back over it.
+        if doc.get("status") in TERMINAL_DAG_STATES or doc.get("status") == "timeout":
+            return
         composer_id = doc.get("composer_dag_run_id") or dag_run_id
 
         try:
@@ -153,8 +157,7 @@ async def create_template(
     webhook_url = ""
     if config.TEMPLATE_JOB_NOTIFY_MODE in ("webhook", "both") and config.TEMPLATE_JOB_WEBHOOK_BASE_URL:
         webhook_url = (
-            f"{config.TEMPLATE_JOB_WEBHOOK_BASE_URL.rstrip('/')}"
-            f"/api/template-job/{dag_run_id}/callback/{webhook_secret}"
+            f"{config.TEMPLATE_JOB_WEBHOOK_BASE_URL.rstrip('/')}/api/template-job/{dag_run_id}/callback"
         )
 
     payload = {
@@ -164,6 +167,10 @@ async def create_template(
             "user_id": user_id,
             "template_name": template_name,
             "webhook_url": webhook_url,
+            # Composer's DAG should set this as the `X-Callback-Secret` header
+            # when POSTing to webhook_url. Keeping it out of the URL prevents
+            # access-log / reverse-proxy leakage.
+            "webhook_secret": webhook_secret,
             "source_bucket": config.SOURCE_BUCKET,
             "dest_bucket": config.DEST_BUCKET,
         },

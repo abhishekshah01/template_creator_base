@@ -205,8 +205,9 @@ def test_callback_with_valid_secret_updates_record(client, patch_template_jobs):
         "started_at": datetime.now(timezone.utc),
     }
     resp = client.post(
-        "/api/template-job/tc-abc/callback/right-secret",
+        "/api/template-job/tc-abc/callback",
         json={"state": "success", "gcs_path": "gs://bkt/lumina"},
+        headers={"X-Callback-Secret": "right-secret"},
     )
     assert resp.status_code == 200
     assert patch_template_jobs.docs["tc-abc"]["status"] == "success"
@@ -220,12 +221,23 @@ def test_callback_wrong_secret_returns_403(client, patch_template_jobs):
         "status": "running",
     }
     resp = client.post(
-        "/api/template-job/tc-abc/callback/wrong-secret",
+        "/api/template-job/tc-abc/callback",
         json={"state": "success"},
+        headers={"X-Callback-Secret": "wrong-secret"},
     )
     assert resp.status_code == 403
     # State should NOT have been updated
     assert patch_template_jobs.docs["tc-abc"]["status"] == "running"
+
+
+def test_callback_missing_secret_header_returns_403(client, patch_template_jobs):
+    patch_template_jobs.docs["tc-abc"] = {
+        "dag_run_id": "tc-abc",
+        "webhook_secret": "right-secret",
+        "status": "running",
+    }
+    resp = client.post("/api/template-job/tc-abc/callback", json={"state": "success"})
+    assert resp.status_code == 403
 
 
 def test_callback_empty_state_marks_failed_not_success(client, patch_template_jobs):
@@ -235,8 +247,9 @@ def test_callback_empty_state_marks_failed_not_success(client, patch_template_jo
         "status": "running",
     }
     resp = client.post(
-        "/api/template-job/tc-abc/callback/s",
+        "/api/template-job/tc-abc/callback",
         json={"state": ""},
+        headers={"X-Callback-Secret": "s"},
     )
     assert resp.status_code == 200
     assert patch_template_jobs.docs["tc-abc"]["status"] == "failed"
@@ -244,7 +257,42 @@ def test_callback_empty_state_marks_failed_not_success(client, patch_template_jo
 
 def test_callback_404_when_record_missing(client):
     resp = client.post(
-        "/api/template-job/never-existed/callback/whatever",
+        "/api/template-job/never-existed/callback",
         json={"state": "success"},
+        headers={"X-Callback-Secret": "whatever"},
     )
     assert resp.status_code == 404
+
+
+# ---------------------------------------------------------------------------
+# Poll loop short-circuit on terminal state (regression guard)
+# ---------------------------------------------------------------------------
+
+
+def test_poll_loop_stops_on_terminal_state_set_by_webhook(monkeypatch, patch_template_jobs):
+    """If a webhook has already marked the record terminal, the poll loop returns
+    without hitting Composer or writing an older state back."""
+    import asyncio as _asyncio
+
+    from services import template_service
+
+    patch_template_jobs.docs["tc-abc"] = {
+        "dag_run_id": "tc-abc",
+        "status": "success",  # already terminal (webhook beat us)
+        "gcs_path": "gs://bkt/lumina",
+    }
+
+    composer_called = {"count": 0}
+
+    async def fail_if_called(_id):
+        composer_called["count"] += 1
+        raise AssertionError("Composer should not be called once the record is terminal")
+
+    monkeypatch.setattr("clients.composer_client.get_dag_run", fail_if_called)
+    # Skip the initial 5s sleep so the test doesn't block.
+    monkeypatch.setattr("services.template_service.asyncio.sleep", AsyncMock(return_value=None))
+
+    _asyncio.get_event_loop().run_until_complete(template_service._poll_dag_run("tc-abc"))
+
+    assert composer_called["count"] == 0
+    assert patch_template_jobs.docs["tc-abc"]["status"] == "success"  # not regressed
