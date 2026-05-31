@@ -16,7 +16,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from clients import app_service_client
+from clients import app_service_client, composer_client, mongo_client
 from routers import admin_auth, asset, category_config, env, job, template
 
 
@@ -24,6 +24,8 @@ from routers import admin_auth, asset, category_config, env, job, template
 async def lifespan(_app: FastAPI):
     yield
     await app_service_client.aclose()
+    await composer_client.aclose()
+    await mongo_client.aclose()
 
 
 app = FastAPI(title="template-automation-v0", lifespan=lifespan)

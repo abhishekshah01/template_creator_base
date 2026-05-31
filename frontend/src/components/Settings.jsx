@@ -45,6 +45,21 @@ function ServerIcon({ className }) {
     </svg>
   );
 }
+function InfoIcon({ className }) {
+  return (
+    <svg className={className} viewBox="0 0 16 16" fill="currentColor">
+      <path d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8Zm8-6.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13ZM6.5 7.75A.75.75 0 0 1 7.25 7h1a.75.75 0 0 1 .75.75v2.75h.25a.75.75 0 0 1 0 1.5h-2a.75.75 0 0 1 0-1.5h.25v-2h-.25a.75.75 0 0 1-.75-.75ZM8 6a1 1 0 1 1 0-2 1 1 0 0 1 0 2Z" />
+    </svg>
+  );
+}
+function FieldHelper({ children }) {
+  return (
+    <div className="flex items-start gap-1.5 mb-2 text-[13px] text-[#8b949e]">
+      <InfoIcon className="w-3.5 h-3.5 mt-0.5 shrink-0" />
+      <span>{children}</span>
+    </div>
+  );
+}
 
 // ── Component ─────────────────────────────────────────────────────────────────
 // localStorage helpers
@@ -145,28 +160,17 @@ export default function Settings({ activeEnv, standardEnvs, onSwitchEnv, envConf
 
       {/* ── Active Environment ──────────────────────────── */}
       <section>
-        <div className="pb-3 border-b border-[#30363d] mb-5">
-          <div className="flex items-center gap-3">
-            <h2 className="text-[20px] font-semibold text-[#e6edf3]">Active Environment</h2>
-            {deploymentScope && (
-              <span className={`text-[11px] font-bold uppercase tracking-wider px-2 py-0.5 rounded border ${
-                deploymentScope === 'prod'
-                  ? 'text-[#f0883e] bg-[#f0883e]/10 border-[#f0883e]/30'
-                  : 'text-[#3fb950] bg-[#3fb950]/10 border-[#3fb950]/30'
-              }`}>
-                {deploymentScope} scope
-              </span>
-            )}
-          </div>
-          <p className="text-[14px] text-[#c9d1d9] mt-1">
-            {deploymentScope === 'prod'
-              ? 'This deployment is locked to the prod environment.'
-              : 'All API calls use the selected environment\'s endpoints.'}
+        <div className="mb-6">
+          <h2 className="text-[36px] font-bold leading-[1.1] bg-gradient-to-r from-[#e6edf3] via-[#dcd2ff] to-[#b794f4] bg-clip-text text-transparent">
+            Environment Configuration
+          </h2>
+          <p className="text-[15px] text-[#8b949e] mt-2 max-w-[640px]">
+            Manage routing endpoints and storage templates for your active AI deployment environments.
           </p>
         </div>
 
         {/* Environment cards */}
-        <div className={`grid gap-3 ${ephemeralEnabled ? 'grid-cols-3' : 'grid-cols-1 max-w-[260px]'}`}>
+        <div className={`grid gap-3 ${ephemeralEnabled ? 'grid-cols-2' : 'grid-cols-1 max-w-[260px]'}`}>
           {/* Standard env cards */}
           {standardEnvs.map(env => {
             const isActive = activeEnv === env.name;
@@ -175,8 +179,8 @@ export default function Settings({ activeEnv, standardEnvs, onSwitchEnv, envConf
                 data-testid={`env-card-${env.name}`}
                 className={`relative p-4 rounded-lg border text-left transition-all ${
                   isActive
-                    ? 'border-[#388bfd] bg-[#1f6feb]/10'
-                    : 'border-[#30363d] bg-[#0d1117] hover:border-[#8b949e] hover:bg-[#161b22]'
+                    ? 'border-[#388bfd] bg-gradient-to-br from-[#1f6feb]/15 to-[#0d1117] shadow-[0_0_0_3px_rgba(56,139,253,0.08)]'
+                    : 'border-dashed border-[#30363d] bg-gradient-to-br from-[#0d1117] to-[#000] hover:border-solid hover:border-[#484f58] hover:from-[#161b22]'
                 }`}>
                 <div className="flex items-start justify-between gap-2 mb-2">
                   <span className={`text-[16px] font-semibold ${isActive ? 'text-[#e6edf3]' : 'text-[#c9d1d9]'}`}>
@@ -197,8 +201,8 @@ export default function Settings({ activeEnv, standardEnvs, onSwitchEnv, envConf
           {ephemeralEnabled && (
             <div className={`relative p-4 rounded-lg border transition-all ${
               isEph
-                ? 'border-[#388bfd] bg-[#1f6feb]/10'
-                : 'border-[#30363d] bg-[#0d1117]'
+                ? 'border-[#388bfd] bg-gradient-to-br from-[#1f6feb]/15 to-[#0d1117] shadow-[0_0_0_3px_rgba(56,139,253,0.08)]'
+                : 'border-dashed border-[#30363d] bg-gradient-to-br from-[#0d1117] to-[#000]'
             }`}>
               <div className="flex items-start justify-between gap-2 mb-2">
                 <div className="min-w-0">
@@ -287,15 +291,11 @@ export default function Settings({ activeEnv, standardEnvs, onSwitchEnv, envConf
           <p className="text-[14px] text-[#c9d1d9] mt-1">Credentials stored locally in your browser — never transmitted to our servers.</p>
         </div>
 
-        <div className="border border-[#30363d] rounded-lg overflow-hidden">
-          {/* Header */}
-          <div className="px-4 py-3.5 bg-[#161b22] border-b border-[#30363d] flex items-center justify-between">
-            <div>
-              <div className="text-[15px] font-semibold text-[#e6edf3]">Bearer Token</div>
-              <div className="text-[13px] text-[#c9d1d9] mt-0.5">Authenticates requests to the Category Config API</div>
-            </div>
+        <div className="rounded-lg border border-[#30363d] bg-gradient-to-b from-[#0d1117] to-[#000] p-4">
+          <div className="flex items-center justify-between mb-2">
+            <label className="text-[13px] font-medium text-[#c9d1d9]">Bearer Token</label>
             <span data-testid="token-status-badge"
-              className={`flex items-center gap-1.5 text-[12px] px-2.5 py-1 rounded-full border font-medium ${
+              className={`flex items-center gap-1.5 text-[11px] px-2 py-0.5 rounded-full border font-medium ${
                 bearerToken
                   ? 'bg-[#238636]/10 text-[#3fb950] border-[#238636]/30'
                   : 'bg-[#f85149]/10 text-[#f85149] border-[#f85149]/30'
@@ -304,48 +304,43 @@ export default function Settings({ activeEnv, standardEnvs, onSwitchEnv, envConf
               {bearerToken ? 'Configured' : 'Not set'}
             </span>
           </div>
-
-          {/* Input */}
-          <div className="px-4 py-4 bg-[#0d1117]">
-            <div className="relative">
-              <input
-                type={showToken ? 'text' : 'password'}
-                value={bearerToken}
-                onChange={e => {
-                  let val = e.target.value;
-                  if (val.toLowerCase().startsWith('bearer ')) val = val.slice(7);
-                  onTokenChange?.(val.trim());
-                }}
-                placeholder="Paste your bearer token here..."
-                data-testid="settings-token-input"
-                className="w-full px-3 py-2.5 pr-24 bg-[#161b22] border border-[#30363d] rounded-md text-[13px] text-[#e6edf3] font-mono outline-none focus:border-[#1f6feb] focus:shadow-[0_0_0_3px_rgba(31,111,235,0.15)] placeholder:text-[#484f58] transition-all"
-              />
-              <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-0.5">
-                {bearerToken && (
-                  <button onClick={handleCopyToken}
-                    data-testid="copy-token-btn"
-                    title="Copy token"
-                    className="p-1.5 text-[#8b949e] hover:text-[#e6edf3] transition-colors rounded">
-                    {copied ? <CheckIcon className="w-4 h-4 text-[#3fb950]" /> : <CopyIcon className="w-3.5 h-3.5" />}
-                  </button>
-                )}
-                <button onClick={() => setShowToken(v => !v)}
-                  data-testid="toggle-token-visibility-btn"
-                  title={showToken ? 'Hide token' : 'Show token'}
+          <div className="relative">
+            <input
+              type={showToken ? 'text' : 'password'}
+              value={bearerToken}
+              onChange={e => {
+                let val = e.target.value;
+                if (val.toLowerCase().startsWith('bearer ')) val = val.slice(7);
+                onTokenChange?.(val.trim());
+              }}
+              placeholder="Paste your bearer token here..."
+              data-testid="settings-token-input"
+              className="w-full px-3 py-2.5 pr-24 bg-[#161b22] border border-[#30363d] rounded-md text-[13px] text-[#e6edf3] font-mono outline-none focus:border-[#1f6feb] focus:shadow-[0_0_0_3px_rgba(31,111,235,0.15)] placeholder:text-[#484f58] transition-all"
+            />
+            <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-0.5">
+              {bearerToken && (
+                <button onClick={handleCopyToken}
+                  data-testid="copy-token-btn"
+                  title="Copy token"
                   className="p-1.5 text-[#8b949e] hover:text-[#e6edf3] transition-colors rounded">
-                  {showToken ? <EyeOffIcon className="w-4 h-4" /> : <EyeIcon className="w-4 h-4" />}
+                  {copied ? <CheckIcon className="w-4 h-4 text-[#3fb950]" /> : <CopyIcon className="w-3.5 h-3.5" />}
                 </button>
-                {bearerToken && (
-                  <button onClick={() => onTokenChange?.('')}
-                    data-testid="clear-token-btn"
-                    title="Clear token"
-                    className="p-1.5 text-[#8b949e] hover:text-[#f85149] transition-colors rounded">
-                    <XIcon className="w-4 h-4" />
-                  </button>
-                )}
-              </div>
+              )}
+              <button onClick={() => setShowToken(v => !v)}
+                data-testid="toggle-token-visibility-btn"
+                title={showToken ? 'Hide token' : 'Show token'}
+                className="p-1.5 text-[#8b949e] hover:text-[#e6edf3] transition-colors rounded">
+                {showToken ? <EyeOffIcon className="w-4 h-4" /> : <EyeIcon className="w-4 h-4" />}
+              </button>
+              {bearerToken && (
+                <button onClick={() => onTokenChange?.('')}
+                  data-testid="clear-token-btn"
+                  title="Clear token"
+                  className="p-1.5 text-[#8b949e] hover:text-[#f85149] transition-colors rounded">
+                  <XIcon className="w-4 h-4" />
+                </button>
+              )}
             </div>
-            <p className="text-[13px] text-[#8b949e] mt-2">Token is stored in browser localStorage. The "Bearer " prefix is added automatically to all requests.</p>
           </div>
         </div>
       </section>
@@ -359,29 +354,26 @@ export default function Settings({ activeEnv, standardEnvs, onSwitchEnv, envConf
           </h2>
           <p className="text-[14px] text-[#c9d1d9] mt-1">Auto-configured when you switch environments.</p>
         </div>
-        <div className="border border-[#30363d] rounded-lg overflow-hidden divide-y divide-[#30363d]">
+        <div className="border border-[#30363d] rounded-lg overflow-hidden divide-y divide-[#30363d] bg-gradient-to-b from-[#0d1117] to-[#000]">
           {[
-            { label: 'Base URL', key: 'api_url', desc: 'Category Config API' },
-            { label: 'Pause URL', key: 'pause_url', desc: 'Pause / Resume Jobs' },
-            { label: 'Envcore URL', key: 'envcore_url', desc: 'Pod Execution', note: 'Same across all environments.' },
+            { label: 'Base URL', key: 'api_url', helper: 'Used for Category Config API requests (create, update, fetch configs).' },
+            { label: 'Pause URL', key: 'pause_url', helper: 'Used to pause and resume running jobs.' },
+            { label: 'Envcore URL', key: 'envcore_url', helper: 'Used to execute commands in job pods. Same across all environments.' },
           ].map(field => (
             <div key={field.key} className="px-4 py-4 group">
-              <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center justify-between mb-1.5">
                 <label className="text-[14px] font-semibold text-[#e6edf3]">{field.label}</label>
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => handleCopyField(field.key, getVal(field.key))}
-                    title="Copy value"
-                    className="opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded text-[#8b949e] hover:text-[#c9d1d9]">
-                    {copiedField === field.key
-                      ? <CheckIcon className="w-3.5 h-3.5 text-[#3fb950]" />
-                      : <CopyIcon className="w-3.5 h-3.5" />}
-                  </button>
-                  <span className="text-[12px] text-[#8b949e] bg-[#161b22] px-2 py-0.5 rounded border border-[#30363d]">{field.desc}</span>
-                </div>
+                <button
+                  onClick={() => handleCopyField(field.key, getVal(field.key))}
+                  title="Copy value"
+                  className="opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded text-[#8b949e] hover:text-[#c9d1d9]">
+                  {copiedField === field.key
+                    ? <CheckIcon className="w-3.5 h-3.5 text-[#3fb950]" />
+                    : <CopyIcon className="w-3.5 h-3.5" />}
+                </button>
               </div>
+              <FieldHelper>{field.helper}</FieldHelper>
               <input type="text" value={getVal(field.key)} readOnly className={readOnlyCls} />
-              {field.note && <p className="text-[13px] text-[#8b949e] mt-1.5">{field.note}</p>}
             </div>
           ))}
         </div>
@@ -393,13 +385,13 @@ export default function Settings({ activeEnv, standardEnvs, onSwitchEnv, envConf
           <h2 className="text-[20px] font-semibold text-[#e6edf3]">Template Creation</h2>
           <p className="text-[14px] text-[#c9d1d9] mt-1">GCS buckets used when creating templates from job snapshots.</p>
         </div>
-        <div className="border border-[#30363d] rounded-lg overflow-hidden divide-y divide-[#30363d]">
+        <div className="border border-[#30363d] rounded-lg overflow-hidden divide-y divide-[#30363d] bg-gradient-to-b from-[#0d1117] to-[#000]">
           {[
-            { label: 'Source Bucket', key: 'source_bucket', note: 'GCS bucket containing job snapshots.' },
-            { label: 'Destination Bucket', key: 'dest_bucket', note: 'GCS bucket where templates are stored.' },
+            { label: 'Source Bucket', key: 'source_bucket', helper: 'GCS bucket containing job snapshots.' },
+            { label: 'Destination Bucket', key: 'dest_bucket', helper: 'GCS bucket where templates are stored.' },
           ].map(field => (
             <div key={field.key} className="px-4 py-4 group">
-              <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center justify-between mb-1.5">
                 <label className="text-[14px] font-semibold text-[#e6edf3]">{field.label}</label>
                 <button
                   onClick={() => handleCopyField(field.key, getVal(field.key))}
@@ -410,8 +402,8 @@ export default function Settings({ activeEnv, standardEnvs, onSwitchEnv, envConf
                     : <CopyIcon className="w-3.5 h-3.5" />}
                 </button>
               </div>
+              <FieldHelper>{field.helper}</FieldHelper>
               <input type="text" value={getVal(field.key)} readOnly className={readOnlyCls} />
-              <p className="text-[13px] text-[#8b949e] mt-1.5">{field.note}</p>
             </div>
           ))}
         </div>
