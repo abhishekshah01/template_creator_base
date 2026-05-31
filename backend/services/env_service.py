@@ -5,9 +5,26 @@ Services that build URLs do so from `config.API_URL` at call time, so they
 pick up the new env automatically after a switch.
 """
 
+import re
+import threading
+
 from fastapi import HTTPException
 
 import config
+
+# Held while we rewrite config.* during a switch so requests don't observe
+# half-updated state. Read paths are best-effort (no lock) since each url is
+# read once per request.
+_switch_lock = threading.Lock()
+
+
+def _mask_dsn(dsn: str) -> str:
+    """Redact credentials in both key=value and URI-style DSNs."""
+    if not dsn:
+        return ""
+    masked = re.sub(r"(?i)(password\s*=\s*)([^ \t;&]+)", r"\1***", dsn)
+    masked = re.sub(r"(://[^:/@]+:)([^@]+)(@)", r"\1***\3", masked)
+    return masked
 
 
 def get_environments() -> dict:
@@ -16,10 +33,7 @@ def get_environments() -> dict:
         for name, cfg in config.STANDARD_ENVS.items()
     ]
     active = config.get_env_config(config.ENV)
-    masked_dsn = (
-        config.DB_DSN.split("password=")[0] + "password=***"
-        if config.DB_DSN else ""
-    )
+    masked_dsn = _mask_dsn(config.DB_DSN)
     return {
         "deployment_scope": config.DEPLOYMENT_SCOPE,
         "ephemeral_enabled": config.EPHEMERAL_ENABLED,
@@ -50,11 +64,12 @@ def switch_environment(env_name: str) -> dict:
         )
 
     cfg = config.get_env_config(name)
-    config.ENV = name
-    config.API_URL = cfg["api_url"]
-    config.ENVCORE_URL = cfg["envcore_url"]
-    config.PAUSE_URL = cfg["pause_url"]
-    config.DB_DSN = cfg["db_dsn"]
+    with _switch_lock:
+        config.ENV = name
+        config.API_URL = cfg["api_url"]
+        config.ENVCORE_URL = cfg["envcore_url"]
+        config.PAUSE_URL = cfg["pause_url"]
+        config.DB_DSN = cfg["db_dsn"]
 
     return {
         "status": "success",
