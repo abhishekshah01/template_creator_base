@@ -73,53 +73,10 @@ body {
   animation: shiny-text 5s linear infinite;
 }
 
-/* Amazon Ember — used by the AWS S3 Navigate section only.
- * Files live in /public/fonts/ so Vite serves them as static assets.
- * Note: browsers pick the FIRST supported format in `src:` and do NOT fall
- * through to later entries on 404, so we list only the .ttf files we ship.
- * If you ever convert these to .woff2 for smaller payloads, list the .woff2
- * URL FIRST, then the .ttf as a fallback. */
-@font-face {
-  font-family: 'Amazon Ember';
-  src: url('/fonts/AmazonEmber-Regular.ttf') format('truetype');
-  font-weight: 400;
-  font-style: normal;
-  font-display: swap;
-}
-@font-face {
-  font-family: 'Amazon Ember';
-  src: url('/fonts/AmazonEmber-Medium.ttf') format('truetype');
-  font-weight: 500;
-  font-style: normal;
-  font-display: swap;
-}
-@font-face {
-  font-family: 'Amazon Ember';
-  src: url('/fonts/AmazonEmber-Bold.ttf') format('truetype');
-  font-weight: 700;
-  font-style: normal;
-  font-display: swap;
-}
-@font-face {
-  font-family: 'Amazon Ember';
-  src: url('/fonts/AmazonEmber-Italic.ttf') format('truetype');
-  font-weight: 400;
-  font-style: italic;
-  font-display: swap;
-}
-@font-face {
-  font-family: 'Amazon Ember';
-  src: url('/fonts/AmazonEmber-BoldItalic.ttf') format('truetype');
-  font-weight: 700;
-  font-style: italic;
-  font-display: swap;
-}
-
-/* Section wrapper: scopes the Amazon Ember stack + base page bg so the rest
- * of the app keeps its GitHub-dark look. Applied to the S3Navigate root. */
+/* AWS S3 Navigate section wrapper. Page bg matches the rest of the app
+ * (GitHub-dark canvas); font is inherited from the app default. AWS-faithful
+ * touches (button colours, row selection, sort triangles, separators) come
+ * from theme.js and the AwsControls primitives — not from here. */
 .aws-s3-section {
-  font-family: 'Amazon Ember', 'Helvetica Neue', system-ui, -apple-system, sans-serif;
-  font-size: 14px;
-  background-color: #1a1c1d;
-  color: #ffffff;
+  background-color: #0d1117;
 }

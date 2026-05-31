@@ -4,9 +4,9 @@
 
 export const colors = {
   bg: {
-    page: '#1a1c1d',         // outer page canvas
-    card: '#181a1b',         // panel / card surface + inactive button fill
-    rowSelected: '#002c3c',  // selected table row inner fill
+    page: '#0d1117',         // matches the rest of the app (gh-canvas)
+    card: '#161b22',         // matches gh-canvas-subtle
+    rowSelected: '#002c3c',  // AWS-blue selected row fill (keep)
   },
   border: {
     rowSeparator: '#ebebf0', // thin light divider between rows
@@ -41,7 +41,3 @@ export const radii = {
   input: '8px',
 };
 
-// Wired into index.css via @font-face declarations. Inside the .aws-s3-section
-// scope this becomes the default font-family.
-export const fontStack = "'Amazon Ember', 'Helvetica Neue', system-ui, -apple-system, sans-serif";
-export const baseFontSize = '14px';
