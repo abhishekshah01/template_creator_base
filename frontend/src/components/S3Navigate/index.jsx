@@ -1,26 +1,36 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, Component } from 'react';
 import Shell from './Shell';
 import Breadcrumb from './Breadcrumb';
 import SignIn from './SignIn';
 import BucketList from './BucketList';
 import ObjectList from './ObjectList';
 import ObjectDetail from './ObjectDetail';
+import UploadPage from './UploadPage';
+import CreateFolderPage from './CreateFolderPage';
+import DeletePage from './DeletePage';
+import DeleteStatusPage from './DeleteStatusPage';
+import AwsAlert from './AwsAlert';
 import { s3api, getToken, GateError } from './api';
 
 // Top-level state machine for AWS S3 Navigate.
 // view: 'signin' | 'buckets' | 'objects' | 'object'
+//     | 'upload' | 'createFolder' | 'deleteObjects' | 'deleteStatus'
 export default function S3Navigate() {
   const [view, setView] = useState('signin');
   const [session, setSession] = useState(null); // {username, expires_at}
-  // Skip the boot delay entirely when there's no token — we know we're showing sign-in.
   const [bootChecked, setBootChecked] = useState(() => !getToken());
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [bucket, setBucket] = useState(null);
   const [prefix, setPrefix] = useState('');
   const [objectKey, setObjectKey] = useState(null);
   const [toast, setToast] = useState(null);
+  const [pageBanner, setPageBanner] = useState(null); // {variant, title, body}
+  // Selection / status passed between Object list -> Delete -> Status views.
+  const [pendingDelete, setPendingDelete] = useState([]); // [{key, size, last_modified, isFolder}]
+  const [deleteSummary, setDeleteSummary] = useState(null); // {source, results}
+  // Bumped after a write so ObjectList re-fetches its listing.
+  const [refreshTick, setRefreshTick] = useState(0);
 
-  // Validate existing token on mount (skipped when there's nothing to validate)
   useEffect(() => {
     if (!getToken()) return;
     let alive = true;
@@ -34,6 +44,14 @@ export default function S3Navigate() {
   function showToast(msg) {
     setToast(msg);
     setTimeout(() => setToast(t => (t === msg ? null : t)), 1800);
+  }
+
+  function showBanner(banner) {
+    setPageBanner(banner);
+    // success banners auto-dismiss; errors stick until closed
+    if (banner?.variant === 'success') {
+      setTimeout(() => setPageBanner(b => (b === banner ? null : b)), 6000);
+    }
   }
 
   const handleGateError = useCallback((err) => {
@@ -61,11 +79,13 @@ export default function S3Navigate() {
     setBucket(b.name);
     setPrefix('');
     setObjectKey(null);
+    setPageBanner(null);
     setView('objects');
   }
   function openPrefix(p) {
     setPrefix(p);
     setObjectKey(null);
+    setPageBanner(null);
     setView('objects');
   }
   function openObject(f) {
@@ -76,7 +96,12 @@ export default function S3Navigate() {
     setBucket(null);
     setPrefix('');
     setObjectKey(null);
+    setPageBanner(null);
     setView('buckets');
+  }
+  function backToObjects() {
+    setObjectKey(null);
+    setView('objects');
   }
 
   // Build breadcrumb crumbs for the current view
@@ -90,22 +115,22 @@ export default function S3Navigate() {
     if (bucket) {
       c.push({
         label: bucket,
-        onClick: () => { setPrefix(''); setObjectKey(null); setView('objects'); },
+        onClick: () => { setPrefix(''); setObjectKey(null); setPageBanner(null); setView('objects'); },
       });
     }
-    // Prefix crumbs ("foo/", "foo/bar/", ...)
     if (prefix) {
       const parts = prefix.split('/').filter(Boolean);
       let acc = '';
       parts.forEach((part, idx) => {
         acc += part + '/';
-        const targetPrefix = acc; // snapshot so the handler doesn't close over the loop variable
-        const isLastBeforeObject = idx === parts.length - 1 && view === 'objects';
+        const targetPrefix = acc;
+        const isLast = idx === parts.length - 1;
         c.push({
           label: part + '/',
-          onClick: isLastBeforeObject ? undefined : (() => {
+          onClick: (isLast && view === 'objects') ? undefined : (() => {
             setPrefix(targetPrefix);
             setObjectKey(null);
+            setPageBanner(null);
             setView('objects');
           }),
         });
@@ -115,6 +140,10 @@ export default function S3Navigate() {
       const name = objectKey.split('/').pop();
       c.push({ label: name });
     }
+    if (view === 'upload') c.push({ label: 'Upload' });
+    if (view === 'createFolder') c.push({ label: 'Create folder' });
+    if (view === 'deleteObjects') c.push({ label: 'Delete objects' });
+    if (view === 'deleteStatus') c.push({ label: 'Delete objects' });
     return c;
   }
 
@@ -136,6 +165,19 @@ export default function S3Navigate() {
     >
       <Breadcrumb crumbs={crumbs()} />
 
+      {pageBanner && (
+        <div className="mb-4">
+          <AwsAlert
+            variant={pageBanner.variant}
+            tone={pageBanner.tone || (pageBanner.variant === 'success' ? 'solid' : 'outlined')}
+            title={pageBanner.title}
+            onDismiss={() => setPageBanner(null)}
+          >
+            {pageBanner.body}
+          </AwsAlert>
+        </div>
+      )}
+
       <ErrorBoundary onAuth={handleGateError}>
         {view === 'buckets' && (
           <BucketList onOpenBucket={openBucket} />
@@ -144,17 +186,72 @@ export default function S3Navigate() {
           <ObjectList
             bucket={bucket}
             prefix={prefix}
+            refreshTick={refreshTick}
             onOpenPrefix={openPrefix}
             onOpenObject={openObject}
             onCopyToast={showToast}
+            onOpenUpload={() => { setPageBanner(null); setView('upload'); }}
+            onOpenCreateFolder={() => { setPageBanner(null); setView('createFolder'); }}
+            onOpenDelete={(selected) => { setPendingDelete(selected); setPageBanner(null); setView('deleteObjects'); }}
           />
         )}
         {view === 'object' && bucket && objectKey && (
           <ObjectDetail
             bucket={bucket}
             objKey={objectKey}
-            onBack={() => setView('objects')}
+            onBack={backToObjects}
             onCopyToast={showToast}
+          />
+        )}
+        {view === 'upload' && bucket && (
+          <UploadPage
+            bucket={bucket}
+            prefix={prefix}
+            onCancel={() => setView('objects')}
+            onDone={(count) => {
+              setRefreshTick(t => t + 1);
+              setView('objects');
+              showBanner({
+                variant: 'success',
+                title: `Successfully uploaded ${count} object${count === 1 ? '' : 's'}`,
+                body: <>to <span className="font-mono">s3://{bucket}/{prefix || ''}</span></>,
+              });
+            }}
+          />
+        )}
+        {view === 'createFolder' && bucket && (
+          <CreateFolderPage
+            bucket={bucket}
+            prefix={prefix}
+            onCancel={() => setView('objects')}
+            onDone={(name) => {
+              setRefreshTick(t => t + 1);
+              setView('objects');
+              showBanner({
+                variant: 'success',
+                title: <>Successfully created folder "{name}".</>,
+              });
+            }}
+          />
+        )}
+        {view === 'deleteObjects' && bucket && (
+          <DeletePage
+            bucket={bucket}
+            prefix={prefix}
+            objects={pendingDelete}
+            onCancel={() => setView('objects')}
+            onDone={(summary) => {
+              setDeleteSummary(summary);
+              setRefreshTick(t => t + 1);
+              setView('deleteStatus');
+            }}
+          />
+        )}
+        {view === 'deleteStatus' && deleteSummary && (
+          <DeleteStatusPage
+            source={deleteSummary.source}
+            results={deleteSummary.results}
+            onClose={() => { setDeleteSummary(null); setView('objects'); }}
           />
         )}
       </ErrorBoundary>
@@ -169,7 +266,6 @@ export default function S3Navigate() {
 }
 
 // Minimal error boundary so a GateError thrown from a leaf can bounce to signin.
-import { Component } from 'react';
 class ErrorBoundary extends Component {
   constructor(props) { super(props); this.state = { err: null }; }
   static getDerivedStateFromError(err) { return { err }; }
