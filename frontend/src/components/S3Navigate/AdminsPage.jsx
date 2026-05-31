@@ -6,13 +6,6 @@ import { s3api } from './api';
 import { formatAwsDate } from './format';
 import { colors } from './theme';
 
-// Settings -> Admin users. Action buttons live in the toolbar above the table
-// and become available only when exactly one row is selected (AWS S3 console
-// pattern). Default sort is Account ID ASC; click any header triangle to
-// re-sort.
-// Every data column is the same 150px wide; Status (last) takes whatever
-// space is left over. Content that doesn't fit wraps inside the cell via
-// break-words on the <td>.
 const COL_WIDTH = 150;
 const COLUMNS = [
   { key: 'account_id',    label: 'Account ID',  width: COL_WIDTH },

@@ -1,13 +1,5 @@
 import { colors, radii } from './theme';
 
-// Pill-shaped AWS Cloudscape-style action button used in toolbars.
-//   variant='default'  – outlined; blue when enabled, dim when disabled
-//   variant='primary'  – orange fill (Upload / Create admin)
-//   variant='icon'     – circular icon-only refresh-style button
-//
-// Disabled `default` buttons keep their resting outline but switch to the
-// inactive palette (border/text/icon all in muted gray). No hover effect on
-// the disabled state.
 export function AwsButton({
   children,
   onClick,
@@ -81,11 +73,8 @@ export function AwsButton({
   );
 }
 
-// All section icons use the same stroke-based recipe: 16x16 viewBox, fill=none,
-// stroke=currentColor (so they inherit from the button text color), 1.4 stroke,
-// rounded caps + joins. Paths transcribed verbatim from AWS Cloudscape where
-// available — anything that diverges is noted on the function.
-
+// Shared recipe for every icon — stroke=currentColor so they inherit color
+// from the surrounding button text.
 const ICON_BASE_PROPS = {
   viewBox: '0 0 16 16',
   fill: 'none',
@@ -96,9 +85,6 @@ const ICON_BASE_PROPS = {
 };
 
 export function RefreshIcon({ className = 'w-[14px] h-[14px]' }) {
-  // AWS Cloudscape refresh — exact paths captured from the live console.
-  // Path 1 = the L-shape arrow notch at top-right.
-  // Path 2 = the three-quarter open arc beneath it.
   return (
     <svg className={className} {...ICON_BASE_PROPS}>
       <path d="M15 0v5l-5-.04" />
@@ -107,12 +93,6 @@ export function RefreshIcon({ className = 'w-[14px] h-[14px]' }) {
   );
 }
 
-// AWS Cloudscape-style checkbox. Three visual states:
-//   checked        – blue fill + white tick
-//   indeterminate  – blue fill + white minus (when "some but not all" selected)
-//   off            – transparent fill + muted-gray border
-// Renders as a real button with role=checkbox + aria-checked for screen
-// readers; click toggles via onChange.
 export function AwsCheckbox({ checked = false, indeterminate = false, onChange, ariaLabel }) {
   const isOn = checked || indeterminate;
   return (
@@ -168,7 +148,6 @@ export function DownloadIcon({ className = 'w-[14px] h-[14px]' }) {
 }
 
 export function OpenExternalIcon({ className = 'w-[14px] h-[14px]' }) {
-  // AWS "external-link" — top-right corner L + diagonal slash from origin.
   return (
     <svg className={className} {...ICON_BASE_PROPS}>
       <path d="M13 9.012v-6H7" />
@@ -185,10 +164,6 @@ export function UploadIcon({ className = 'w-[14px] h-[14px]' }) {
   );
 }
 
-// Filled rounded triangle used as the column-header sort marker. Path
-// matches AWS Cloudscape "down" exactly; "up" is the vertical mirror.
-// Rounded vertices come from stroke-linejoin=round with stroke=fill so the
-// outline thickens the shape symmetrically.
 export function SortTriangle({ direction, active }) {
   const color = active ? colors.text.primary : '#5e6166';
   const d = direction === 'asc'
@@ -209,7 +184,6 @@ export function SortTriangle({ direction, active }) {
   );
 }
 
-// Magnifying glass for AwsSearchInput. Stroked, rounded caps.
 function MagnifierIcon({ className = 'w-[14px] h-[14px]' }) {
   return (
     <svg className={className} {...ICON_BASE_PROPS}>
@@ -219,8 +193,6 @@ function MagnifierIcon({ className = 'w-[14px] h-[14px]' }) {
   );
 }
 
-// AWS-style search input. Magnifier on the left, italic placeholder, light
-// border. Use for the "find by…" filters at the top of tables.
 export function AwsSearchInput({ value, onChange, placeholder, className = '' }) {
   return (
     <div className={`relative ${className}`}>
