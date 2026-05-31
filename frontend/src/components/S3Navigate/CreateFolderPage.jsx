@@ -87,7 +87,15 @@ export default function CreateFolderPage({ bucket, prefix, onCancel, onDone }) {
           <span className="text-[14px] text-[#8b949e]">/</span>
         </div>
         <p className="mt-2 text-[12px] text-[#8b949e]">
-          Folder names can't contain "/" and are limited to 200 characters.
+          Folder names can't contain "/".{' '}
+          <a
+            href="https://docs.aws.amazon.com/AmazonS3/latest/userguide/object-keys.html"
+            target="_blank"
+            rel="noreferrer"
+            className="text-[#58a6ff] underline decoration-dashed underline-offset-2"
+          >
+            See rules for naming
+          </a>
         </p>
       </form>
 
