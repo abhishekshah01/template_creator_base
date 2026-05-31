@@ -30,7 +30,7 @@ export default function SignIn({ onSignedIn }) {
   }
 
   return (
-    <div className="min-h-[calc(100vh-4rem)] -mx-6 -my-8 bg-[#0f1419] text-[#e9ecef] flex flex-col items-center justify-center">
+    <div className="min-h-full bg-[#0f1419] text-[#e9ecef] flex flex-col items-center justify-center py-12">
       {/* Emergent "e" mark */}
       <img
         src="https://assets.emergent.sh/assets/elogo.gif"

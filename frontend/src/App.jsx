@@ -227,35 +227,63 @@ export default function App() {
       >
         <div className={`w-[2px] h-full mx-auto transition-colors ${isDragging ? 'bg-[#1f6feb]' : 'bg-transparent group-hover:bg-[#1f6feb]'}`} />
       </div>
-      <main style={{ marginLeft: sidebarWidth }} className="flex-1 min-h-screen">
-        <div className={`${
-          activePage.startsWith('guide-')
-            ? 'px-6 py-8'
-            : ['create-template', 'config-create', 'config-edit'].includes(activePage)
+      <main style={{ marginLeft: sidebarWidth }} className="flex-1 min-h-screen flex flex-col">
+        {activePage === 's3' ? (
+          <>
+            {/* S3 page banners — own padded zone, in flow above the full-bleed page */}
+            {(envError || (bearerToken && !infoBannerDismissed)) && (
+              <div className="shrink-0 px-6 pt-6 space-y-2">
+                {envError && (
+                  <>
+                    <Banner variant="critical" onDismiss={() => setEnvError(null)}>
+                      {envError}{previousEnv && <> — <button onClick={switchToPreviousEnv} className="text-[#58a6ff] hover:underline font-medium">switch back to {previousEnv}</button></>}
+                    </Banner>
+                    {!envWarningDismissed && (
+                      <Banner variant="warning" onDismiss={() => setEnvWarningDismissed(true)}>
+                        Switch to a valid environment using the dropdown in the sidebar, or check the environment name for typos.
+                      </Banner>
+                    )}
+                  </>
+                )}
+                {!envError && bearerToken && !infoBannerDismissed && (
+                  <Banner variant="upsell" onDismiss={() => setInfoBannerDismissed(true)}>
+                    API tokens are environment-specific. Ensure your token matches the active environment <strong className="text-white">({activeEnv})</strong>.
+                  </Banner>
+                )}
+              </div>
+            )}
+            <div className="flex-1 min-h-0">{renderPage()}</div>
+          </>
+        ) : (
+          <div className={`${
+            activePage.startsWith('guide-')
               ? 'px-6 py-8'
-              : 'px-6 py-8 max-w-4xl mx-auto'
-        }`}>
-          {/* Global env error banners — shown on ALL pages */}
-          {envError && (
-            <div className="mb-4 space-y-2">
-              <Banner variant="critical" onDismiss={() => setEnvError(null)}>
-                {envError}{previousEnv && <> — <button onClick={switchToPreviousEnv} className="text-[#58a6ff] hover:underline font-medium">switch back to {previousEnv}</button></>}
-              </Banner>
-              {!envWarningDismissed && (
-                <Banner variant="warning" onDismiss={() => setEnvWarningDismissed(true)}>
-                  Switch to a valid environment using the dropdown in the sidebar, or check the environment name for typos.
+              : ['create-template', 'config-create', 'config-edit'].includes(activePage)
+                ? 'px-6 py-8'
+                : 'px-6 py-8 max-w-4xl mx-auto'
+          }`}>
+            {/* Global env error banners — shown on ALL pages */}
+            {envError && (
+              <div className="mb-4 space-y-2">
+                <Banner variant="critical" onDismiss={() => setEnvError(null)}>
+                  {envError}{previousEnv && <> — <button onClick={switchToPreviousEnv} className="text-[#58a6ff] hover:underline font-medium">switch back to {previousEnv}</button></>}
                 </Banner>
-              )}
-            </div>
-          )}
-          {/* Persistent auth info banner — shown on auth-dependent pages */}
-          {!envError && bearerToken && !infoBannerDismissed && activePage !== 'create-template' && activePage !== 'settings' && !activePage.startsWith('guide-') && (
-            <Banner variant="upsell" onDismiss={() => setInfoBannerDismissed(true)} className="mb-4">
-              API tokens are environment-specific. Ensure your token matches the active environment <strong className="text-white">({activeEnv})</strong>.
-            </Banner>
-          )}
-          {renderPage()}
-        </div>
+                {!envWarningDismissed && (
+                  <Banner variant="warning" onDismiss={() => setEnvWarningDismissed(true)}>
+                    Switch to a valid environment using the dropdown in the sidebar, or check the environment name for typos.
+                  </Banner>
+                )}
+              </div>
+            )}
+            {/* Persistent auth info banner — shown on auth-dependent pages */}
+            {!envError && bearerToken && !infoBannerDismissed && activePage !== 'create-template' && activePage !== 'settings' && !activePage.startsWith('guide-') && (
+              <Banner variant="upsell" onDismiss={() => setInfoBannerDismissed(true)} className="mb-4">
+                API tokens are environment-specific. Ensure your token matches the active environment <strong className="text-white">({activeEnv})</strong>.
+              </Banner>
+            )}
+            {renderPage()}
+          </div>
+        )}
       </main>
     </div>
   );
