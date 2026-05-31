@@ -34,7 +34,7 @@ export default function DeletePage({ bucket, prefix, objects, onCancel, onDone }
 
   return (
     <div>
-      <h1 className="text-[28px] font-bold text-[#e6edf3] mb-4">
+      <h1 style={{ fontSize: 28, lineHeight: '36px' }} className="font-bold text-[#e6edf3] mb-4">
         Delete objects <InfoIcon />
       </h1>
 

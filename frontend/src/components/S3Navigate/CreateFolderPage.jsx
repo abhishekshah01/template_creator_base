@@ -47,7 +47,7 @@ export default function CreateFolderPage({ bucket, prefix, onCancel, onDone }) {
 
   return (
     <div className="max-w-[920px]">
-      <h1 className="text-[28px] font-bold text-[#e6edf3] mb-1">
+      <h1 style={{ fontSize: 28, lineHeight: '36px' }} className="font-bold text-[#e6edf3] mb-1">
         Create folder <InfoIcon />
       </h1>
       <p className="text-[13px] text-[#8b949e] mb-5">

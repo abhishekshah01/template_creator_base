@@ -39,7 +39,7 @@ export default function BucketList({ onOpenBucket }) {
 
   return (
     <div>
-      <h1 className="text-[28px] font-bold text-[#e6edf3] mb-1">Buckets</h1>
+      <h1 style={{ fontSize: 28, lineHeight: '36px' }} className="font-bold text-[#e6edf3] mb-1">Buckets</h1>
 
       <div className="border-b border-[#30363d] mb-6 flex gap-6">
         <Tab active>General purpose buckets <Pill>All AWS Regions</Pill></Tab>

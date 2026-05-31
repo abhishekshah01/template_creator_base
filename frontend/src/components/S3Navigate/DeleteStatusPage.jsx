@@ -28,7 +28,7 @@ export default function DeleteStatusPage({ source, results, onClose }) {
       )}
 
       <div className="flex items-center justify-between mb-4">
-        <h1 className="text-[28px] font-bold text-[#e6edf3]">Delete objects: status</h1>
+        <h1 style={{ fontSize: 28, lineHeight: '36px' }} className="font-bold text-[#e6edf3]">Delete objects: status</h1>
         <button
           onClick={onClose}
           className="px-4 py-1.5 rounded-[4px] bg-[#ff9900] hover:bg-[#ec7211] text-[#16191f] text-[14px] font-bold transition-colors"

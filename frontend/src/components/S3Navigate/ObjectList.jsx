@@ -128,7 +128,7 @@ export default function ObjectList({
   return (
     <div>
       <div className="flex items-start justify-between mb-4">
-        <h1 className="text-[28px] font-bold text-[#e6edf3]">{prefix ? prefix : bucket + '/'}</h1>
+        <h1 style={{ fontSize: 28, lineHeight: '36px' }} className="font-bold text-[#e6edf3]">{prefix ? prefix : bucket + '/'}</h1>
         <SecondaryBtn icon={<CopyIcon />} onClick={() => copy(`s3://${bucket}/${prefix || ''}`)}>Copy S3 URI</SecondaryBtn>
       </div>
 

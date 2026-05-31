@@ -33,7 +33,7 @@ export default function ObjectDetail({ bucket, objKey, onCopyToast }) {
   return (
     <div>
       <div className="flex items-start justify-between mb-4 gap-4">
-        <h1 className="text-[28px] font-bold text-[#e6edf3] break-all">
+        <h1 style={{ fontSize: 28, lineHeight: '36px' }} className="font-bold text-[#e6edf3] break-all">
           {name} <InfoIcon />
         </h1>
         <div className="flex items-center gap-2 shrink-0">
