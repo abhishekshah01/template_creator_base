@@ -7,6 +7,7 @@ import { ConfigAll, ConfigCreate, ConfigSummary, ConfigDetailPage } from './comp
 import Settings from './components/Settings';
 import S3Navigate from './components/S3Navigate';
 import Banner from './components/Banner';
+import Guide from './components/Guide';
 import { api } from './api';
 
 const MIN_SIDEBAR = 200;
@@ -171,6 +172,9 @@ export default function App() {
 
   function renderPage() {
     if (activePage === 's3') return <S3Navigate />;
+    if (activePage.startsWith('guide-')) {
+      return <Guide page={activePage} onNavigate={navigate} />;
+    }
     switch (activePage) {
       case 'create-template':
         return <CreateTemplate bearerToken={bearerToken} />;
@@ -224,7 +228,13 @@ export default function App() {
         <div className={`w-[2px] h-full mx-auto transition-colors ${isDragging ? 'bg-[#1f6feb]' : 'bg-transparent group-hover:bg-[#1f6feb]'}`} />
       </div>
       <main style={{ marginLeft: sidebarWidth }} className="flex-1 min-h-screen">
-        <div className={`px-6 py-8 ${['create-template', 'config-create', 'config-edit'].includes(activePage) ? '' : 'max-w-4xl mx-auto'}`}>
+        <div className={`${
+          activePage.startsWith('guide-')
+            ? 'px-6 py-8'
+            : ['create-template', 'config-create', 'config-edit'].includes(activePage)
+              ? 'px-6 py-8'
+              : 'px-6 py-8 max-w-4xl mx-auto'
+        }`}>
           {/* Global env error banners — shown on ALL pages */}
           {envError && (
             <div className="mb-4 space-y-2">
@@ -239,7 +249,7 @@ export default function App() {
             </div>
           )}
           {/* Persistent auth info banner — shown on auth-dependent pages */}
-          {!envError && bearerToken && !infoBannerDismissed && activePage !== 'create-template' && activePage !== 'settings' && (
+          {!envError && bearerToken && !infoBannerDismissed && activePage !== 'create-template' && activePage !== 'settings' && !activePage.startsWith('guide-') && (
             <Banner variant="upsell" onDismiss={() => setInfoBannerDismissed(true)} className="mb-4">
               API tokens are environment-specific. Ensure your token matches the active environment <strong className="text-white">({activeEnv})</strong>.
             </Banner>
