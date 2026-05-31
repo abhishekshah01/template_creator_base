@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 
 import AwsAlert from './AwsAlert';
 import { s3api } from './api';
-import { formatAwsDate } from './format';
+import { formatAwsDateCompact } from './format';
 
 // Settings -> Admin users. Lists every admin in the admin_users collection,
 // lets the signed-in admin create, edit, reset password, and (de)activate
@@ -95,8 +95,8 @@ export default function AdminsPage({ currentUsername, onSelfDeactivated, onCopyT
         />
       </div>
 
-      <div className="rounded-[4px] bg-[#0d1117] overflow-hidden">
-        <table className="w-full text-[13px] text-left">
+      <div className="rounded-[4px] bg-[#0d1117] overflow-x-auto">
+        <table className="w-full min-w-[860px] text-[13px] text-left">
           <thead className="text-[#c9d1d9] border-b border-[#30363d]">
             <tr>
               <Th>Account ID</Th>
@@ -130,14 +130,14 @@ export default function AdminsPage({ currentUsername, onSelfDeactivated, onCopyT
                     {u.username}
                     {isSelf && <span className="ml-2 text-[11px] text-[#8b949e] uppercase tracking-wider">you</span>}
                   </Td>
-                  <Td className="text-[#8b949e] whitespace-nowrap">{formatAwsDate(u.created_at)}</Td>
-                  <Td className="text-[#8b949e] whitespace-nowrap">{u.last_login_at ? formatAwsDate(u.last_login_at) : '—'}</Td>
+                  <Td className="text-[#8b949e]">{formatAwsDateCompact(u.created_at)}</Td>
+                  <Td className="text-[#8b949e]">{u.last_login_at ? formatAwsDateCompact(u.last_login_at) : '—'}</Td>
                   <Td>
                     {u.is_active
                       ? <Badge color="#3fb950" bg="rgba(63,185,80,0.12)">Active</Badge>
                       : <Badge color="#8b949e" bg="rgba(139,148,158,0.12)">Inactive</Badge>}
                   </Td>
-                  <Td className="text-right pr-4">
+                  <Td className="text-right pr-4 whitespace-nowrap">
                     <div className="inline-flex gap-3 text-[13px]">
                       <RowAction onClick={() => setModal({ kind: 'edit', target: u })}>Edit</RowAction>
                       <RowAction onClick={() => setModal({ kind: 'reset', target: u })}>Reset password</RowAction>

@@ -21,6 +21,25 @@ const MONTH_NAMES = [
   'July', 'August', 'September', 'October', 'November', 'December',
 ];
 
+const MONTH_ABBR = [
+  'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+  'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+];
+
+// Compact form used in dense tables — "Jun 1, 2026, 00:20" (no seconds, no tz).
+// Use formatAwsDate() when the full AWS-faithful timestamp is what you want.
+export function formatAwsDateCompact(iso) {
+  if (!iso) return '-';
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return '-';
+  const month = MONTH_ABBR[d.getMonth()];
+  const day = d.getDate();
+  const year = d.getFullYear();
+  const hh = String(d.getHours()).padStart(2, '0');
+  const mm = String(d.getMinutes()).padStart(2, '0');
+  return `${month} ${day}, ${year}, ${hh}:${mm}`;
+}
+
 // AWS format: "October 15, 2025, 20:39:38 (UTC+05:30)"
 export function formatAwsDate(iso) {
   if (!iso) return '-';
