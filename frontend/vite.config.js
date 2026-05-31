@@ -3,25 +3,15 @@ import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 
 export default defineConfig(({ mode }) => {
-  // Load env file based on `mode` in the current working directory.
   const env = loadEnv(mode, process.cwd(), '')
   const allowedHosts = env.VITE_ALLOWED_HOST ? [env.VITE_ALLOWED_HOST] : undefined;
 
   return {
-    plugins: [
-      react({
-        // Disable Fast Refresh completely
-        fastRefresh: false,
-      }),
-      tailwindcss()
-    ],
+    plugins: [react(), tailwindcss()],
     server: {
       host: '0.0.0.0',
       port: 3000,
       strictPort: true,
-      hmr: false,
-      ws: false,
-      watch: null,
       ...(allowedHosts && { allowedHosts }),
       proxy: {
         '/api': {
@@ -29,9 +19,6 @@ export default defineConfig(({ mode }) => {
           changeOrigin: true,
         },
       },
-    },
-    build: {
-      watch: null,
     },
   }
 })
