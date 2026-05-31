@@ -93,7 +93,11 @@ export default function DeletePage({ bucket, prefix, objects, onCancel, onDone }
       </div>
 
       <div className="flex items-center justify-end gap-3">
-        <button onClick={onCancel} className="px-4 py-1.5 text-[14px] text-[#58a6ff] hover:underline">
+        <button
+          onClick={onCancel}
+          disabled={deleting}
+          className="px-4 py-1.5 text-[14px] text-[#58a6ff] hover:underline disabled:opacity-50 disabled:cursor-not-allowed disabled:no-underline"
+        >
           Cancel
         </button>
         <button
