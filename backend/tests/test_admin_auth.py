@@ -1,20 +1,15 @@
 """Tests for /api/admin-auth/* — admin gate for the AWS S3 Navigate UI."""
 
-import importlib
-import os
-
 import pytest
 
 
 @pytest.fixture
 def admin_creds(monkeypatch):
-    """Set creds + reload the service so the new env values are picked up."""
+    """Set creds at env-var level; service reads them lazily so no reload needed."""
     monkeypatch.setenv("ADMIN_USERNAME", "admin")
     monkeypatch.setenv("ADMIN_PASSWORD", "s3cret")
     monkeypatch.setenv("ADMIN_SESSION_TTL_SECONDS", "3600")
     from services import admin_auth_service
-    importlib.reload(admin_auth_service)
-    # Reset the in-memory store between tests.
     admin_auth_service._sessions.clear()
     return {"username": "admin", "password": "s3cret"}
 
@@ -38,8 +33,6 @@ def test_login_wrong_password_returns_401(client, admin_creds):
 def test_login_unconfigured_returns_503(client, monkeypatch):
     monkeypatch.setenv("ADMIN_USERNAME", "")
     monkeypatch.setenv("ADMIN_PASSWORD", "")
-    from services import admin_auth_service
-    importlib.reload(admin_auth_service)
     resp = client.post("/api/admin-auth/login", json={
         "username": "admin", "password": "anything",
     })

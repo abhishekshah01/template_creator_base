@@ -6,6 +6,10 @@ Routes live in routers/, business logic in services/, external HTTP wrappers in
 clients/, pydantic models in schemas/.
 """
 
+# Load backend/.env BEFORE any module that reads os.environ at import time.
+from dotenv import load_dotenv
+load_dotenv()
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 

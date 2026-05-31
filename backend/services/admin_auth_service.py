@@ -19,31 +19,33 @@ from typing import Optional
 
 from fastapi import HTTPException
 
-ADMIN_USERNAME = os.environ.get("ADMIN_USERNAME", "")
-ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD", "")
-SESSION_TTL_SECONDS = int(os.environ.get("ADMIN_SESSION_TTL_SECONDS", str(24 * 60 * 60)))
-
 _sessions: dict[str, dict] = {}
 _sessions_lock = asyncio.Lock()
 
 
-def _is_configured() -> bool:
-    return bool(ADMIN_USERNAME and ADMIN_PASSWORD)
+def _get_creds() -> tuple[str, str]:
+    """Read creds at call time so env var changes (and import-order quirks) don't bite."""
+    return os.environ.get("ADMIN_USERNAME", ""), os.environ.get("ADMIN_PASSWORD", "")
+
+
+def _get_ttl_seconds() -> int:
+    return int(os.environ.get("ADMIN_SESSION_TTL_SECONDS", str(24 * 60 * 60)))
 
 
 async def login(username: str, password: str) -> dict:
-    if not _is_configured():
+    admin_username, admin_password = _get_creds()
+    if not (admin_username and admin_password):
         raise HTTPException(
             503,
             "Admin auth not configured (set ADMIN_USERNAME / ADMIN_PASSWORD in backend/.env).",
         )
-    ok_user = secrets.compare_digest(username or "", ADMIN_USERNAME)
-    ok_pass = secrets.compare_digest(password or "", ADMIN_PASSWORD)
+    ok_user = secrets.compare_digest(username or "", admin_username)
+    ok_pass = secrets.compare_digest(password or "", admin_password)
     if not (ok_user and ok_pass):
         raise HTTPException(401, "Invalid username or password.")
 
     token = secrets.token_urlsafe(32)
-    expires_at = time.time() + SESSION_TTL_SECONDS
+    expires_at = time.time() + _get_ttl_seconds()
     async with _sessions_lock:
         _sessions[token] = {"username": username, "expires_at": expires_at}
     return {"token": token, "username": username, "expires_at": expires_at}
@@ -60,7 +62,7 @@ async def require(token: Optional[str]) -> dict:
         if time.time() > session["expires_at"]:
             _sessions.pop(token, None)
             raise HTTPException(401, "Session expired. Sign in again.")
-        session["expires_at"] = time.time() + SESSION_TTL_SECONDS
+        session["expires_at"] = time.time() + _get_ttl_seconds()
         return {
             "token": token,
             "username": session["username"],
