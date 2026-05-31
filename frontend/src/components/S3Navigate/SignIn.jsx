@@ -102,9 +102,9 @@ export default function SignIn({ onSignedIn }) {
             <form
               onSubmit={handleSubmit}
               noValidate
-              className="bg-[#161b22] border border-[#5f6b7a] rounded-[4px] overflow-hidden"
+              className="bg-[#161b22] rounded-[4px] overflow-hidden"
             >
-              <div className="px-5 pt-4 pb-3 border-b border-[#5f6b7a]">
+              <div className="px-5 pt-4 pb-3 border-b border-[#eaeded]">
                 <h2 className="text-[20px] font-bold text-[#e6edf3] inline-flex items-center gap-1.5">
                   Admin sign in
                   <InfoCircle />
@@ -185,7 +185,7 @@ export default function SignIn({ onSignedIn }) {
           </div>
 
           {/* Right: promo card — taller, gradient retuned for the new size */}
-          <div className="bg-[#0d1117] border border-[#5f6b7a] rounded-[4px] overflow-hidden flex flex-col">
+          <div className="bg-[#0d1117] rounded-[4px] overflow-hidden flex flex-col">
             <div
               className="relative h-[320px]"
               style={{
@@ -238,7 +238,7 @@ function inputCls(hasError = false) {
     'focus:shadow-[0_0_0_2px_rgba(31,111,235,0.3)] transition-shadow';
   return hasError
     ? `${base} border-[#e35b66] focus:border-[#e35b66] focus:shadow-[0_0_0_2px_rgba(227,91,102,0.3)]`
-    : `${base} border-[#5f6b7a] focus:border-[#1f6feb]`;
+    : `${base} border-[#687077] focus:border-[#1f6feb]`;
 }
 
 function Gap({ small = false }) {
