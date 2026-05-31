@@ -11,7 +11,7 @@ from motor.motor_asyncio import AsyncIOMotorClient
 
 import config
 
-_client: AsyncIOMotorClient = AsyncIOMotorClient(config.MONGO_URL)
+_client: AsyncIOMotorClient = AsyncIOMotorClient(config.MONGO_URL, tz_aware=True)
 _db = _client[config.DB_NAME]
 
 template_jobs = _db["template_jobs"]
