@@ -46,8 +46,6 @@ export default function ObjectDetail({ bucket, objKey, onCopyToast }) {
 
       <div className="border-b border-[#30363d] mb-6 flex gap-6">
         <Tab active>Properties</Tab>
-        <Tab>Permissions</Tab>
-        <Tab>Versions</Tab>
       </div>
 
       <div className="border border-[#30363d] rounded-md bg-[#0d1117] p-6 mb-6">
@@ -92,19 +90,6 @@ export default function ObjectDetail({ bucket, objKey, onCopyToast }) {
         )}
       </div>
 
-      <div className="border border-[#30363d] rounded-md bg-[#0d1117] px-5 py-4">
-        <h2 className="text-[16px] font-bold text-[#e6edf3] mb-0.5">Object management overview</h2>
-        <p className="text-[12px] text-[#8b949e] mb-3">The following bucket properties and object management configurations impact the behavior of this object.</p>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-y-2.5 gap-x-12">
-          <CompactField label="Bucket Versioning">
-            When enabled, multiple variants of an object can be stored in the bucket to easily recover from accidental deletions and overwrites.
-          </CompactField>
-          <CompactField label="Replication status">
-            When a replication rule is applied to an object the replication status indicates the progress of the replication.
-          </CompactField>
-        </div>
-      </div>
     </div>
   );
 }
@@ -114,15 +99,6 @@ function Field({ label, children }) {
     <div>
       <div className="text-[14px] font-bold text-[#e6edf3] mb-1">{label}</div>
       <div className="text-[14px] text-[#c9d1d9]">{children}</div>
-    </div>
-  );
-}
-
-function CompactField({ label, children }) {
-  return (
-    <div className="leading-snug">
-      <div className="text-[13px] font-bold text-[#e6edf3] mb-0.5">{label}</div>
-      <div className="text-[12px] text-[#8b949e]">{children}</div>
     </div>
   );
 }
