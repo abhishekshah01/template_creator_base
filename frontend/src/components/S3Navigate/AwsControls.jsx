@@ -96,12 +96,48 @@ const ICON_BASE_PROPS = {
 };
 
 export function RefreshIcon({ className = 'w-[14px] h-[14px]' }) {
-  // Cloudscape "refresh" — single continuous path so the arrow notch joins the
-  // arc cleanly (no disconnect at the start/end point of the arc).
+  // AWS Cloudscape refresh — exact paths captured from the live console.
+  // Path 1 = the L-shape arrow notch at top-right.
+  // Path 2 = the three-quarter open arc beneath it.
   return (
     <svg className={className} {...ICON_BASE_PROPS}>
-      <path d="M14 4 12 1.99v1.34a6 6 0 1 0 1.5 5.1" />
+      <path d="M15 0v5l-5-.04" />
+      <path d="M15 8c0 3.87-3.13 7-7 7s-7-3.13-7-7 3.13-7 7-7c2.79 0 5.2 1.63 6.33 4" />
     </svg>
+  );
+}
+
+// AWS Cloudscape-style checkbox. Three visual states:
+//   checked        – blue fill + white tick
+//   indeterminate  – blue fill + white minus (when "some but not all" selected)
+//   off            – transparent fill + muted-gray border
+// Renders as a real button with role=checkbox + aria-checked for screen
+// readers; click toggles via onChange.
+export function AwsCheckbox({ checked = false, indeterminate = false, onChange, ariaLabel }) {
+  const isOn = checked || indeterminate;
+  return (
+    <button
+      type="button"
+      role="checkbox"
+      aria-checked={indeterminate ? 'mixed' : !!checked}
+      aria-label={ariaLabel}
+      onClick={onChange}
+      className="inline-flex items-center justify-center w-[16px] h-[16px] rounded-[2px] shrink-0 cursor-pointer"
+      style={{
+        backgroundColor: isOn ? colors.border.rowSelected : 'transparent',
+        border: `2px solid ${isOn ? colors.border.rowSelected : colors.text.buttonInactive}`,
+      }}
+    >
+      {indeterminate ? (
+        <svg viewBox="0 0 10 10" width="10" height="10" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round">
+          <path d="M2 5h6" />
+        </svg>
+      ) : checked ? (
+        <svg viewBox="0 0 10 10" width="10" height="10" fill="none" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M2 5l2 2 4-4" />
+        </svg>
+      ) : null}
+    </button>
   );
 }
 

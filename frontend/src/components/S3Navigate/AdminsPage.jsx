@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 
 import AwsAlert from './AwsAlert';
-import { AwsButton, AwsSearchInput, RefreshIcon, SortTriangle } from './AwsControls';
+import { AwsButton, AwsCheckbox, AwsSearchInput, RefreshIcon, SortTriangle } from './AwsControls';
 import { s3api } from './api';
 import { formatAwsDate } from './format';
 import { colors } from './theme';
@@ -10,15 +10,16 @@ import { colors } from './theme';
 // and become available only when exactly one row is selected (AWS S3 console
 // pattern). Default sort is Account ID ASC; click any header triangle to
 // re-sort.
-// Fixed pixel widths on every column except the last — Status takes whatever
-// horizontal space is left over so the table fills the panel without dead
-// space, the way AWS S3 lays out the Objects table.
+// Every data column is the same 150px wide; Status (last) takes whatever
+// space is left over. Content that doesn't fit wraps inside the cell via
+// break-words on the <td>.
+const COL_WIDTH = 150;
 const COLUMNS = [
-  { key: 'account_id',    label: 'Account ID',  width: 140 },
-  { key: 'email',         label: 'Email',       width: 260 },
-  { key: 'username',      label: 'Username',    width: 200 },
-  { key: 'created_at',    label: 'Created',     width: 200 },
-  { key: 'last_login_at', label: 'Last login',  width: 200 },
+  { key: 'account_id',    label: 'Account ID',  width: COL_WIDTH },
+  { key: 'email',         label: 'Email',       width: COL_WIDTH },
+  { key: 'username',      label: 'Username',    width: COL_WIDTH },
+  { key: 'created_at',    label: 'Created',     width: COL_WIDTH },
+  { key: 'last_login_at', label: 'Last login',  width: COL_WIDTH },
   { key: 'is_active',     label: 'Status',      width: null }, // leftover
 ];
 
@@ -172,10 +173,10 @@ export default function AdminsPage({ currentUsername, onSelfDeactivated, onCopyT
         />
       </div>
 
-      <div className="rounded-[4px] overflow-x-auto" style={{ backgroundColor: colors.bg.card }}>
+      <div className="rounded-[4px] overflow-x-auto min-w-0" style={{ backgroundColor: colors.bg.card }}>
         <table
           className="w-full text-[14px] text-left border-collapse"
-          style={{ tableLayout: 'fixed', minWidth: 1080 }}
+          style={{ tableLayout: 'fixed' }}
         >
           <colgroup>
             <col style={{ width: 44 }} />
@@ -185,7 +186,13 @@ export default function AdminsPage({ currentUsername, onSelfDeactivated, onCopyT
           </colgroup>
           <thead>
             <tr>
-              <HeaderCell aria-hidden="true" showDivider />
+              <HeaderCell aria-hidden="true" showDivider>
+                <AwsCheckbox
+                  indeterminate={!!selected}
+                  onChange={() => setSelectedId(null)}
+                  ariaLabel="Clear selection"
+                />
+              </HeaderCell>
               {COLUMNS.map((col, idx) => {
                 const isSorted = sort.key === col.key;
                 const isLast = idx === COLUMNS.length - 1;
@@ -195,7 +202,7 @@ export default function AdminsPage({ currentUsername, onSelfDeactivated, onCopyT
                       type="button"
                       onClick={() => toggleSort(col.key)}
                       className="inline-flex items-center gap-2"
-                      style={{ color: colors.text.primary }}
+                      style={{ color: colors.text.tableHeader }}
                     >
                       <span>{col.label}</span>
                       <SortTriangle
@@ -237,12 +244,10 @@ export default function AdminsPage({ currentUsername, onSelfDeactivated, onCopyT
                   }}
                 >
                   <Td style={{ borderLeft: ringSide }}>
-                    <input
-                      type="checkbox"
+                    <AwsCheckbox
                       checked={isSel}
                       onChange={() => setSelectedId(isSel ? null : u.id)}
-                      className="w-[16px] h-[16px] accent-[#016ce0] cursor-pointer"
-                      aria-label={`Select ${u.username}`}
+                      ariaLabel={`Select ${u.username}`}
                     />
                   </Td>
                   <Td>
@@ -333,7 +338,7 @@ function HeaderCell({ children, showDivider }) {
     <th
       style={{
         padding: '6px 12px',
-        color: colors.text.primary,
+        color: colors.text.tableHeader,
         position: 'relative',
         textAlign: 'left',
         fontWeight: 700,

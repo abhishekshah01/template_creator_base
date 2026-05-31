@@ -19,6 +19,7 @@ export const colors = {
   text: {
     primary: '#ffffff',
     selectedRow: '#dbd8d3',
+    tableHeader: '#dbd8d3',     // column headers (slightly dimmer than body)
     info: '#bab4ab',            // helper / description copy
     placeholder: '#5e5c56',     // italic search placeholder
     buttonInactive: '#a2998d',
