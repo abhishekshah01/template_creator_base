@@ -25,7 +25,7 @@ function wrap(promise) {
 
 export const s3api = {
   // Admin gate
-  signIn: (username, password) => adminAuth.login(username, password),
+  signIn: (account, username, password) => adminAuth.login(account, username, password),
   me: () => wrap(adminAuth.me()),
   signOut: () => adminAuth.logout(),
 

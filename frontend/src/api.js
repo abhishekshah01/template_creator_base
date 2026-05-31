@@ -60,11 +60,11 @@ export const adminAuth = {
     else localStorage.removeItem(ADMIN_TOKEN_KEY);
   },
 
-  login: async (username, password) => {
+  login: async (account, username, password) => {
     const resp = await fetch('/api/admin-auth/login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username, password }),
+      body: JSON.stringify({ account, username, password }),
     });
     const text = await resp.text();
     let data; try { data = JSON.parse(text); } catch { data = { message: text }; }

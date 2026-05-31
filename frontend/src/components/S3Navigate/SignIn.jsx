@@ -42,7 +42,7 @@ export default function SignIn({ onSignedIn }) {
     setSubmitting(true);
     setAuthError(null);
     try {
-      const data = await s3api.signIn(trimmedUser, password);
+      const data = await s3api.signIn(trimmedAccount, trimmedUser, password);
       if (remember) {
         localStorage.setItem(REMEMBERED_ACCOUNT_KEY, trimmedAccount);
         localStorage.setItem(REMEMBERED_USERNAME_KEY, trimmedUser);

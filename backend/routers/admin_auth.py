@@ -12,18 +12,14 @@ router = APIRouter(prefix="/api/admin-auth", tags=["admin-auth"])
 
 @router.post("/login", response_model=AdminSessionResponse)
 async def login(req: AdminLoginRequest) -> AdminSessionResponse:
-    data = await svc.login(req.username, req.password)
+    data = await svc.login(req.account, req.username, req.password)
     return AdminSessionResponse(**data)
 
 
 @router.get("/me", response_model=AdminSessionResponse)
 async def me(x_admin_token: Optional[str] = Header(default=None)) -> AdminSessionResponse:
     data = await svc.require(x_admin_token)
-    return AdminSessionResponse(
-        token=data["token"],
-        username=data["username"],
-        expires_at=data["expires_at"],
-    )
+    return AdminSessionResponse(**data)
 
 
 @router.post("/logout")
