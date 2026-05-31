@@ -27,22 +27,28 @@ async def collections(req: JobRequest):
 @router.post("/api/delete-collections")
 async def delete_collections(req: DeleteCollectionsRequest):
     return await job_service.delete_collections(
-        job_id=req.job_id, db_name=req.db_name, collections=req.collections,
+        job_id=req.job_id,
+        db_name=req.db_name,
+        collections=req.collections,
     )
 
 
 @router.post("/api/collection-data")
 async def collection_data(req: CollectionDataRequest):
     return await job_service.get_collection_data(
-        job_id=req.job_id, db_name=req.db_name,
-        collection_name=req.collection_name, limit=req.limit,
+        job_id=req.job_id,
+        db_name=req.db_name,
+        collection_name=req.collection_name,
+        limit=req.limit,
     )
 
 
 @router.post("/api/mongosh")
 async def mongosh(req: MongoshRequest):
     return await job_service.run_mongosh(
-        job_id=req.job_id, db_name=req.db_name, command=req.command,
+        job_id=req.job_id,
+        db_name=req.db_name,
+        command=req.command,
     )
 
 

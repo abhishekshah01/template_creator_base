@@ -1,0 +1,15 @@
+[tool.ruff]
+line-length = 110
+target-version = "py311"
+exclude = [".venv", "venv", "__pycache__", ".pytest_cache"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "W", "C4", "SIM"]
+ignore = ["E501", "B008", "SIM117", "SIM103"]
+
+[tool.ruff.lint.per-file-ignores]
+# load_dotenv() must run before other imports
+"main.py" = ["E402"]
+
+[tool.ruff.format]
+quote-style = "double"

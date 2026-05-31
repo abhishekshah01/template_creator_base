@@ -21,20 +21,30 @@ async def list_configs(*, bearer_token: str):
 
 async def create_config(*, payload: dict, bearer_token: str) -> dict:
     response = await app_svc.post(
-        _BASE, json=payload, bearer_token=bearer_token, timeout=30.0, label="create category config",
+        _BASE,
+        json=payload,
+        bearer_token=bearer_token,
+        timeout=30.0,
+        label="create category config",
     )
     return {"status": "success", "response": response}
 
 
 async def get_config(*, config_id: str, bearer_token: str) -> dict:
     return await app_svc.get(
-        f"{_BASE}/{config_id}", bearer_token=bearer_token, timeout=10.0, label="get category config",
+        f"{_BASE}/{config_id}",
+        bearer_token=bearer_token,
+        timeout=10.0,
+        label="get category config",
     )
 
 
 async def update_config(*, config_id: str, payload: dict, bearer_token: str) -> dict:
     response = await app_svc.put(
-        f"{_BASE}/{config_id}", json=payload, bearer_token=bearer_token, label="update category config",
+        f"{_BASE}/{config_id}",
+        json=payload,
+        bearer_token=bearer_token,
+        label="update category config",
     )
     return {"status": "success", "response": response}
 

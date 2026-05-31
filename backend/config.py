@@ -6,6 +6,7 @@ Supports three environment types:
 """
 
 import os
+
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -100,7 +101,7 @@ VM_ZONE = os.environ.get("VM_ZONE", "us-central1-a")
 
 # --- Template defaults (scope-aware) ---
 _SCOPE_BUCKETS = {
-    "dev":  {"source": "dev-snapshots-restic",  "dest": "emergent-dev-template-restic"},
+    "dev": {"source": "dev-snapshots-restic", "dest": "emergent-dev-template-restic"},
     "prod": {"source": "prod-snapshots-restic", "dest": "emergent-template-restic"},
 }
 RESTIC_PASSWORD = (
@@ -121,6 +122,5 @@ DEST_BUCKET = (
 
 # --- Script path on the VM ---
 TEMPLATE_SCRIPT_PATH = os.environ.get(
-    "TEMPLATE_SCRIPT_PATH",
-    "/home/sritam_emergent_sh/create_template_gcs.sh"
+    "TEMPLATE_SCRIPT_PATH", "/home/sritam_emergent_sh/create_template_gcs.sh"
 )

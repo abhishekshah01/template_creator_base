@@ -15,6 +15,7 @@ class TemplateJobCallback(BaseModel):
     Field names follow the conventional Airflow callback payload; backend is
     tolerant to extra keys.
     """
+
     state: str = ""
     dag_run_id: str = ""
     gcs_path: str = ""

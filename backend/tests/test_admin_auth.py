@@ -10,6 +10,7 @@ def admin_creds(monkeypatch):
     monkeypatch.setenv("ADMIN_PASSWORD", "s3cret")
     monkeypatch.setenv("ADMIN_SESSION_TTL_SECONDS", "3600")
     from services import admin_auth_service
+
     admin_auth_service._sessions.clear()
     return {"username": "admin", "password": "s3cret"}
 
@@ -24,18 +25,26 @@ def test_login_success_returns_token(client, admin_creds):
 
 
 def test_login_wrong_password_returns_401(client, admin_creds):
-    resp = client.post("/api/admin-auth/login", json={
-        "username": "admin", "password": "wrong",
-    })
+    resp = client.post(
+        "/api/admin-auth/login",
+        json={
+            "username": "admin",
+            "password": "wrong",
+        },
+    )
     assert resp.status_code == 401
 
 
 def test_login_unconfigured_returns_503(client, monkeypatch):
     monkeypatch.setenv("ADMIN_USERNAME", "")
     monkeypatch.setenv("ADMIN_PASSWORD", "")
-    resp = client.post("/api/admin-auth/login", json={
-        "username": "admin", "password": "anything",
-    })
+    resp = client.post(
+        "/api/admin-auth/login",
+        json={
+            "username": "admin",
+            "password": "anything",
+        },
+    )
     assert resp.status_code == 503
 
 
@@ -61,6 +70,7 @@ def test_me_refreshes_expiry_sliding(client, admin_creds):
     first_expiry = login["expires_at"]
     # Small sleep so the refreshed expiry is measurably greater.
     import time as _time
+
     _time.sleep(1.05)
     resp = client.get("/api/admin-auth/me", headers={"X-Admin-Token": login["token"]})
     assert resp.status_code == 200

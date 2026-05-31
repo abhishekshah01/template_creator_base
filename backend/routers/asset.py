@@ -29,9 +29,7 @@ async def upload_url(req: AssetUploadUrlRequest):
 
 @router.post("/delete")
 async def delete(req: AssetDeleteRequest):
-    return await asset_service.delete_object(
-        bucket=req.bucket, key=req.key, bearer_token=req.bearer_token
-    )
+    return await asset_service.delete_object(bucket=req.bucket, key=req.key, bearer_token=req.bearer_token)
 
 
 @router.post("/invalidate")
@@ -61,9 +59,7 @@ async def objects(req: AssetListObjectsRequest):
 
 @router.post("/object-meta")
 async def object_meta(req: AssetObjectMetaRequest):
-    return await asset_service.object_meta(
-        bucket=req.bucket, key=req.key, bearer_token=req.bearer_token
-    )
+    return await asset_service.object_meta(bucket=req.bucket, key=req.key, bearer_token=req.bearer_token)
 
 
 @router.post("/download-url")

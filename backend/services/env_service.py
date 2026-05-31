@@ -16,10 +16,7 @@ def get_environments() -> dict:
         for name, cfg in config.STANDARD_ENVS.items()
     ]
     active = config.get_env_config(config.ENV)
-    masked_dsn = (
-        config.DB_DSN.split("password=")[0] + "password=***"
-        if config.DB_DSN else ""
-    )
+    masked_dsn = config.DB_DSN.split("password=")[0] + "password=***" if config.DB_DSN else ""
     return {
         "deployment_scope": config.DEPLOYMENT_SCOPE,
         "ephemeral_enabled": config.EPHEMERAL_ENABLED,

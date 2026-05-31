@@ -48,12 +48,15 @@ async def update_category_config(req: UpdateCategoryConfigRequest):
         "public": req.public,
     }
     return await svc.update_config(
-        config_id=req.config_id, payload=payload, bearer_token=req.bearer_token,
+        config_id=req.config_id,
+        payload=payload,
+        bearer_token=req.bearer_token,
     )
 
 
 @router.post("/api/template-summary")
 async def template_summary(req: TemplateSummaryRequest):
     return await svc.generate_template_summary(
-        template_name=req.template_name, bearer_token=req.bearer_token,
+        template_name=req.template_name,
+        bearer_token=req.bearer_token,
     )
