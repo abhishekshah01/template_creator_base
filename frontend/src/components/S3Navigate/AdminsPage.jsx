@@ -10,13 +10,16 @@ import { colors } from './theme';
 // and become available only when exactly one row is selected (AWS S3 console
 // pattern). Default sort is Account ID ASC; click any header triangle to
 // re-sort.
+// Fixed pixel widths on every column except the last — Status takes whatever
+// horizontal space is left over so the table fills the panel without dead
+// space, the way AWS S3 lays out the Objects table.
 const COLUMNS = [
-  { key: 'account_id', label: 'Account ID',  width: '15%' },
-  { key: 'email',       label: 'Email',       width: '24%' },
-  { key: 'username',    label: 'Username',    width: '18%' },
-  { key: 'created_at',  label: 'Created',     width: '17%' },
-  { key: 'last_login_at', label: 'Last login', width: '17%' },
-  { key: 'is_active',   label: 'Status',      width: '9%'  },
+  { key: 'account_id',    label: 'Account ID',  width: 140 },
+  { key: 'email',         label: 'Email',       width: 260 },
+  { key: 'username',      label: 'Username',    width: 200 },
+  { key: 'created_at',    label: 'Created',     width: 200 },
+  { key: 'last_login_at', label: 'Last login',  width: 200 },
+  { key: 'is_active',     label: 'Status',      width: null }, // leftover
 ];
 
 export default function AdminsPage({ currentUsername, onSelfDeactivated, onCopyToast }) {
@@ -170,31 +173,24 @@ export default function AdminsPage({ currentUsername, onSelfDeactivated, onCopyT
       </div>
 
       <div className="rounded-[4px] overflow-x-auto" style={{ backgroundColor: colors.bg.card }}>
-        <table className="w-full min-w-[920px] text-[14px] text-left border-collapse">
+        <table
+          className="w-full text-[14px] text-left border-collapse"
+          style={{ tableLayout: 'fixed', minWidth: 1080 }}
+        >
+          <colgroup>
+            <col style={{ width: 44 }} />
+            {COLUMNS.map((c) => (
+              <col key={c.key} style={c.width ? { width: c.width } : undefined} />
+            ))}
+          </colgroup>
           <thead>
             <tr>
-              <th
-                aria-hidden="true"
-                style={{
-                  width: 44,
-                  padding: '6px 12px',
-                  borderRight: `1px solid ${colors.border.rowSeparator}`,
-                }}
-              />
+              <HeaderCell aria-hidden="true" showDivider />
               {COLUMNS.map((col, idx) => {
                 const isSorted = sort.key === col.key;
                 const isLast = idx === COLUMNS.length - 1;
                 return (
-                  <th
-                    key={col.key}
-                    style={{
-                      width: col.width,
-                      padding: '6px 12px',
-                      color: colors.text.primary,
-                      borderRight: isLast ? 'none' : `1px solid ${colors.border.rowSeparator}`,
-                    }}
-                    className="font-bold"
-                  >
+                  <HeaderCell key={col.key} showDivider={!isLast}>
                     <button
                       type="button"
                       onClick={() => toggleSort(col.key)}
@@ -207,7 +203,7 @@ export default function AdminsPage({ currentUsername, onSelfDeactivated, onCopyT
                         direction={isSorted ? sort.dir : null}
                       />
                     </button>
-                  </th>
+                  </HeaderCell>
                 );
               })}
             </tr>
@@ -222,17 +218,25 @@ export default function AdminsPage({ currentUsername, onSelfDeactivated, onCopyT
             {!loading && filtered.map(u => {
               const isSel = u.id === selectedId;
               const isSelf = u.username === currentUsername;
+              // 2px ring around the selected row: top/bottom on the <tr> and
+              // left/right on the first/last <td>. Text stays default white.
+              const ringTopBottom = isSel
+                ? `2px solid ${colors.border.rowSelected}`
+                : `1px solid ${colors.border.rowSeparator}`;
+              const ringSide = isSel
+                ? `2px solid ${colors.border.rowSelected}`
+                : 'none';
               return (
                 <tr
                   key={u.id}
                   style={{
                     backgroundColor: isSel ? colors.bg.rowSelected : 'transparent',
-                    color: isSel ? colors.text.selectedRow : colors.text.primary,
-                    borderTop: `1px solid ${isSel ? colors.border.rowSelected : colors.border.rowSeparator}`,
-                    borderBottom: `1px solid ${isSel ? colors.border.rowSelected : colors.border.rowSeparator}`,
+                    color: colors.text.primary,
+                    borderTop: ringTopBottom,
+                    borderBottom: ringTopBottom,
                   }}
                 >
-                  <Td>
+                  <Td style={{ borderLeft: ringSide }}>
                     <input
                       type="checkbox"
                       checked={isSel}
@@ -260,13 +264,9 @@ export default function AdminsPage({ currentUsername, onSelfDeactivated, onCopyT
                       </span>
                     )}
                   </Td>
-                  <Td className="break-words" style={{ color: isSel ? colors.text.selectedRow : colors.text.info }}>
-                    {formatAwsDate(u.created_at)}
-                  </Td>
-                  <Td className="break-words" style={{ color: isSel ? colors.text.selectedRow : colors.text.info }}>
-                    {u.last_login_at ? formatAwsDate(u.last_login_at) : '—'}
-                  </Td>
-                  <Td>
+                  <Td className="break-words">{formatAwsDate(u.created_at)}</Td>
+                  <Td className="break-words">{u.last_login_at ? formatAwsDate(u.last_login_at) : '—'}</Td>
+                  <Td style={{ borderRight: ringSide }}>
                     {u.is_active
                       ? <Badge color="#7af0a0" bg="rgba(0,90,40,0.25)">Active</Badge>
                       : <Badge color={colors.text.info} bg="rgba(139,148,158,0.18)">Inactive</Badge>}
@@ -322,6 +322,38 @@ export default function AdminsPage({ currentUsername, onSelfDeactivated, onCopyT
 function Td({ children, className = '', style }) {
   return (
     <td className={`align-middle ${className}`} style={{ padding: '12px', ...style }}>{children}</td>
+  );
+}
+
+// Header cell with an inset column divider on its right edge: the line stops
+// short of the top + bottom of the cell so it doesn't visually merge with
+// the underline below the header row.
+function HeaderCell({ children, showDivider }) {
+  return (
+    <th
+      style={{
+        padding: '6px 12px',
+        color: colors.text.primary,
+        position: 'relative',
+        textAlign: 'left',
+        fontWeight: 700,
+      }}
+    >
+      {children}
+      {showDivider && (
+        <span
+          aria-hidden="true"
+          style={{
+            position: 'absolute',
+            right: 0,
+            top: 6,
+            bottom: 6,
+            width: 1,
+            backgroundColor: colors.border.rowSeparator,
+          }}
+        />
+      )}
+    </th>
   );
 }
 

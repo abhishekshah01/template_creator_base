@@ -29,7 +29,7 @@ export function AwsButton({
         className={`inline-flex items-center justify-center w-[32px] h-[32px] rounded-full transition-colors disabled:cursor-not-allowed ${className}`}
         style={{
           backgroundColor: 'transparent',
-          border: `1px solid ${disabled ? colors.border.buttonInactive : colors.border.buttonActive}`,
+          border: `2px solid ${disabled ? colors.border.buttonInactive : colors.border.buttonActive}`,
           color: disabled ? colors.icon.buttonInactive : colors.icon.buttonActive,
         }}
       >
@@ -48,7 +48,7 @@ export function AwsButton({
         className={`inline-flex items-center gap-2 px-4 h-[32px] text-[14px] font-bold transition-colors disabled:cursor-not-allowed disabled:opacity-60 ${className}`}
         style={{
           backgroundColor: colors.fill.primaryButton,
-          border: `1px solid ${colors.border.primaryButton}`,
+          border: `2px solid ${colors.border.primaryButton}`,
           color: colors.text.primaryButton,
           borderRadius: radii.pill,
         }}
@@ -69,7 +69,7 @@ export function AwsButton({
       className={`inline-flex items-center gap-2 px-4 h-[32px] text-[14px] font-bold transition-colors disabled:cursor-not-allowed ${className}`}
       style={{
         backgroundColor: colors.bg.card,
-        border: `1px solid ${disabled ? colors.border.buttonInactive : colors.border.buttonActive}`,
+        border: `2px solid ${disabled ? colors.border.buttonInactive : colors.border.buttonActive}`,
         color: disabled ? colors.text.buttonInactive : colors.text.buttonActive,
         borderRadius: radii.pill,
       }}
@@ -96,10 +96,11 @@ const ICON_BASE_PROPS = {
 };
 
 export function RefreshIcon({ className = 'w-[14px] h-[14px]' }) {
-  // Cloudscape "refresh" — open arrow at 1-o'clock, sweeping clockwise.
+  // Cloudscape "refresh" — single continuous path so the arrow notch joins the
+  // arc cleanly (no disconnect at the start/end point of the arc).
   return (
     <svg className={className} {...ICON_BASE_PROPS}>
-      <path d="M14 6.5V2l-1.39 1.39A6 6 0 1 0 14 8M14 6.5H9.5" />
+      <path d="M14 4 12 1.99v1.34a6 6 0 1 0 1.5 5.1" />
     </svg>
   );
 }
