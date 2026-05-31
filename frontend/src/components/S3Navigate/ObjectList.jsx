@@ -123,7 +123,6 @@ export default function ObjectList({ bucket, prefix, onOpenObject, onOpenPrefix,
 
       <div className="border-b border-[#30363d] mb-6 flex gap-6">
         <Tab active>Objects</Tab>
-        <Tab>Properties</Tab>
       </div>
 
       <div className="border border-[#30363d] rounded-md bg-[#0d1117] p-5">
@@ -160,13 +159,6 @@ export default function ObjectList({ bucket, prefix, onOpenObject, onOpenPrefix,
               className="w-full pl-9 pr-3 py-2 bg-[#0d1117] border border-[#30363d] rounded-[4px] text-[14px] text-[#e6edf3] outline-none focus:border-[#1f6feb]"
             />
           </div>
-          <label className="flex items-center gap-2 text-[14px] text-[#c9d1d9]">
-            <span className="inline-block w-9 h-5 rounded-full bg-[#30363d] relative">
-              <span className="absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-[#8b949e]" />
-            </span>
-            <span>Show versions</span>
-          </label>
-
           <PagerWrap>
             <button
               disabled={!pageStack.length}
