@@ -252,7 +252,19 @@ export default function S3Navigate() {
           <DeleteStatusPage
             source={deleteSummary.source}
             results={deleteSummary.results}
-            onClose={() => { setDeleteSummary(null); setView('objects'); }}
+            onClose={() => {
+              const ok = deleteSummary.results.filter(r => r.ok).length;
+              const fail = deleteSummary.results.length - ok;
+              showBanner({
+                variant: fail ? 'warning' : 'success',
+                tone: fail ? 'outlined' : 'solid',
+                title: fail
+                  ? `Deleted ${ok} object${ok === 1 ? '' : 's'} with ${fail} failure${fail === 1 ? '' : 's'}`
+                  : `Successfully deleted ${ok} object${ok === 1 ? '' : 's'}`,
+              });
+              setDeleteSummary(null);
+              setView('objects');
+            }}
           />
         )}
       </ErrorBoundary>
