@@ -32,10 +32,26 @@
   --color-gh-btn-danger-hover: #b62324;
 }
 
+html {
+  font-size: 16px;
+}
+
 body {
   margin: 0;
-  background: #000;
+  background: #0d1117;
   color: #e6edf3;
+  font-size: 14px;
+  line-height: 1.45;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* AWS console heading reset — defeat any inherited UA "2em" h1 size when
+   arbitrary Tailwind classes haven't compiled yet (saves us from huge h1s) */
+h1, h2, h3, h4, h5, h6 {
+  font-size: inherit;
+  font-weight: inherit;
+  margin: 0;
 }
 
 /* Scrollbar styling */

@@ -163,7 +163,8 @@ export default function S3Navigate() {
       sidebarCollapsed={sidebarCollapsed}
       onToggleSidebar={() => setSidebarCollapsed(v => !v)}
     >
-      <Breadcrumb crumbs={crumbs()} />
+      {/* AWS hides the breadcrumb on the root bucket-list view — the h1 "Buckets" already names it. */}
+      {view !== 'buckets' && <Breadcrumb crumbs={crumbs()} />}
 
       {pageBanner && (
         <div className="mb-4">
