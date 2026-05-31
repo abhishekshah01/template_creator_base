@@ -19,14 +19,22 @@ _client = httpx.AsyncClient(follow_redirects=True)
 
 # Read-only commands allowed in the mongosh terminal
 _BLOCKED_MONGOSH_COMMANDS = [
-    "drop", "delete", "remove", "insert", "update", "replace", "rename",
-    "createIndex", "dropIndex",
+    "drop",
+    "delete",
+    "remove",
+    "insert",
+    "update",
+    "replace",
+    "rename",
+    "createIndex",
+    "dropIndex",
 ]
 
 
 # ---------------------------------------------------------------------------
 # Pod helpers (envcore / kubectl fallback)
 # ---------------------------------------------------------------------------
+
 
 async def get_env_id(job_id: str) -> str | None:
     """Resolve env UUID for a job via agent-service. None if not found in this env."""
@@ -46,7 +54,9 @@ async def get_env_id(job_id: str) -> str | None:
             return None
         return pod_id
     except httpx.HTTPStatusError as exc:
-        raise HTTPException(exc.response.status_code, f"Failed to resolve environment for job: {exc.response.text[:300]}")
+        raise HTTPException(
+            exc.response.status_code, f"Failed to resolve environment for job: {exc.response.text[:300]}"
+        )
     except Exception as exc:
         raise HTTPException(502, f"Failed to resolve environment for job: {exc}")
 
@@ -82,15 +92,30 @@ async def pod_exec(env_id: str, command: str, timeout: int = 30) -> dict:
             resp.raise_for_status()
             return resp.json()
         except httpx.HTTPStatusError as exc:
-            raise HTTPException(exc.response.status_code, f"Pod exec failed (is the job running?): {exc.response.text[:300]}")
+            raise HTTPException(
+                exc.response.status_code, f"Pod exec failed (is the job running?): {exc.response.text[:300]}"
+            )
         except Exception as exc:
             raise HTTPException(502, f"Pod exec failed: {exc}")
 
     # Local dev fallback
     result = subprocess.run(
-        ["kubectl", "exec", "-n", "emergent-agents-env", "-c", "agent-env",
-         f"agent-env-{env_id}", "--", "sh", "-c", command],
-        capture_output=True, text=True, timeout=timeout,
+        [
+            "kubectl",
+            "exec",
+            "-n",
+            "emergent-agents-env",
+            "-c",
+            "agent-env",
+            f"agent-env-{env_id}",
+            "--",
+            "sh",
+            "-c",
+            command,
+        ],
+        capture_output=True,
+        text=True,
+        timeout=timeout,
     )
     return {"stdout": result.stdout, "stderr": result.stderr, "return_code": result.returncode}
 
@@ -113,6 +138,7 @@ async def _require_env_id(job_id: str) -> str:
 # ---------------------------------------------------------------------------
 # Job info / inspection
 # ---------------------------------------------------------------------------
+
 
 async def get_job_info(*, job_id: str, bearer_token: str) -> dict:
     env_id = await _require_env_id(job_id)
@@ -219,14 +245,16 @@ async def delete_collections(*, job_id: str, db_name: str, collections: list[str
         result = await pod_exec(env_id, cmd)
         stdout = result.get("stdout", "").strip()
         success = stdout == "true"
-        results.append({
-            "collection": coll_name,
-            "status": "dropped" if success else "failed",
-            "output": stdout,
-            "error": result.get("stderr", "") or "",
-            "return_code": result.get("return_code", -1),
-            "db_name": db_name,
-        })
+        results.append(
+            {
+                "collection": coll_name,
+                "status": "dropped" if success else "failed",
+                "output": stdout,
+                "error": result.get("stderr", "") or "",
+                "return_code": result.get("return_code", -1),
+                "db_name": db_name,
+            }
+        )
     return {"job_id": job_id, "results": results}
 
 
@@ -318,6 +346,7 @@ async def get_env_variables(*, job_id: str) -> dict:
 # Deploy / lifecycle proxies (forward to app-service)
 # ---------------------------------------------------------------------------
 
+
 def _require_api_url() -> None:
     if not config.API_URL:
         raise HTTPException(503, "API_URL not configured for this environment.")
@@ -344,8 +373,10 @@ async def deploy_app(*, job_id: str, bearer_token: str) -> dict:
     url = f"{config.API_URL}/jobs/v0/deploy"
     try:
         resp = await _client.post(
-            url, headers=_auth_headers(bearer_token, json_body=True),
-            json={"job_id": job_id}, timeout=60,
+            url,
+            headers=_auth_headers(bearer_token, json_body=True),
+            json={"job_id": job_id},
+            timeout=60,
         )
     except Exception as exc:
         raise HTTPException(502, f"Failed to reach deploy API: {exc!r}")
@@ -398,7 +429,11 @@ async def restart_job(*, job_id: str, bearer_token: str) -> dict:
     try:
         resp = await _client.post(url, headers=_auth_headers(bearer_token), timeout=180)
     except httpx.ReadTimeout:
-        return {"job_id": job_id, "status": "accepted", "message": "Restart initiated; awaiting pod readiness."}
+        return {
+            "job_id": job_id,
+            "status": "accepted",
+            "message": "Restart initiated; awaiting pod readiness.",
+        }
     except Exception as exc:
         raise HTTPException(502, f"Failed to reach restart API: {exc!r}")
     _raise_auth_or_status(resp, "Restart failed")
@@ -409,7 +444,8 @@ async def restart_job(*, job_id: str, bearer_token: str) -> dict:
 async def pause_job(*, job_id: str) -> dict:
     try:
         resp = await _client.post(
-            f"{config.PAUSE_URL}/v0/pause-environment/{job_id}", timeout=120,
+            f"{config.PAUSE_URL}/v0/pause-environment/{job_id}",
+            timeout=120,
         )
     except Exception as exc:
         raise HTTPException(502, f"Failed to reach pause API: {exc}")

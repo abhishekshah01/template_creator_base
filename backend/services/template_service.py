@@ -7,7 +7,6 @@ from fastapi import HTTPException
 
 import config
 
-
 # All three identifiers below are interpolated into a shell command, so reject
 # anything that isn't a simple slug. job_id is a UUID in practice; user_id is
 # typically a UUID or a short alphanum handle.
@@ -35,9 +34,13 @@ def create_template(*, job_id: str, user_id: str, template_name: str) -> dict:
     )
 
     gcloud_cmd = [
-        "gcloud", "compute", "ssh", config.VM_HOST,
+        "gcloud",
+        "compute",
+        "ssh",
+        config.VM_HOST,
         f"--zone={config.VM_ZONE}",
-        "--command", script_command,
+        "--command",
+        script_command,
     ]
 
     try:
@@ -45,7 +48,9 @@ def create_template(*, job_id: str, user_id: str, template_name: str) -> dict:
     except subprocess.TimeoutExpired:
         raise HTTPException(504, "Template creation timed out (5 min limit)")
     except FileNotFoundError:
-        raise HTTPException(500, "gcloud CLI not found. Install Google Cloud SDK and run `gcloud auth login`.")
+        raise HTTPException(
+            500, "gcloud CLI not found. Install Google Cloud SDK and run `gcloud auth login`."
+        )
 
     return {
         "status": "success" if result.returncode == 0 else "failed",

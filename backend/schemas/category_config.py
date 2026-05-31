@@ -7,7 +7,7 @@ class CategoryConfigRequest(BaseModel):
     template_name: str
     config: dict = {}
     default_env_config: dict
-    summary_source_job_id: str
+    summary_source_job_id: str = ""
     internal: bool = True
     public: bool = False
     bearer_token: str

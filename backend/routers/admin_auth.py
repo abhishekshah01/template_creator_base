@@ -20,7 +20,9 @@ async def login(req: AdminLoginRequest) -> AdminSessionResponse:
 async def me(x_admin_token: Optional[str] = Header(default=None)) -> AdminSessionResponse:
     data = await svc.require(x_admin_token)
     return AdminSessionResponse(
-        token=data["token"], username=data["username"], expires_at=data["expires_at"],
+        token=data["token"],
+        username=data["username"],
+        expires_at=data["expires_at"],
     )
 
 

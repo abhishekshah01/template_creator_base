@@ -10,7 +10,9 @@ from clients import app_service_client as app_svc
 _BASE = "/internal/s3-templates"
 
 
-async def mint_upload_url(*, bucket: str, key: str, content_type: str, expiration_minutes: int, bearer_token: str) -> dict:
+async def mint_upload_url(
+    *, bucket: str, key: str, content_type: str, expiration_minutes: int, bearer_token: str
+) -> dict:
     return await app_svc.post(
         f"{_BASE}/upload-url",
         json={
@@ -51,7 +53,9 @@ async def list_buckets(*, bearer_token: str) -> dict:
     )
 
 
-async def list_objects(*, bucket: str, prefix: str, continuation_token: Optional[str], page_size: int, bearer_token: str) -> dict:
+async def list_objects(
+    *, bucket: str, prefix: str, continuation_token: Optional[str], page_size: int, bearer_token: str
+) -> dict:
     params = {"bucket": bucket, "prefix": prefix, "page_size": page_size}
     if continuation_token:
         params["continuation_token"] = continuation_token
@@ -73,7 +77,9 @@ async def object_meta(*, bucket: str, key: str, bearer_token: str) -> dict:
     )
 
 
-async def mint_download_url(*, bucket: str, key: str, expiration_minutes: int, download: bool, bearer_token: str) -> dict:
+async def mint_download_url(
+    *, bucket: str, key: str, expiration_minutes: int, download: bool, bearer_token: str
+) -> dict:
     return await app_svc.post(
         f"{_BASE}/download-url",
         json={
