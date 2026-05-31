@@ -17,6 +17,8 @@ if str(BACKEND_DIR) not in sys.path:
 os.environ["DEPLOYMENT_SCOPE"] = "dev"
 os.environ["TEMPLATE_ENV"] = "dev"
 os.environ["DEV_API_URL"] = "http://app-service.test"
+os.environ["DEV_ENVCORE_URL"] = "http://envcore.test"
+os.environ["DEV_PAUSE_URL"] = "http://pause.test"
 
 
 @pytest.fixture
@@ -35,3 +37,17 @@ def app_service_base():
     import config
 
     return config.API_URL.rstrip("/")
+
+
+@pytest.fixture
+def envcore_base():
+    import config
+
+    return config.ENVCORE_URL.rstrip("/")
+
+
+@pytest.fixture
+def pause_base():
+    import config
+
+    return config.PAUSE_URL.rstrip("/")
