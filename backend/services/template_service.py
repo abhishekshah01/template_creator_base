@@ -7,7 +7,6 @@ from fastapi import HTTPException
 
 import config
 
-
 # All three identifiers below are interpolated into a shell command, so reject
 # anything that isn't a simple slug. job_id is a UUID in practice; user_id is
 # typically a UUID or a short alphanum handle.

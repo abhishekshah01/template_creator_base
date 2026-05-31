@@ -21,6 +21,22 @@ os.environ["DEV_ENVCORE_URL"] = "http://envcore.test"
 os.environ["DEV_PAUSE_URL"] = "http://pause.test"
 
 
+_CONFIG_SNAPSHOT_ATTRS = ("ENV", "API_URL", "ENVCORE_URL", "PAUSE_URL", "DB_DSN")
+
+
+@pytest.fixture(autouse=True)
+def _restore_config():
+    """Snapshot config.* module state so tests that switch envs don't leak into others."""
+    import config
+
+    saved = {attr: getattr(config, attr) for attr in _CONFIG_SNAPSHOT_ATTRS}
+    try:
+        yield
+    finally:
+        for attr, value in saved.items():
+            setattr(config, attr, value)
+
+
 @pytest.fixture
 def client():
     """FastAPI TestClient against the real app, but with httpx routed via respx."""

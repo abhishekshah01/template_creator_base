@@ -6,6 +6,10 @@ on:
     branches-ignore:
       - main
 
+# Each job only reads the repo; deny everything else by default.
+permissions:
+  contents: read
+
 jobs:
   pytest:
     runs-on: ubuntu-latest
