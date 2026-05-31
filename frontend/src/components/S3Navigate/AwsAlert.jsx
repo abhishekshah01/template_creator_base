@@ -47,7 +47,9 @@ export default function AwsAlert({ variant = 'info', tone = 'solid', title, onDi
       </div>
       {onDismiss && (
         <button
+          type="button"
           onClick={onDismiss}
+          aria-label="Dismiss alert"
           title="Dismiss"
           className="shrink-0 p-1 rounded hover:bg-white/10 transition-colors"
           style={{ color: v.text }}
