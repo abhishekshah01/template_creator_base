@@ -39,15 +39,15 @@ export default function BucketList({ onOpenBucket }) {
 
   return (
     <div>
-      <h1 style={{ fontSize: 28, lineHeight: '36px' }} className="font-bold text-[#ffffff] mb-1">Buckets</h1>
+      <h1 style={{ fontSize: 28, lineHeight: '36px' }} className="font-bold text-[#e6edf3] mb-1">Buckets</h1>
 
-      <div className="border-b border-[#3c4451] mb-6 flex gap-6">
+      <div className="border-b border-[#30363d] mb-6 flex gap-6">
         <Tab active>General purpose buckets <Pill>All AWS Regions</Pill></Tab>
       </div>
 
-      <div className="border border-[#3c4451] rounded-md bg-[#1a212d] p-5">
+      <div className="border border-[#30363d] rounded-md bg-[#0d1117] p-5">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-[18px] font-bold text-[#ffffff]">
+          <h2 className="text-[18px] font-bold text-[#e6edf3]">
             General purpose buckets <span className="text-[#8b949e] font-normal">({buckets.length})</span>
             <InfoIcon />
           </h2>
@@ -67,17 +67,17 @@ export default function BucketList({ onOpenBucket }) {
               onChange={e => { setFilter(e.target.value); setPage(1); }}
               placeholder="Find buckets by name"
               data-testid="s3-bucket-search"
-              className="w-full pl-9 pr-3 py-2 bg-[#1a212d] border border-[#3c4451] rounded-[4px] text-[14px] text-[#ffffff] outline-none focus:border-[#88c4ff]"
+              className="w-full pl-9 pr-3 py-2 bg-[#0d1117] border border-[#30363d] rounded-[4px] text-[14px] text-[#e6edf3] outline-none focus:border-[#1f6feb]"
             />
           </div>
           <Pager page={page} pageCount={pageCount} onChange={setPage} />
         </div>
 
         {/* Table */}
-        <div className="border border-[#3c4451] rounded-[4px] overflow-hidden">
+        <div className="border border-[#30363d] rounded-[4px] overflow-hidden">
           <table className="w-full text-[14px]">
             <thead>
-              <tr className="bg-[#1a212d] border-b border-[#3c4451] text-[#ffffff]">
+              <tr className="bg-[#0d1117] border-b border-[#30363d] text-[#e6edf3]">
                 <th className="w-10 px-3 py-2"></th>
                 <th className="text-left px-3 py-2 font-semibold">
                   <span className="inline-flex items-center gap-1">Name <SortArrows /></span>
@@ -102,20 +102,20 @@ export default function BucketList({ onOpenBucket }) {
               )}
               {!loading && !err && pageItems.map(b => (
                 <tr key={b.name}
-                  className={`border-b border-[#2c3340] hover:bg-[#232c3a] transition-colors ${selected === b.name ? 'bg-[#88c4ff]/10' : ''}`}>
+                  className={`border-b border-[#21262d] hover:bg-[#161b22] transition-colors ${selected === b.name ? 'bg-[#1f6feb]/10' : ''}`}>
                   <td className="px-3 py-3">
-                    <input type="radio" name="bucket" className="accent-[#88c4ff] w-4 h-4"
+                    <input type="radio" name="bucket" className="accent-[#1f6feb] w-4 h-4"
                       checked={selected === b.name} onChange={() => setSelected(b.name)} />
                   </td>
                   <td className="px-3 py-3">
                     <button onClick={() => onOpenBucket(b)}
                       data-testid={`s3-bucket-${b.name}`}
-                      className="text-[#88c4ff] hover:underline decoration-1 underline-offset-2 text-left">
+                      className="text-[#58a6ff] hover:underline decoration-1 underline-offset-2 text-left">
                       {b.name}
                     </button>
                   </td>
-                  <td className="px-3 py-3 text-[#d4d8db]">{regionLabel(b.region)}</td>
-                  <td className="px-3 py-3 text-[#d4d8db] whitespace-nowrap">{formatAwsDate(b.creation_date)}</td>
+                  <td className="px-3 py-3 text-[#c9d1d9]">{regionLabel(b.region)}</td>
+                  <td className="px-3 py-3 text-[#c9d1d9] whitespace-nowrap">{formatAwsDate(b.creation_date)}</td>
                 </tr>
               ))}
             </tbody>
@@ -146,16 +146,16 @@ function regionLabel(code) {
 
 export function Tab({ active, children }) {
   return (
-    <button className={`relative py-2 text-[15px] font-semibold ${active ? 'text-[#88c4ff]' : 'text-[#d4d8db] hover:text-[#ffffff]'}`}>
+    <button className={`relative py-2 text-[15px] font-semibold ${active ? 'text-[#58a6ff]' : 'text-[#c9d1d9] hover:text-[#e6edf3]'}`}>
       {children}
-      {active && <span className="absolute left-0 right-0 -bottom-px h-[2px] bg-[#88c4ff]" />}
+      {active && <span className="absolute left-0 right-0 -bottom-px h-[2px] bg-[#58a6ff]" />}
     </button>
   );
 }
 
 export function Pill({ children }) {
   return (
-    <span className="ml-1.5 px-1.5 py-0.5 rounded text-[11px] bg-[#232c3a] border border-[#3c4451] text-[#d4d8db] align-middle">
+    <span className="ml-1.5 px-1.5 py-0.5 rounded text-[11px] bg-[#161b22] border border-[#30363d] text-[#c9d1d9] align-middle">
       {children}
     </span>
   );
@@ -164,7 +164,7 @@ export function Pill({ children }) {
 export function PrimaryBtn({ children, onClick, disabled, ...rest }) {
   return (
     <button onClick={onClick} disabled={disabled} {...rest}
-      className="px-3 py-1.5 rounded-[4px] bg-[#ff9900] hover:bg-[#ec7211] text-[#000000] text-[14px] font-bold disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
+      className="px-3 py-1.5 rounded-[4px] bg-[#ff9900] hover:bg-[#ec7211] text-[#16191f] text-[14px] font-bold disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
       {children}
     </button>
   );
@@ -175,8 +175,8 @@ export function SecondaryBtn({ children, icon, onClick, disabled, ...rest }) {
     <button onClick={onClick} disabled={disabled} {...rest}
       className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-[4px] border text-[14px] transition-colors ${
         disabled
-          ? 'border-[#3c4451] text-[#6e7681] cursor-not-allowed'
-          : 'border-[#88c4ff] text-[#88c4ff] hover:bg-[#88c4ff]/10'
+          ? 'border-[#30363d] text-[#6e7681] cursor-not-allowed'
+          : 'border-[#58a6ff] text-[#58a6ff] hover:bg-[#58a6ff]/10'
       }`}>
       {icon}
       {children}
@@ -187,7 +187,7 @@ export function SecondaryBtn({ children, icon, onClick, disabled, ...rest }) {
 export function RefreshButton({ onClick, loading }) {
   return (
     <button onClick={onClick} title="Refresh"
-      className="w-8 h-8 inline-flex items-center justify-center rounded-full border border-[#88c4ff] text-[#88c4ff] hover:bg-[#88c4ff]/10 transition-colors disabled:opacity-50"
+      className="w-8 h-8 inline-flex items-center justify-center rounded-full border border-[#58a6ff] text-[#58a6ff] hover:bg-[#58a6ff]/10 transition-colors disabled:opacity-50"
       disabled={loading}>
       <svg className={`w-4 h-4 ${loading ? 'animate-spin-slow' : ''}`} viewBox="0 0 16 16" fill="currentColor">
         <path d="M1.705 8.005a.75.75 0 0 1 .834.656 5.5 5.5 0 0 0 9.592 2.97l-1.204-1.204a.25.25 0 0 1 .177-.427h3.646a.25.25 0 0 1 .25.25v3.646a.25.25 0 0 1-.427.177l-1.38-1.38A7.002 7.002 0 0 1 1.05 8.84a.75.75 0 0 1 .656-.834ZM8 2.5a5.487 5.487 0 0 0-4.131 1.869l1.204 1.204A.25.25 0 0 1 4.896 6H1.25A.25.25 0 0 1 1 5.75V2.104a.25.25 0 0 1 .427-.177l1.38 1.38A7.002 7.002 0 0 1 14.95 7.16a.75.75 0 0 1-1.49.178A5.5 5.5 0 0 0 8 2.5Z" />
@@ -215,13 +215,13 @@ export function SearchIcon() {
 
 export function InfoIcon() {
   return (
-    <span className="ml-1.5 align-middle text-[#88c4ff] text-[13px] font-normal underline decoration-dotted underline-offset-2 cursor-help">Info</span>
+    <span className="ml-1.5 align-middle text-[#58a6ff] text-[13px] font-normal underline decoration-dotted underline-offset-2 cursor-help">Info</span>
   );
 }
 
 export function SortArrows() {
   return (
-    <svg className="w-3 h-3 text-[#88c4ff]" viewBox="0 0 16 16" fill="currentColor">
+    <svg className="w-3 h-3 text-[#58a6ff]" viewBox="0 0 16 16" fill="currentColor">
       <path d="M4.427 9.573 7.396 12.5a.75.75 0 0 0 1.208 0L11.573 9.573a.75.75 0 0 0-1.061-1.06L8.75 10.273V4a.75.75 0 0 0-1.5 0v6.273L5.488 8.513a.75.75 0 0 0-1.061 1.06Z" transform="rotate(180 8 8)" />
     </svg>
   );
@@ -237,21 +237,21 @@ export function FilterTriangle() {
 
 export function Pager({ page, pageCount, onChange }) {
   return (
-    <div className="inline-flex items-center gap-1 text-[14px] text-[#d4d8db]">
+    <div className="inline-flex items-center gap-1 text-[14px] text-[#c9d1d9]">
       <button onClick={() => onChange(Math.max(1, page - 1))} disabled={page <= 1}
-        className="px-2 py-1 rounded text-[#88c4ff] hover:bg-[#232c3a] disabled:opacity-40">
+        className="px-2 py-1 rounded text-[#58a6ff] hover:bg-[#161b22] disabled:opacity-40">
         <svg className="w-3 h-3" viewBox="0 0 16 16" fill="currentColor">
           <path d="M9.78 12.78a.75.75 0 0 1-1.06 0L4.47 8.53a.75.75 0 0 1 0-1.06l4.25-4.25a.751.751 0 0 1 1.275.326.749.749 0 0 1-.215.734L6.06 8l3.72 3.72a.75.75 0 0 1 0 1.06Z" />
         </svg>
       </button>
       {Array.from({ length: pageCount }).slice(0, 5).map((_, i) => (
         <button key={i} onClick={() => onChange(i + 1)}
-          className={`min-w-[24px] px-1.5 py-0.5 rounded text-[13px] ${page === i + 1 ? 'text-[#ffffff] font-bold' : 'text-[#88c4ff] hover:underline'}`}>
+          className={`min-w-[24px] px-1.5 py-0.5 rounded text-[13px] ${page === i + 1 ? 'text-[#e6edf3] font-bold' : 'text-[#58a6ff] hover:underline'}`}>
           {i + 1}
         </button>
       ))}
       <button onClick={() => onChange(Math.min(pageCount, page + 1))} disabled={page >= pageCount}
-        className="px-2 py-1 rounded text-[#88c4ff] hover:bg-[#232c3a] disabled:opacity-40">
+        className="px-2 py-1 rounded text-[#58a6ff] hover:bg-[#161b22] disabled:opacity-40">
         <svg className="w-3 h-3" viewBox="0 0 16 16" fill="currentColor">
           <path d="M6.22 3.22a.75.75 0 0 1 1.06 0l4.25 4.25a.75.75 0 0 1 0 1.06l-4.25 4.25a.749.749 0 0 1-1.275-.326.749.749 0 0 1 .215-.734L9.94 8 6.22 4.28a.75.75 0 0 1 0-1.06Z" />
         </svg>

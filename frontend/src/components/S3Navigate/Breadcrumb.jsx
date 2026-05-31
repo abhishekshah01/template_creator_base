@@ -12,10 +12,10 @@ export default function Breadcrumb({ crumbs }) {
         return (
           <span key={i} className="flex items-center gap-x-1.5">
             {isLast ? (
-              <span className="text-[#ffffff] font-medium">{c.label}</span>
+              <span className="text-[#e6edf3] font-medium">{c.label}</span>
             ) : (
               <button onClick={c.onClick}
-                className="text-[#88c4ff] hover:underline decoration-1 underline-offset-2">
+                className="text-[#58a6ff] hover:underline decoration-1 underline-offset-2">
                 {c.label}
               </button>
             )}

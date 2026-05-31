@@ -47,7 +47,7 @@ export default function CreateFolderPage({ bucket, prefix, onCancel, onDone }) {
 
   return (
     <div className="max-w-[920px]">
-      <h1 style={{ fontSize: 28, lineHeight: '36px' }} className="font-bold text-[#ffffff] mb-1">
+      <h1 style={{ fontSize: 28, lineHeight: '36px' }} className="font-bold text-[#e6edf3] mb-1">
         Create folder <InfoIcon />
       </h1>
       <p className="text-[13px] text-[#8b949e] mb-5">
@@ -71,9 +71,9 @@ export default function CreateFolderPage({ bucket, prefix, onCancel, onDone }) {
         </div>
       )}
 
-      <form onSubmit={handleCreate} className="border border-[#3c4451] rounded-md bg-[#1a212d] p-5 mb-6">
-        <h2 className="text-[16px] font-bold text-[#ffffff] mb-4">Folder</h2>
-        <label className="block text-[13px] font-semibold text-[#ffffff] mb-1">Folder name</label>
+      <form onSubmit={handleCreate} className="border border-[#30363d] rounded-md bg-[#0d1117] p-5 mb-6">
+        <h2 className="text-[16px] font-bold text-[#e6edf3] mb-4">Folder</h2>
+        <label className="block text-[13px] font-semibold text-[#e6edf3] mb-1">Folder name</label>
         <div className="flex items-center gap-2 max-w-[640px]">
           <input
             type="text"
@@ -81,18 +81,18 @@ export default function CreateFolderPage({ bucket, prefix, onCancel, onDone }) {
             onChange={(e) => setName(e.target.value)}
             placeholder="Enter folder name"
             disabled={creating}
-            className="flex-1 px-3 py-2 bg-[#1a212d] border border-[#3c4451] rounded-[2px] text-[14px] text-[#ffffff] outline-none focus:border-[#88c4ff] focus:shadow-[0_0_0_3px_rgba(136,196,255,0.25)] placeholder:text-[#484f58]"
+            className="flex-1 px-3 py-2 bg-[#0d1117] border border-[#30363d] rounded-[2px] text-[14px] text-[#e6edf3] outline-none focus:border-[#1f6feb] focus:shadow-[0_0_0_3px_rgba(31,111,235,0.25)] placeholder:text-[#484f58]"
             autoFocus
           />
           <span className="text-[14px] text-[#8b949e]">/</span>
         </div>
         <p className="mt-2 text-[12px] text-[#8b949e]">
-          Folder names can't contain "/". <button type="button" className="text-[#88c4ff] underline decoration-dashed underline-offset-2" onClick={(e) => e.preventDefault()}>See rules for naming</button>
+          Folder names can't contain "/". <button type="button" className="text-[#58a6ff] underline decoration-dashed underline-offset-2" onClick={(e) => e.preventDefault()}>See rules for naming</button>
         </p>
       </form>
 
       <div className="flex items-center justify-end gap-3">
-        <button onClick={onCancel} className="px-4 py-1.5 text-[14px] text-[#88c4ff] hover:underline">
+        <button onClick={onCancel} className="px-4 py-1.5 text-[14px] text-[#58a6ff] hover:underline">
           Cancel
         </button>
         <PrimaryBtn onClick={handleCreate} disabled={creating || !name.trim()}>

@@ -33,9 +33,9 @@ export default function SignIn({ onSignedIn }) {
   }
 
   return (
-    <div className="aws-s3-theme min-h-full flex flex-col">
+    <div className="min-h-full bg-[#0f1419] text-[#e9ecef] flex flex-col">
       {/* Top utility bar */}
-      <div className="px-6 py-4 flex items-center justify-end gap-7 text-[13px] text-[#d4d8db]">
+      <div className="px-6 py-4 flex items-center justify-end gap-7 text-[13px] text-[#c9d1d9]">
         <span className="cursor-default">Provide feedback</span>
         <span className="cursor-default flex items-center gap-1">
           Multi-session disabled <Chevron />
@@ -75,10 +75,10 @@ export default function SignIn({ onSignedIn }) {
 
             <form
               onSubmit={handleSubmit}
-              className="bg-[#232c3a] border border-[#3c4451] rounded-md overflow-hidden"
+              className="bg-[#161b22] border border-[#30363d] rounded-md overflow-hidden"
             >
-              <div className="px-6 pt-5 pb-3 border-b border-[#3c4451]">
-                <h2 className="text-[18px] font-bold text-[#ffffff] inline-flex items-center gap-1.5">
+              <div className="px-6 pt-5 pb-3 border-b border-[#30363d]">
+                <h2 className="text-[18px] font-bold text-[#e6edf3] inline-flex items-center gap-1.5">
                   Admin sign in <InfoCircle />
                 </h2>
               </div>
@@ -89,7 +89,7 @@ export default function SignIn({ onSignedIn }) {
                   accessory={
                     <button
                       type="button"
-                      className="text-[12px] text-[#88c4ff] underline decoration-dashed underline-offset-2"
+                      className="text-[12px] text-[#58a6ff] underline decoration-dashed underline-offset-2"
                       onClick={(e) => e.preventDefault()}
                     >
                       (Don't have?)
@@ -106,12 +106,12 @@ export default function SignIn({ onSignedIn }) {
                   />
                 </Field>
 
-                <label className="flex items-center gap-2 text-[13px] text-[#d4d8db] select-none">
+                <label className="flex items-center gap-2 text-[13px] text-[#c9d1d9] select-none">
                   <input
                     type="checkbox"
                     checked={remember}
                     onChange={(e) => setRemember(e.target.checked)}
-                    className="accent-[#88c4ff] w-4 h-4"
+                    className="accent-[#1f6feb] w-4 h-4"
                   />
                   Remember this account
                 </label>
@@ -127,18 +127,18 @@ export default function SignIn({ onSignedIn }) {
                 </Field>
 
                 <div className="flex items-center justify-between text-[13px]">
-                  <label className="flex items-center gap-2 text-[#d4d8db] select-none">
+                  <label className="flex items-center gap-2 text-[#c9d1d9] select-none">
                     <input
                       type="checkbox"
                       checked={showPw}
                       onChange={(e) => setShowPw(e.target.checked)}
-                      className="accent-[#88c4ff] w-4 h-4"
+                      className="accent-[#1f6feb] w-4 h-4"
                     />
                     Show Password
                   </label>
                   <button
                     type="button"
-                    className="text-[#88c4ff] underline decoration-dashed underline-offset-2"
+                    className="text-[#58a6ff] underline decoration-dashed underline-offset-2"
                     onClick={(e) => e.preventDefault()}
                   >
                     Having trouble?
@@ -148,7 +148,7 @@ export default function SignIn({ onSignedIn }) {
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="w-full py-2 rounded-[2px] bg-[#ff9900] hover:bg-[#ec7211] disabled:opacity-50 text-[#000000] font-bold text-[14px] transition-colors"
+                  className="w-full py-2 rounded-[2px] bg-[#ff9900] hover:bg-[#ec7211] disabled:opacity-50 text-[#16191f] font-bold text-[14px] transition-colors"
                 >
                   {submitting ? 'Signing in…' : 'Sign in'}
                 </button>
@@ -177,7 +177,7 @@ function Field({ label, accessory, children }) {
   return (
     <div>
       <div className="flex items-baseline justify-between mb-1">
-        <label className="block text-[13px] font-semibold text-[#ffffff]">{label}</label>
+        <label className="block text-[13px] font-semibold text-[#e6edf3]">{label}</label>
         {accessory}
       </div>
       {children}
@@ -187,7 +187,7 @@ function Field({ label, accessory, children }) {
 
 function InfoCircle() {
   return (
-    <svg className="w-[14px] h-[14px] text-[#88c4ff]" viewBox="0 0 16 16" fill="currentColor">
+    <svg className="w-[14px] h-[14px] text-[#58a6ff]" viewBox="0 0 16 16" fill="currentColor">
       <path d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8Zm8-6.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13ZM6.5 7.75A.75.75 0 0 1 7.25 7h1a.75.75 0 0 1 .75.75v2.75h.25a.75.75 0 0 1 0 1.5h-2a.75.75 0 0 1 0-1.5h.25v-2h-.25a.75.75 0 0 1-.75-.75ZM8 6a1 1 0 1 1 0-2 1 1 0 0 1 0 2Z" />
     </svg>
   );
@@ -227,7 +227,7 @@ function PromoPanel() {
 }
 
 const inputCls =
-  'w-full px-3 py-2 bg-[#1a212d] border border-[#3c4451] rounded-[2px] ' +
-  'text-[14px] text-[#ffffff] outline-none focus:border-[#88c4ff] ' +
-  'focus:shadow-[0_0_0_3px_rgba(136,196,255,0.3)] placeholder:text-[#484f58] ' +
+  'w-full px-3 py-2 bg-[#0d1117] border border-[#30363d] rounded-[2px] ' +
+  'text-[14px] text-[#e6edf3] outline-none focus:border-[#1f6feb] ' +
+  'focus:shadow-[0_0_0_3px_rgba(31,111,235,0.3)] placeholder:text-[#484f58] ' +
   'transition-shadow';

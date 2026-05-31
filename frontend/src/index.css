@@ -32,48 +32,23 @@
   --color-gh-btn-danger-hover: #b62324;
 }
 
-body {
-  margin: 0;
-  background: #000;
-  color: #e6edf3;
+html {
+  font-size: 16px;
 }
 
-/* AWS S3 Navigate scoped theme — only applies inside .aws-s3-theme so the
-   rest of the template-creator app keeps its existing GitHub-dark look. */
-.aws-s3-theme {
-  /* Canvas tokens extracted from the AWS S3 console dark mode */
-  --aws-bg-canvas: #0f1419;
-  --aws-bg-surface: #1a212d;
-  --aws-bg-surface-hover: #232c3a;
-  --aws-bg-surface-selected: #0d2b4f;
-  --aws-border: #3c4451;
-  --aws-border-strong: #5a6470;
-  --aws-text: #ffffff;
-  --aws-text-body: #d4d8db;
-  --aws-text-muted: #8b949e;
-  --aws-link: #88c4ff;
-  --aws-orange: #ff9900;
-  --aws-orange-hover: #ec7211;
-  --aws-error: #ff5a5f;
-  --aws-success: #3fce6c;
-  --aws-warning: #ffb84d;
-
-  background: var(--aws-bg-canvas);
-  color: var(--aws-text);
+body {
+  margin: 0;
+  background: #0d1117;
+  color: #e6edf3;
   font-size: 14px;
   line-height: 1.45;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
 }
 
-/* Heading reset scoped to the AWS theme so explicit Tailwind text-* classes
-   are the only source of truth inside the S3 Navigate page. */
-.aws-s3-theme h1,
-.aws-s3-theme h2,
-.aws-s3-theme h3,
-.aws-s3-theme h4,
-.aws-s3-theme h5,
-.aws-s3-theme h6 {
+/* AWS console heading reset — defeat any inherited UA "2em" h1 size when
+   arbitrary Tailwind classes haven't compiled yet (saves us from huge h1s) */
+h1, h2, h3, h4, h5, h6 {
   font-size: inherit;
   font-weight: inherit;
   margin: 0;
