@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 
 import AwsAlert from './AwsAlert';
-import { AwsButton, AwsSearchInput, ColumnDivider, RefreshIcon, SortTriangle } from './AwsControls';
+import { AwsButton, AwsSearchInput, RefreshIcon, SortTriangle } from './AwsControls';
 import { s3api } from './api';
 import { formatAwsDate } from './format';
 import { colors } from './theme';
@@ -173,13 +173,26 @@ export default function AdminsPage({ currentUsername, onSelfDeactivated, onCopyT
         <table className="w-full min-w-[920px] text-[14px] text-left border-collapse">
           <thead>
             <tr>
-              <th style={{ width: 44, padding: '10px 12px' }} aria-hidden="true" />
+              <th
+                aria-hidden="true"
+                style={{
+                  width: 44,
+                  padding: '6px 12px',
+                  borderRight: `1px solid ${colors.border.rowSeparator}`,
+                }}
+              />
               {COLUMNS.map((col, idx) => {
                 const isSorted = sort.key === col.key;
+                const isLast = idx === COLUMNS.length - 1;
                 return (
                   <th
                     key={col.key}
-                    style={{ width: col.width, padding: '10px 12px', color: colors.text.primary }}
+                    style={{
+                      width: col.width,
+                      padding: '6px 12px',
+                      color: colors.text.primary,
+                      borderRight: isLast ? 'none' : `1px solid ${colors.border.rowSeparator}`,
+                    }}
                     className="font-bold"
                   >
                     <button
@@ -194,7 +207,6 @@ export default function AdminsPage({ currentUsername, onSelfDeactivated, onCopyT
                         direction={isSorted ? sort.dir : null}
                       />
                     </button>
-                    {idx < COLUMNS.length - 1 && <ColumnDivider />}
                   </th>
                 );
               })}
