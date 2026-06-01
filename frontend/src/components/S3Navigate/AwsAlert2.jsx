@@ -124,17 +124,20 @@ function LightbulbIcon() {
       aria-hidden="true"
       focusable="false"
     >
-      {/* Rays — radiating outward from the bulb, suggest glow */}
-      <path d="M8 0.5v1.2" />
-      <path d="M2.5 3l.9.9" />
-      <path d="M13.5 3l-.9.9" />
-      <path d="M0.8 7.5h1.2" />
-      <path d="M14 7.5h1.2" />
+      {/* 7 rays evenly distributed around the upper hemisphere, radial from
+          the bulb centre (~8,6.5). Length ~1.5, all clear of the bulb body. */}
+      <path d="M8 2.5V1" />
+      <path d="m10.9 3 1.2-1.2" />
+      <path d="m5.1 3-1.2-1.2" />
+      <path d="m11.7 4.8 1.4-.8" />
+      <path d="m4.3 4.8-1.4-.8" />
+      <path d="M11.5 6.5H13.2" />
+      <path d="M4.5 6.5H2.8" />
       {/* Bulb */}
-      <path d="M8 3a3 3 0 0 0-1.9 5.32c.36.3.62.7.74 1.18h2.32c.12-.48.38-.88.74-1.18A3 3 0 0 0 8 3Z" />
+      <path d="M8 3.5C6 3.5 5 5 5 6.5c0 1.3.55 2.3 1.35 2.9.3.2.5.5.5.9v.2h3.3v-.2c0-.4.2-.7.5-.9C10.45 8.8 11 7.8 11 6.5c0-1.5-1-3-3-3Z" />
       {/* Base bands */}
-      <path d="M6.6 11.5h2.8" />
-      <path d="M7.1 13.4h1.8" />
+      <path d="M6.7 11.6h2.6" />
+      <path d="M7 13.1h2" />
     </svg>
   );
 }
