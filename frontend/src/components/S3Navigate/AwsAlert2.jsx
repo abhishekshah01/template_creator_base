@@ -76,19 +76,24 @@ function ErrorCircleIcon() {
 }
 
 function WarningTriangleIcon() {
-  // AWS Cloudscape filled status-warning: solid triangle with the
-  // exclamation cut out as negative space via fill-rule=evenodd.
   return (
     <svg
       viewBox="0 0 16 16"
       width="20"
       height="20"
-      fill="currentColor"
-      fillRule="evenodd"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.6"
+      strokeLinecap="round"
+      strokeLinejoin="round"
       aria-hidden="true"
       focusable="false"
     >
-      <path d="M6.52 1.88l-5.33 9.76c-.13.23-.19.5-.19.76 0 .88.71 1.59 1.59 1.59H13.4c.88 0 1.59-.71 1.59-1.59 0-.27-.07-.53-.19-.76L9.48 1.88C9.18 1.34 8.62 1 8 1s-1.18.34-1.48.88ZM7.25 5a.75.75 0 0 1 1.5 0v4a.75.75 0 0 1-1.5 0V5Zm.75 7.5a1 1 0 1 0 0-2 1 1 0 0 0 0 2Z" />
+      <path d="M6.52 1.88l-5.33 9.76c-.13.23-.19.5-.19.76 0 .88.71 1.59 1.59 1.59H13.4c.88 0 1.59-.71 1.59-1.59 0-.27-.07-.53-.19-.76L9.48 1.88C9.18 1.34 8.62 1 8 1s-1.18.34-1.48.88Z" />
+      <path d="M8 5v4" />
+      {/* Near-zero-length segment so the round line-cap renders as a dot
+          instead of the elongated pill the original 2-unit M8 10v2 gave. */}
+      <path d="M8 11.5h.01" />
     </svg>
   );
 }
