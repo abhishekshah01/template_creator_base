@@ -393,13 +393,13 @@ function FileRow({ file, selected, mergeTop = false, mergeBottom = false, onSele
     color: colors.text.selectedRow,
     verticalAlign: 'middle',
   };
-  // When a selected row is immediately preceded by another selected row, drop
-  // our top border so the prev row's bottom border serves as the single 2px
-  // separator between them (instead of stacking to 4px). Same idea for the
-  // bottom edge when the next row is also selected.
+  // Outer edges of a selection group keep the 2px ring. Internal boundaries
+  // between consecutive selected rows render as a single 1px blue line —
+  // the upper row owns it (borderBottom: 1px) and the lower row drops its
+  // borderTop so the two don't stack.
   const top = (selected && mergeTop) ? 'none' : `2px solid ${ringColor}`;
   const bottom = selected
-    ? (mergeBottom ? 'none' : `2px solid ${ringColor}`)
+    ? (mergeBottom ? `1px solid ${ringColor}` : `2px solid ${ringColor}`)
     : separator;
   const roundTop = selected && !mergeTop;
   const roundBottom = selected && !mergeBottom;
