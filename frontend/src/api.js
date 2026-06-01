@@ -127,8 +127,8 @@ export const api = {
   createCategoryConfig: (payload) => request('/category-config', payload),
   generateTemplateSummary: (templateName, bearerToken) =>
     request('/template-summary', { template_name: templateName, bearer_token: bearerToken }),
-  listCategoryConfigs: (bearerToken) =>
-    request('/list-category-configs', { bearer_token: bearerToken }),
+  listCategoryConfigs: (bearerToken, force = false) =>
+    request('/list-category-configs', { bearer_token: bearerToken, force }),
   getEnvironments: () => fetch('/api/environments').then(r => r.json()),
   switchEnvironment: (envName) => request('/switch-environment', { env_name: envName }),
   getCategoryConfig: (configId, bearerToken) =>
@@ -146,14 +146,14 @@ export const api = {
     request('/asset/invalidate', {
       cloudfront_distribution_id: cloudfrontDistributionId, path, bearer_token: bearerToken,
     }),
-  listAssetBuckets: (bearerToken) =>
-    request('/asset/buckets', { bearer_token: bearerToken }),
-  listAssetObjects: (bucket, prefix, continuationToken, bearerToken) =>
+  listAssetBuckets: (bearerToken, force = false) =>
+    request('/asset/buckets', { bearer_token: bearerToken, force }),
+  listAssetObjects: (bucket, prefix, continuationToken, bearerToken, force = false) =>
     request('/asset/objects', {
-      bucket, prefix: prefix || '', continuation_token: continuationToken || null, bearer_token: bearerToken,
+      bucket, prefix: prefix || '', continuation_token: continuationToken || null, bearer_token: bearerToken, force,
     }),
-  getAssetObjectMeta: (bucket, key, bearerToken) =>
-    request('/asset/object-meta', { bucket, key, bearer_token: bearerToken }),
+  getAssetObjectMeta: (bucket, key, bearerToken, force = false) =>
+    request('/asset/object-meta', { bucket, key, bearer_token: bearerToken, force }),
   getAssetDownloadUrl: (bucket, key, bearerToken, opts = {}) =>
     request('/asset/download-url', {
       bucket, key,

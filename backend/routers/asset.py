@@ -43,7 +43,7 @@ async def invalidate(req: AssetInvalidateRequest):
 
 @router.post("/buckets")
 async def buckets(req: BearerTokenRequest):
-    return await asset_service.list_buckets(bearer_token=req.bearer_token)
+    return await asset_service.list_buckets(bearer_token=req.bearer_token, force=req.force)
 
 
 @router.post("/objects")
@@ -54,12 +54,15 @@ async def objects(req: AssetListObjectsRequest):
         continuation_token=req.continuation_token,
         page_size=req.page_size,
         bearer_token=req.bearer_token,
+        force=req.force,
     )
 
 
 @router.post("/object-meta")
 async def object_meta(req: AssetObjectMetaRequest):
-    return await asset_service.object_meta(bucket=req.bucket, key=req.key, bearer_token=req.bearer_token)
+    return await asset_service.object_meta(
+        bucket=req.bucket, key=req.key, bearer_token=req.bearer_token, force=req.force,
+    )
 
 
 @router.post("/download-url")

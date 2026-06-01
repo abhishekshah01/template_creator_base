@@ -22,11 +22,11 @@ export default function BucketList({ onOpenBucket }) {
   const [selected, setSelected] = useState(null);
   const [sort, setSort] = useState({ key: 'name', dir: 'asc' });
 
-  async function load() {
+  async function load({ force = false } = {}) {
     setLoading(true);
     setErr(null);
     try {
-      const data = await s3api.listBuckets();
+      const data = await s3api.listBuckets(force);
       setBuckets(data.buckets || []);
     } catch (e) {
       setErr(e.message);
@@ -112,7 +112,7 @@ export default function BucketList({ onOpenBucket }) {
         </div>
 
         <div className="flex items-center gap-2 mb-3 flex-wrap">
-          <AwsButton variant="icon" title="Refresh" onClick={load} icon={<RefreshIcon />} />
+          <AwsButton variant="icon" title="Refresh" onClick={() => load({ force: true })} icon={<RefreshIcon />} />
           <AwsButton disabled={!hasSelection} onClick={copyArn} icon={<AwsCopyIcon />}>Copy ARN</AwsButton>
           <AwsButton disabled>Empty</AwsButton>
           <AwsButton disabled>Delete</AwsButton>

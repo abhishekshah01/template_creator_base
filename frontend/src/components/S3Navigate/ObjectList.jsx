@@ -25,11 +25,11 @@ export default function ObjectList({
   const [pageStack, setPageStack] = useState([]); // tokens of pages we navigated FROM (for back nav)
   const [currentToken, setCurrentToken] = useState(null); // token that loaded the current page
 
-  async function load(token = null) {
+  async function load(token = null, { force = false } = {}) {
     setLoading(true);
     setErr(null);
     try {
-      const d = await s3api.listObjects(bucket, prefix, token);
+      const d = await s3api.listObjects(bucket, prefix, token, force);
       setData(d);
       setCurrentToken(token);
       setSelected(new Set());
@@ -142,7 +142,7 @@ export default function ObjectList({
         </h2>
 
         <div className="flex items-center gap-2 mb-3 flex-wrap">
-          <RefreshButton onClick={() => load()} loading={loading} />
+          <RefreshButton onClick={() => load(currentToken, { force: true })} loading={loading} />
           <SecondaryBtn icon={<CopyIcon />} disabled={!singleSelected} onClick={copyS3Uri}>Copy S3 URI</SecondaryBtn>
           <SecondaryBtn icon={<CopyIcon />} disabled={!singleSelected} onClick={copyUrl}>Copy URL</SecondaryBtn>
           <SecondaryBtn icon={<DownloadIcon />} disabled={!singleSelected} onClick={downloadSel}>Download</SecondaryBtn>

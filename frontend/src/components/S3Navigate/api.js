@@ -55,11 +55,11 @@ export const s3api = {
       body: JSON.stringify({ new_password: newPassword }),
     }),
 
-  // Browse
-  listBuckets: () => api.listAssetBuckets(bearer()),
-  listObjects: (bucket, prefix = '', continuationToken = null) =>
-    api.listAssetObjects(bucket, prefix, continuationToken, bearer()),
-  objectMeta: (bucket, key) => api.getAssetObjectMeta(bucket, key, bearer()),
+  // Browse — `force` bypasses the backend 30s TTL cache and refills it.
+  listBuckets: (force = false) => api.listAssetBuckets(bearer(), force),
+  listObjects: (bucket, prefix = '', continuationToken = null, force = false) =>
+    api.listAssetObjects(bucket, prefix, continuationToken, bearer(), force),
+  objectMeta: (bucket, key, force = false) => api.getAssetObjectMeta(bucket, key, bearer(), force),
   objectUrl: (bucket, key, download = false) =>
     api.getAssetDownloadUrl(bucket, key, bearer(), { download }),
 

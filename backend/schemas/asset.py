@@ -13,6 +13,7 @@ _TOKEN = Field(min_length=1, max_length=4096)
 
 class BearerTokenRequest(BaseModel):
     bearer_token: str = _TOKEN
+    force: bool = False
 
 
 class AssetUploadUrlRequest(BaseModel):
@@ -41,12 +42,14 @@ class AssetListObjectsRequest(BaseModel):
     continuation_token: Optional[str] = Field(default=None, max_length=2048)
     page_size: int = Field(default=300, ge=1, le=1000)
     bearer_token: str = _TOKEN
+    force: bool = False
 
 
 class AssetObjectMetaRequest(BaseModel):
     bucket: str = _BUCKET
     key: str = _KEY
     bearer_token: str = _TOKEN
+    force: bool = False
 
 
 class AssetDownloadUrlRequest(BaseModel):

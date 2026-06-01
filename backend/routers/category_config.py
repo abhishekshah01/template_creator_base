@@ -16,7 +16,7 @@ router = APIRouter(tags=["category-config"])
 
 @router.post("/api/list-category-configs")
 async def list_category_configs(req: BearerTokenRequest):
-    return await svc.list_configs(bearer_token=req.bearer_token)
+    return await svc.list_configs(bearer_token=req.bearer_token, force=req.force)
 
 
 @router.post("/api/category-config")

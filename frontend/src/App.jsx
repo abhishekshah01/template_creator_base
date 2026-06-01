@@ -106,9 +106,9 @@ export default function App() {
   const [configsStale, setConfigsStale] = useState(false);
   const [configsLoaded, setConfigsLoaded] = useState(false);
 
-  async function refreshConfigs() {
+  async function refreshConfigs({ force = false } = {}) {
     if (!bearerToken) return [];
-    const data = await api.listCategoryConfigs(bearerToken);
+    const data = await api.listCategoryConfigs(bearerToken, force);
     const list = Array.isArray(data) ? data : (data?.configs || data?.data || data?.results || []);
     const configs = Array.isArray(list) ? list : [];
     setCachedConfigs(configs);

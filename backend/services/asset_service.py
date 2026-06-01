@@ -1,11 +1,14 @@
 """S3 + CloudFront operations — proxied through app-service /internal/s3-templates/*.
 
-Thin shims; app-service holds all AWS credentials.
+Thin shims; app-service holds all AWS credentials. Reads go through a 30s
+TTL cache (services/cache.py). Writes invalidate the relevant cache keys
+so users see fresh data after they mutate.
 """
 
 from typing import Optional
 
 from clients import app_service_client as app_svc
+from services.cache import object_cache, token_hash
 
 _BASE = "/internal/s3-templates"
 
@@ -27,12 +30,17 @@ async def mint_upload_url(
 
 
 async def delete_object(*, bucket: str, key: str, bearer_token: str) -> dict:
-    return await app_svc.post(
+    result = await app_svc.post(
         f"{_BASE}/delete",
         json={"bucket": bucket, "key": key},
         bearer_token=bearer_token,
         label="S3 delete",
     )
+    # Bust every listing in this bucket and any cached metadata for this key,
+    # across all tokens — a delete is observable to everyone.
+    object_cache.invalidate_prefix(f"objects:{bucket}:")
+    object_cache.invalidate_prefix(f"meta:{bucket}:{key}:")
+    return result
 
 
 async def invalidate_cache(*, cloudfront_distribution_id: str, path: str, bearer_token: str) -> dict:
@@ -45,36 +53,49 @@ async def invalidate_cache(*, cloudfront_distribution_id: str, path: str, bearer
     )
 
 
-async def list_buckets(*, bearer_token: str) -> dict:
-    return await app_svc.get(
-        f"{_BASE}/buckets",
-        bearer_token=bearer_token,
-        label="S3 list-buckets",
+async def list_buckets(*, bearer_token: str, force: bool = False) -> dict:
+    key = f"buckets:{token_hash(bearer_token)}"
+    return await object_cache.get_or_set(
+        key,
+        lambda: app_svc.get(f"{_BASE}/buckets", bearer_token=bearer_token, label="S3 list-buckets"),
+        force=force,
     )
 
 
 async def list_objects(
-    *, bucket: str, prefix: str, continuation_token: Optional[str], page_size: int, bearer_token: str
+    *,
+    bucket: str,
+    prefix: str,
+    continuation_token: Optional[str],
+    page_size: int,
+    bearer_token: str,
+    force: bool = False,
 ) -> dict:
-    params = {"bucket": bucket, "prefix": prefix, "page_size": page_size}
-    if continuation_token:
-        params["continuation_token"] = continuation_token
-    return await app_svc.get(
-        f"{_BASE}/objects",
-        bearer_token=bearer_token,
-        params=params,
-        label="S3 list-objects",
-    )
+    cache_key = f"objects:{bucket}:{prefix}:{continuation_token or ''}:{page_size}:{token_hash(bearer_token)}"
+    async def _fetch():
+        params = {"bucket": bucket, "prefix": prefix, "page_size": page_size}
+        if continuation_token:
+            params["continuation_token"] = continuation_token
+        return await app_svc.get(
+            f"{_BASE}/objects",
+            bearer_token=bearer_token,
+            params=params,
+            label="S3 list-objects",
+        )
+    return await object_cache.get_or_set(cache_key, _fetch, force=force)
 
 
-async def object_meta(*, bucket: str, key: str, bearer_token: str) -> dict:
-    return await app_svc.get(
-        f"{_BASE}/object/meta",
-        bearer_token=bearer_token,
-        params={"bucket": bucket, "key": key},
-        timeout=10.0,
-        label="S3 object-meta",
-    )
+async def object_meta(*, bucket: str, key: str, bearer_token: str, force: bool = False) -> dict:
+    cache_key = f"meta:{bucket}:{key}:{token_hash(bearer_token)}"
+    async def _fetch():
+        return await app_svc.get(
+            f"{_BASE}/object/meta",
+            bearer_token=bearer_token,
+            params={"bucket": bucket, "key": key},
+            timeout=10.0,
+            label="S3 object-meta",
+        )
+    return await object_cache.get_or_set(cache_key, _fetch, force=force)
 
 
 async def mint_download_url(
