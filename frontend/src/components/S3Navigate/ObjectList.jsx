@@ -393,14 +393,12 @@ function FileRow({ file, selected, mergeTop = false, mergeBottom = false, onSele
     color: colors.text.selectedRow,
     verticalAlign: 'middle',
   };
-  // Outer edges of a selection group keep the 2px ring. Internal boundaries
-  // between consecutive selected rows render as a single 1px blue line —
-  // the upper row owns it (borderBottom: 1px) and the lower row drops its
-  // borderTop so the two don't stack.
+  // Outer ring stays 2px. Internal boundaries between consecutive selected
+  // rows also render at 2px (matching the outer borders) — the upper row
+  // keeps its 2px borderBottom and the lower row drops borderTop so they
+  // don't stack to 4px.
   const top = (selected && mergeTop) ? 'none' : `2px solid ${ringColor}`;
-  const bottom = selected
-    ? (mergeBottom ? `1px solid ${ringColor}` : `2px solid ${ringColor}`)
-    : separator;
+  const bottom = selected ? `2px solid ${ringColor}` : separator;
   const roundTop = selected && !mergeTop;
   const roundBottom = selected && !mergeBottom;
   return (
