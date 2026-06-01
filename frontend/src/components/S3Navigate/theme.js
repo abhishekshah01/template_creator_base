@@ -12,9 +12,10 @@ export const colors = {
     rowSeparator: '#ebebf0', // thin light divider between rows
     buttonInactive: '#444a4d',
     buttonActive: '#005bbc',
-    rowSelected: '#016ce0',
+    rowSelected: '#45abfe',  // bright blue ring around selected rows
     inputDefault: '#8c8c95',
     primaryButton: '#b36b00',
+    cardOutline: '#c6c6cd',  // outer panel border
   },
   text: {
     primary: '#ffffff',

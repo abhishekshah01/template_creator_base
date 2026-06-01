@@ -93,6 +93,35 @@ export function RefreshIcon({ className = 'w-[14px] h-[14px]' }) {
   );
 }
 
+export function AwsRadio({ checked = false, onChange, ariaLabel }) {
+  return (
+    <button
+      type="button"
+      role="radio"
+      aria-checked={!!checked}
+      aria-label={ariaLabel}
+      onClick={onChange}
+      className="inline-flex items-center justify-center w-[18px] h-[18px] rounded-full shrink-0 cursor-pointer"
+      style={{
+        backgroundColor: 'transparent',
+        border: `2px solid ${checked ? colors.border.rowSelected : colors.text.buttonInactive}`,
+      }}
+    >
+      {checked && (
+        <span
+          style={{
+            display: 'block',
+            width: 8,
+            height: 8,
+            borderRadius: '50%',
+            backgroundColor: colors.border.rowSelected,
+          }}
+        />
+      )}
+    </button>
+  );
+}
+
 export function AwsCheckbox({ checked = false, indeterminate = false, onChange, ariaLabel }) {
   const isOn = checked || indeterminate;
   return (
@@ -165,14 +194,14 @@ export function UploadIcon({ className = 'w-[14px] h-[14px]' }) {
 }
 
 export function SortTriangle({ direction, active }) {
-  const color = active ? colors.text.primary : '#5e6166';
+  const color = active ? colors.text.primary : '#9ba0a6';
   const d = direction === 'asc'
     ? 'm8 5 4 6H4l4-6Z'
     : 'm8 11 4-6H4l4 6Z';
   return (
     <svg
-      width="12"
-      height="12"
+      width="14"
+      height="14"
       viewBox="0 0 16 16"
       fill={color}
       stroke={color}
