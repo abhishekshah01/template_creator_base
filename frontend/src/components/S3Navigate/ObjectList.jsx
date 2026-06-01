@@ -329,15 +329,22 @@ export default function ObjectList({
                 <FolderRow key={f.prefix} folder={f} onOpen={() => onOpenPrefix(f.prefix)} />
               ))}
 
-              {!loading && sortedFiles.map(f => (
-                <FileRow
-                  key={f.key}
-                  file={f}
-                  selected={selected.has(f.key)}
-                  onSelect={() => toggleSelect(f.key)}
-                  onOpen={() => onOpenObject(f)}
-                />
-              ))}
+              {!loading && sortedFiles.map((f, idx) => {
+                const isSel = selected.has(f.key);
+                const prevSel = idx > 0 && selected.has(sortedFiles[idx - 1].key);
+                const nextSel = idx < sortedFiles.length - 1 && selected.has(sortedFiles[idx + 1].key);
+                return (
+                  <FileRow
+                    key={f.key}
+                    file={f}
+                    selected={isSel}
+                    mergeTop={isSel && prevSel}
+                    mergeBottom={isSel && nextSel}
+                    onSelect={() => toggleSelect(f.key)}
+                    onOpen={() => onOpenObject(f)}
+                  />
+                );
+              })}
             </tbody>
           </table>
         </div>
@@ -377,7 +384,7 @@ function FolderRow({ folder, onOpen }) {
   );
 }
 
-function FileRow({ file, selected, onSelect, onOpen }) {
+function FileRow({ file, selected, mergeTop = false, mergeBottom = false, onSelect, onOpen }) {
   const ringColor = selected ? colors.border.rowSelected : 'transparent';
   const separator = `1px solid ${colors.border.rowSeparator}`;
   const cellBase = {
@@ -386,8 +393,16 @@ function FileRow({ file, selected, onSelect, onOpen }) {
     color: colors.text.selectedRow,
     verticalAlign: 'middle',
   };
-  const top = `2px solid ${ringColor}`;
-  const bottom = selected ? `2px solid ${ringColor}` : separator;
+  // When a selected row is immediately preceded by another selected row, drop
+  // our top border so the prev row's bottom border serves as the single 2px
+  // separator between them (instead of stacking to 4px). Same idea for the
+  // bottom edge when the next row is also selected.
+  const top = (selected && mergeTop) ? 'none' : `2px solid ${ringColor}`;
+  const bottom = selected
+    ? (mergeBottom ? 'none' : `2px solid ${ringColor}`)
+    : separator;
+  const roundTop = selected && !mergeTop;
+  const roundBottom = selected && !mergeBottom;
   return (
     <tr>
       <td
@@ -396,8 +411,8 @@ function FileRow({ file, selected, onSelect, onOpen }) {
           borderTop: top,
           borderBottom: bottom,
           borderLeft: `2px solid ${ringColor}`,
-          borderTopLeftRadius: selected ? 8 : 0,
-          borderBottomLeftRadius: selected ? 8 : 0,
+          borderTopLeftRadius: roundTop ? 8 : 0,
+          borderBottomLeftRadius: roundBottom ? 8 : 0,
         }}
       >
         <AwsCheckbox
@@ -428,8 +443,8 @@ function FileRow({ file, selected, onSelect, onOpen }) {
           borderTop: top,
           borderBottom: bottom,
           borderRight: `2px solid ${ringColor}`,
-          borderTopRightRadius: selected ? 8 : 0,
-          borderBottomRightRadius: selected ? 8 : 0,
+          borderTopRightRadius: roundTop ? 8 : 0,
+          borderBottomRightRadius: roundBottom ? 8 : 0,
         }}
       >
         {prettyStorageClass(file.storage_class)}
