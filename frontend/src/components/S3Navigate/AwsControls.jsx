@@ -248,7 +248,7 @@ export function SortTriangleV2({ direction, active, size = 16 }) {
   );
 }
 
-function MagnifierIcon({ className = 'w-[14px] h-[14px]', strokeWidth = DEFAULT_STROKE }) {
+function MagnifierIcon({ className = 'w-[18px] h-[18px]', strokeWidth = DEFAULT_STROKE }) {
   return (
     <svg className={className} {...ICON_BASE_PROPS} strokeWidth={strokeWidth}>
       <circle cx="7" cy="7" r="4.5" />
