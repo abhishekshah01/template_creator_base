@@ -94,10 +94,10 @@ export default function BucketList({ onOpenBucket }) {
       )}
 
       <div
-        className="rounded-[8px] p-5"
+        className="rounded-[12px] p-5"
         style={{
           backgroundColor: colors.bg.card,
-          border: `2px solid ${colors.border.cardOutline}`,
+          border: `1px solid ${colors.border.cardOutline}`,
         }}
       >
         <div className="flex items-center justify-between mb-3 flex-wrap gap-3">
@@ -317,8 +317,8 @@ function SectionTab({ active, children }) {
           aria-hidden="true"
           className="absolute left-0 right-0"
           style={{
-            height: 3,
-            bottom: -2,
+            height: 4,
+            bottom: -3,
             backgroundColor: colors.text.buttonActive,
             zIndex: 2,
           }}
