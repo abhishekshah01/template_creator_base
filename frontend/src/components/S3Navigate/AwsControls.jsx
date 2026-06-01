@@ -103,7 +103,7 @@ export function AwsRadio({ checked = false, onChange, ariaLabel }) {
       onClick={onChange}
       className="inline-flex items-center justify-center w-[18px] h-[18px] rounded-full shrink-0 cursor-pointer"
       style={{
-        backgroundColor: 'transparent',
+        backgroundColor: checked ? colors.border.rowSelected : 'transparent',
         border: `2px solid ${checked ? colors.border.rowSelected : colors.text.buttonInactive}`,
       }}
     >
@@ -114,7 +114,7 @@ export function AwsRadio({ checked = false, onChange, ariaLabel }) {
             width: 8,
             height: 8,
             borderRadius: '50%',
-            backgroundColor: colors.border.rowSelected,
+            backgroundColor: colors.text.selectedRow,
           }}
         />
       )}
