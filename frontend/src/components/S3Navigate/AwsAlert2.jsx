@@ -19,6 +19,12 @@ const VARIANTS = {
     iconColor: '#45abfe',
     Icon: InfoCircleIcon,
   },
+  tip: {
+    bg: '#1a0a35',
+    border: '#7730e8',
+    iconColor: '#c5a3ff',
+    Icon: LightbulbIcon,
+  },
 };
 
 export default function AwsAlert2({ variant = 'error', title, onDismiss, className = '', children }) {
@@ -100,6 +106,29 @@ function InfoCircleIcon() {
       <path d="M8 7v4" />
       {/* 'i' dot — near-zero-length segment so the round line-cap renders as a circle */}
       <path d="M8 5h.01" />
+    </svg>
+  );
+}
+
+function LightbulbIcon() {
+  return (
+    <svg
+      viewBox="0 0 16 16"
+      width="20"
+      height="20"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.6"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+      focusable="false"
+    >
+      {/* Bulb */}
+      <path d="M8 1.5a4 4 0 0 0-2.5 7.13c.5.4.9 1.05 1 1.87h3c.1-.82.5-1.47 1-1.87A4 4 0 0 0 8 1.5Z" />
+      {/* Base bands */}
+      <path d="M6.5 12h3" />
+      <path d="M7 14h2" />
     </svg>
   );
 }

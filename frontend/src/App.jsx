@@ -248,7 +248,7 @@ export default function App() {
                 )}
                 {!envError && bearerToken && !infoBannerDismissed && (
                   <AwsAlert2
-                    variant="info"
+                    variant="tip"
                     title="API tokens are environment-specific"
                     onDismiss={() => setInfoBannerDismissed(true)}
                   >
