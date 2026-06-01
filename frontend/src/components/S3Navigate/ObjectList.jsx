@@ -265,7 +265,7 @@ export default function ObjectList({
         <div className="rounded-[4px] overflow-x-auto min-w-0">
           <table
             className="w-full text-[14px] text-left"
-            style={{ tableLayout: 'fixed', borderCollapse: 'separate', borderSpacing: 0, minWidth: 980 }}
+            style={{ tableLayout: 'fixed', borderCollapse: 'separate', borderSpacing: 0 }}
           >
             <colgroup>
               <col style={{ width: 44 }} />
