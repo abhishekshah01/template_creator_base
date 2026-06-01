@@ -200,7 +200,7 @@ function BucketRow({ bucket, selected, onSelect, onOpen }) {
   const ringColor = selected ? colors.border.rowSelected : 'transparent';
   const separator = `1px solid ${colors.border.rowSeparator}`;
   const cellBase = {
-    padding: '12px',
+    padding: '8px 12px',
     backgroundColor: selected ? colors.bg.rowSelected : 'transparent',
     color: selected ? colors.text.primary : colors.text.selectedRow,
     verticalAlign: 'middle',
@@ -378,10 +378,10 @@ function BucketPager({ page, pageCount, onChange }) {
         <button
           key={n}
           onClick={() => onChange(n)}
-          className="min-w-[22px] px-1 text-[14px]"
+          className="min-w-[24px] px-1 text-[16px]"
           style={{
             color: page === n ? colors.text.primary : colors.text.buttonActive,
-            fontWeight: page === n ? 700 : 400,
+            fontWeight: page === n ? 700 : 600,
             cursor: 'pointer',
           }}
         >
