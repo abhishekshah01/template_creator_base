@@ -82,7 +82,7 @@ const ICON_BASE_PROPS = {
   strokeLinecap: 'round',
   strokeLinejoin: 'round',
 };
-const DEFAULT_STROKE = 1.8;
+const DEFAULT_STROKE = 2;
 
 export function RefreshIcon({ className = 'w-[14px] h-[14px]', strokeWidth = DEFAULT_STROKE }) {
   return (
@@ -189,6 +189,32 @@ export function UploadIcon({ className = 'w-[14px] h-[14px]', strokeWidth = DEFA
   return (
     <svg className={className} {...ICON_BASE_PROPS} strokeWidth={strokeWidth}>
       <path d="M1 1h14M13 6 8 1 3 6M8 5v10" />
+    </svg>
+  );
+}
+
+export function UploadIconV2({ className = 'w-[14px] h-[14px]', strokeWidth = 2 }) {
+  return (
+    <svg className={className} {...ICON_BASE_PROPS} strokeWidth={strokeWidth}>
+      <path d="M1 1h14M13 10 8 5l-5 5M8 6v9" />
+    </svg>
+  );
+}
+
+export function OpenExternalIconV2({ className = 'w-[14px] h-[14px]', strokeWidth = 2 }) {
+  return (
+    <svg className={className} {...ICON_BASE_PROPS} strokeWidth={strokeWidth}>
+      <path d="M13 9.012v-6H7" />
+      <path d="M13.02 3 7 9.01" />
+      <path d="M3 5.012v8h8.01" />
+    </svg>
+  );
+}
+
+export function ActionsArrowIcon({ size = 12, color = 'currentColor' }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 16 16" fill={color} stroke={color} strokeWidth="1" strokeLinejoin="round">
+      <path d="m8 11 4-6H4l4 6Z" />
     </svg>
   );
 }
