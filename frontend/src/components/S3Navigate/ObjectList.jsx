@@ -383,7 +383,7 @@ function FileRow({ file, selected, onSelect, onOpen }) {
   const cellBase = {
     padding: '8px 12px',
     backgroundColor: selected ? colors.bg.rowSelected : 'transparent',
-    color: selected ? colors.text.primary : colors.text.selectedRow,
+    color: colors.text.selectedRow,
     verticalAlign: 'middle',
   };
   const top = `2px solid ${ringColor}`;
