@@ -235,9 +235,23 @@ export default function App() {
             {(envError || (bearerToken && !infoBannerDismissed)) && (
               <div className="shrink-0 px-6 pt-6 space-y-2">
                 {envError && (() => {
+                  const isConn = envError.startsWith('Could not reach');
                   const dot = envError.indexOf('. ');
-                  const errTitle = dot > 0 ? envError.slice(0, dot) : envError;
-                  const errDetail = dot > 0 ? envError.slice(dot + 2) : '';
+                  const colon = envError.indexOf(': ');
+                  const errTitle = isConn
+                    ? (dot > 0 ? envError.slice(0, dot) : envError)
+                    : (colon > 0 ? envError.slice(0, colon) : envError);
+                  const switchDetail = !isConn && colon > 0 ? envError.slice(colon + 2) : null;
+                  const switchBack = previousEnv && (
+                    <button
+                      type="button"
+                      onClick={switchToPreviousEnv}
+                      className="underline underline-offset-2 hover:opacity-90"
+                      style={{ color: '#ffffff' }}
+                    >
+                      Switch back to {previousEnv}
+                    </button>
+                  );
                   return (
                     <>
                       <AwsAlert2
@@ -245,18 +259,15 @@ export default function App() {
                         title={errTitle}
                         onDismiss={() => setEnvError(null)}
                       >
-                        {errDetail}
-                        {previousEnv && (
+                        {isConn ? (
                           <>
-                            {errDetail ? ' ' : ''}
-                            <button
-                              type="button"
-                              onClick={switchToPreviousEnv}
-                              className="underline underline-offset-2 hover:opacity-90"
-                              style={{ color: '#ffffff' }}
-                            >
-                              Switch back to {previousEnv}
-                            </button>.
+                            The environment may not exist, its services may be down and need a redeploy, or your bearer token for <strong style={{ color: '#ffffff' }}>{activeEnv}</strong> is missing or expired.
+                            {switchBack && <> {switchBack}.</>}
+                          </>
+                        ) : (
+                          <>
+                            {switchDetail}
+                            {switchBack && <>{switchDetail ? ' ' : ''}{switchBack}.</>}
                           </>
                         )}
                       </AwsAlert2>
@@ -266,7 +277,16 @@ export default function App() {
                           title="How to recover"
                           onDismiss={() => setEnvWarningDismissed(true)}
                         >
-                          Switch to a valid environment using the dropdown in the sidebar, check the environment name for typos, or re-enter your bearer token in Settings if it has expired.
+                          Switch environments via the sidebar dropdown, double-check the name for typos, or open{' '}
+                          <button
+                            type="button"
+                            onClick={() => setActivePage('settings')}
+                            className="underline underline-offset-2 hover:opacity-90"
+                            style={{ color: '#ffffff' }}
+                          >
+                            Settings
+                          </button>
+                          {' '}to paste a fresh bearer token if yours has expired.
                         </AwsAlert2>
                       )}
                     </>
