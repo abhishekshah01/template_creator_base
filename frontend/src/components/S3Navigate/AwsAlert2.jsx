@@ -10,7 +10,7 @@ const VARIANTS = {
   warning: {
     bg: '#2a2100',
     border: '#d79000',
-    iconColor: '#d79000',
+    iconColor: '#ffcf6f',
     Icon: WarningTriangleIcon,
   },
 };
