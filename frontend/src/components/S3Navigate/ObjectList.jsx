@@ -506,8 +506,8 @@ function SectionTab({ active, children }) {
           aria-hidden="true"
           className="absolute left-0 right-0"
           style={{
-            height: 4,
-            bottom: -3,
+            height: 3,
+            bottom: 0,
             backgroundColor: colors.text.buttonActive,
             zIndex: 2,
           }}
