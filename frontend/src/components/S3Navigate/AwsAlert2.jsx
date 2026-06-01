@@ -7,6 +7,12 @@ const VARIANTS = {
     iconColor: '#bd0000',
     Icon: ErrorCircleIcon,
   },
+  warning: {
+    bg: '#2a2100',
+    border: '#d79000',
+    iconColor: '#d79000',
+    Icon: WarningTriangleIcon,
+  },
 };
 
 export default function AwsAlert2({ variant = 'error', title, onDismiss, className = '', children }) {
@@ -65,6 +71,25 @@ function ErrorCircleIcon() {
     >
       <circle cx="8" cy="8" r="7" />
       <path d="m5.5 5.5 5 5M10.5 5.5l-5 5" />
+    </svg>
+  );
+}
+
+function WarningTriangleIcon() {
+  return (
+    <svg
+      viewBox="0 0 16 16"
+      width="20"
+      height="20"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.6"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+      focusable="false"
+    >
+      <path d="M8 5v4M8 10v2M6.52 1.88l-5.33 9.76c-.13.23-.19.5-.19.76 0 .88.71 1.59 1.59 1.59H13.4c.88 0 1.59-.71 1.59-1.59 0-.27-.07-.53-.19-.76L9.48 1.88C9.18 1.34 8.62 1 8 1s-1.18.34-1.48.88Z" />
     </svg>
   );
 }
