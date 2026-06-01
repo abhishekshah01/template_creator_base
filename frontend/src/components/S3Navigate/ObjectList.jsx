@@ -225,9 +225,7 @@ export default function ObjectList({
           <AwsButton disabled={!hasSelection} onClick={deleteSel}>Delete</AwsButton>
           <AwsButton disabled>Actions ▾</AwsButton>
           <AwsButton onClick={() => onOpenCreateFolder?.()}>Create folder</AwsButton>
-          <div className="ml-auto">
-            <AwsButton variant="primary" onClick={() => onOpenUpload?.()} icon={<UploadIcon />}>Upload</AwsButton>
-          </div>
+          <AwsButton variant="primary" onClick={() => onOpenUpload?.()} icon={<UploadIcon />}>Upload</AwsButton>
         </div>
 
         <p className="text-[13px] mb-4" style={{ color: colors.text.info }}>
