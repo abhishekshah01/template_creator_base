@@ -12,14 +12,11 @@ export default function Shell({ children, username, onSignOut, onHome, onOpenAdm
           className="w-[240px] shrink-0 py-5 px-4"
           style={{
             borderRight: `1px solid ${colors.border.rowSeparator}`,
-            backgroundColor: colors.bg.page,
+            backgroundColor: '#181a1b',
           }}
         >
-          <div
-            className="flex items-center justify-between pb-3 mb-3"
-            style={{ borderBottom: `1px solid ${colors.border.rowSeparator}` }}
-          >
-            <h2 className="text-[15px] font-bold" style={{ color: colors.text.primary }}>AWS S3 Navigate</h2>
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-[15px] font-bold" style={{ color: colors.text.selectedRow }}>AWS S3 Navigate</h2>
             <button
               onClick={onToggleSidebar}
               title="Collapse"
@@ -90,32 +87,39 @@ function SidebarSection({ label, children, defaultOpen = true }) {
     <div className="mb-3">
       <button
         onClick={() => setOpen(o => !o)}
-        className="w-full flex items-center gap-1.5 text-[14px] font-bold py-1"
-        style={{ color: colors.text.primary }}
+        className="group w-full flex items-center gap-2 text-[14px] font-bold py-1 transition-colors text-[#dbd8d3] hover:text-[#45abfe]"
       >
-        <svg
-          className={`w-3 h-3 transition-transform ${open ? '' : '-rotate-90'}`}
-          viewBox="0 0 16 16"
-          fill="currentColor"
-        >
-          <path d="M12.78 5.22a.749.749 0 0 1 0 1.06l-4.25 4.25a.749.749 0 0 1-1.06 0L3.22 6.28a.749.749 0 1 1 1.06-1.06L8 8.939l3.72-3.719a.749.749 0 0 1 1.06 0Z" />
-        </svg>
+        <SectionArrow open={open} />
         <span>{label}</span>
       </button>
-      {open && <div className="pl-4 mt-1">{children}</div>}
+      {open && <div className="pl-6 mt-1">{children}</div>}
     </div>
   );
 }
 
+function SectionArrow({ open }) {
+  return (
+    <svg
+      className={`transition-transform ${open ? '' : '-rotate-90'} shrink-0`}
+      width="16"
+      height="16"
+      viewBox="0 0 16 16"
+      fill="#bab4ab"
+      style={{ flex: 'none' }}
+    >
+      <path d="M3 5h10l-5 7Z" />
+    </svg>
+  );
+}
+
 function SidebarLink({ label, active, onClick }) {
+  const cls = active
+    ? 'text-[#45abfe] font-bold'
+    : 'text-[#dbd8d3] hover:text-[#45abfe]';
   return (
     <button
       onClick={onClick}
-      className="block w-full text-left py-1 text-[14px] transition-colors"
-      style={{
-        color: active ? colors.text.buttonActive : colors.text.selectedRow,
-        fontWeight: active ? 700 : 400,
-      }}
+      className={`block w-full text-left py-1 text-[14px] transition-colors ${cls}`}
     >
       {label}
     </button>
