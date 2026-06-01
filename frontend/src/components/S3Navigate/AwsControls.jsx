@@ -74,19 +74,19 @@ export function AwsButton({
 }
 
 // Shared recipe for every icon — stroke=currentColor so they inherit color
-// from the surrounding button text.
+// from the surrounding button text. strokeWidth is overridable per icon.
 const ICON_BASE_PROPS = {
   viewBox: '0 0 16 16',
   fill: 'none',
   stroke: 'currentColor',
-  strokeWidth: 1.4,
   strokeLinecap: 'round',
   strokeLinejoin: 'round',
 };
+const DEFAULT_STROKE = 1.8;
 
-export function RefreshIcon({ className = 'w-[14px] h-[14px]' }) {
+export function RefreshIcon({ className = 'w-[14px] h-[14px]', strokeWidth = DEFAULT_STROKE }) {
   return (
-    <svg className={className} {...ICON_BASE_PROPS}>
+    <svg className={className} {...ICON_BASE_PROPS} strokeWidth={strokeWidth}>
       <path d="M15 0v5l-5-.04" />
       <path d="M15 8c0 3.87-3.13 7-7 7s-7-3.13-7-7 3.13-7 7-7c2.79 0 5.2 1.63 6.33 4" />
     </svg>
@@ -150,44 +150,44 @@ export function AwsCheckbox({ checked = false, indeterminate = false, onChange, 
   );
 }
 
-export function SettingsIcon({ className = 'w-[14px] h-[14px]' }) {
+export function SettingsIcon({ className = 'w-[14px] h-[14px]', strokeWidth = DEFAULT_STROKE }) {
   return (
-    <svg className={className} {...ICON_BASE_PROPS}>
+    <svg className={className} {...ICON_BASE_PROPS} strokeWidth={strokeWidth}>
       <path d="M6.11 1.729c-.07-.42.44-.729.86-.729h2.02c.43 0 .79.31.86.729l.17.999c.05.29.24.529.5.679.06.03.11.06.17.1.25.15.56.2.84.1l.95-.35c.4-.15.85 0 1.07.38l1.01 1.747c.21.37.13.839-.2 1.108l-.78.64c-.23.189-.34.479-.33.768v.2c0 .29.11.579.33.769l.78.639c.33.27.42.739.2 1.108l-1.01 1.748c-.21.37-.66.529-1.06.38l-.95-.35a.966.966 0 0 0-.84.1c-.06.03-.11.07-.17.1-.26.14-.45.389-.5.679l-.17.998A.878.878 0 0 1 9 15H6.98a.87.87 0 0 1-.86-.729l-.17-.998a.988.988 0 0 0-.5-.68c-.06-.03-.11-.06-.17-.1a.996.996 0 0 0-.84-.1l-.95.35c-.4.15-.85 0-1.06-.38l-1.01-1.747a.873.873 0 0 1 .2-1.108l.78-.64c.23-.189.34-.479.33-.768v-.2c0-.3-.11-.579-.33-.769l-.78-.639a.861.861 0 0 1-.2-1.108l1.01-1.748c.21-.37.66-.529 1.07-.38l.95.35c.28.1.58.06.84-.1.06-.03.11-.07.17-.1.26-.14.45-.379.5-.678l.15-1Z" />
       <path d="M10 8c0 1.1-.9 2-2 2s-2-.9-2-2 .9-2 2-2 2 .9 2 2Z" />
     </svg>
   );
 }
 
-export function CopyIcon({ className = 'w-[14px] h-[14px]' }) {
+export function CopyIcon({ className = 'w-[14px] h-[14px]', strokeWidth = DEFAULT_STROKE }) {
   return (
-    <svg className={className} {...ICON_BASE_PROPS}>
+    <svg className={className} {...ICON_BASE_PROPS} strokeWidth={strokeWidth}>
       <path d="M15 5H5v10h10V5Z" />
       <path d="M13 1H1v11" />
     </svg>
   );
 }
 
-export function DownloadIcon({ className = 'w-[14px] h-[14px]' }) {
+export function DownloadIcon({ className = 'w-[14px] h-[14px]', strokeWidth = DEFAULT_STROKE }) {
   return (
-    <svg className={className} {...ICON_BASE_PROPS}>
+    <svg className={className} {...ICON_BASE_PROPS} strokeWidth={strokeWidth}>
       <path d="M1 15h14M13 6l-5 5-5-5M8 10V1" />
     </svg>
   );
 }
 
-export function OpenExternalIcon({ className = 'w-[14px] h-[14px]' }) {
+export function OpenExternalIcon({ className = 'w-[14px] h-[14px]', strokeWidth = DEFAULT_STROKE }) {
   return (
-    <svg className={className} {...ICON_BASE_PROPS}>
+    <svg className={className} {...ICON_BASE_PROPS} strokeWidth={strokeWidth}>
       <path d="M13 9.012v-6H7" />
       <path d="M13 3 7 9" />
     </svg>
   );
 }
 
-export function UploadIcon({ className = 'w-[14px] h-[14px]' }) {
+export function UploadIcon({ className = 'w-[14px] h-[14px]', strokeWidth = DEFAULT_STROKE }) {
   return (
-    <svg className={className} {...ICON_BASE_PROPS}>
+    <svg className={className} {...ICON_BASE_PROPS} strokeWidth={strokeWidth}>
       <path d="M1 1h14M13 6 8 1 3 6M8 5v10" />
     </svg>
   );
@@ -248,9 +248,9 @@ export function SortTriangleV2({ direction, active, size = 16 }) {
   );
 }
 
-function MagnifierIcon({ className = 'w-[14px] h-[14px]' }) {
+function MagnifierIcon({ className = 'w-[14px] h-[14px]', strokeWidth = DEFAULT_STROKE }) {
   return (
-    <svg className={className} {...ICON_BASE_PROPS}>
+    <svg className={className} {...ICON_BASE_PROPS} strokeWidth={strokeWidth}>
       <circle cx="7" cy="7" r="4.5" />
       <path d="m11 11 3 3" />
     </svg>
