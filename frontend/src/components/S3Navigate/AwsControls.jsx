@@ -133,7 +133,7 @@ export function AwsCheckbox({ checked = false, indeterminate = false, onChange, 
       onClick={onChange}
       className="inline-flex items-center justify-center w-[16px] h-[16px] rounded-[2px] shrink-0 cursor-pointer"
       style={{
-        backgroundColor: isOn ? colors.border.rowSelected : 'transparent',
+        backgroundColor: isOn ? colors.border.rowSelected : '#e8e6e2',
         border: `2px solid ${isOn ? colors.border.rowSelected : colors.text.buttonInactive}`,
       }}
     >
