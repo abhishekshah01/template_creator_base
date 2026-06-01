@@ -131,10 +131,10 @@ export function AwsCheckbox({ checked = false, indeterminate = false, onChange, 
       aria-checked={indeterminate ? 'mixed' : !!checked}
       aria-label={ariaLabel}
       onClick={onChange}
-      className="inline-flex items-center justify-center w-[16px] h-[16px] rounded-[4px] shrink-0 cursor-pointer"
+      className="inline-flex items-center justify-center w-[16px] h-[16px] shrink-0 cursor-pointer"
       style={{
         backgroundColor: isOn ? colors.border.rowSelected : '#e8e6e2',
-        border: 'none',
+        border: `2px solid ${colors.bg.card}`,
       }}
     >
       {indeterminate ? (
