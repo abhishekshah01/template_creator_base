@@ -40,7 +40,7 @@ class AssetListObjectsRequest(BaseModel):
     bucket: str = _BUCKET
     prefix: str = Field(default="", max_length=1024)
     continuation_token: Optional[str] = Field(default=None, max_length=2048)
-    page_size: int = Field(default=300, ge=1, le=1000)
+    page_size: int = Field(default=1000, ge=1, le=1000)
     bearer_token: str = _TOKEN
     force: bool = False
 
