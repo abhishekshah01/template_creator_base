@@ -43,28 +43,15 @@ export default function DeletePage({ bucket, prefix, objects, onCancel, onDone }
         </span>
       </h1>
 
-      <div className="mb-4">
+      <div className="mb-6">
         <AwsAlert2
           variant="warning"
-          title="You don't have permission to get the Bucket Versioning setting"
+          title="Deleting these objects is permanent"
         >
-          Without <span className="font-mono">s3:getBucketVersioning</span> permission, we cannot determine
-          if this delete action will add a delete marker to your objects or permanently delete them.{' '}
-          <a className="underline decoration-1 underline-offset-2" style={{ color: colors.text.buttonActive }}>
-            Learn more about Identity and access management in Amazon S3 ↗
-          </a>
-        </AwsAlert2>
-      </div>
-
-      <div className="mb-6">
-        <AwsAlert2 variant="warning">
           If a folder is selected for deletion, all objects in the folder will be deleted, and any new
           objects added while the delete action is in progress might also be deleted. If an object is
           selected for deletion, any new objects with the same name that are uploaded before the delete
-          action is completed will also be deleted.{' '}
-          <a className="underline decoration-1 underline-offset-2" style={{ color: colors.text.buttonActive }}>
-            Learn more ↗
-          </a>
+          action is completed will also be deleted.
         </AwsAlert2>
       </div>
 
