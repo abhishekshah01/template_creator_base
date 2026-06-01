@@ -43,14 +43,22 @@ export default function ObjectList({
   const [pageStack, setPageStack] = useState([]);
   const [currentToken, setCurrentToken] = useState(null);
   const [sort, setSort] = useState({ key: 'name', dir: 'asc' });
-  const [scrolled, setScrolled] = useState(false);
-  const scrollRef = useRef(null);
+  // `stuck` flips when the panel's natural position has scrolled past the
+  // viewport top. A sentinel above the panel is observed by IntersectionObserver;
+  // when it leaves the viewport, the panel is sticky-pinned to top.
+  const [stuck, setStuck] = useState(false);
+  const sentinelRef = useRef(null);
 
-  function handleScroll() {
-    if (scrollRef.current) {
-      setScrolled(scrollRef.current.scrollTop > 0);
-    }
-  }
+  useEffect(() => {
+    const el = sentinelRef.current;
+    if (!el) return undefined;
+    const obs = new IntersectionObserver(
+      ([entry]) => setStuck(!entry.isIntersecting && entry.boundingClientRect.top < 0),
+      { threshold: [0], rootMargin: '0px' },
+    );
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, []);
 
   async function load(token = null, { force = false } = {}) {
     setLoading(true);
@@ -209,70 +217,82 @@ export default function ObjectList({
         </div>
       )}
 
+      <div ref={sentinelRef} aria-hidden="true" style={{ height: 1, marginBottom: -1 }} />
+
       <div
-        className="rounded-[8px] p-5"
         style={{
+          position: 'sticky',
+          top: 0,
           backgroundColor: colors.bg.card,
           border: `2px solid ${colors.border.cardOutline}`,
+          borderTopLeftRadius: stuck ? 0 : 8,
+          borderTopRightRadius: stuck ? 0 : 8,
+          borderBottomLeftRadius: 8,
+          borderBottomRightRadius: 8,
+          zIndex: 10,
         }}
       >
-        <div className="flex items-center justify-between mb-3 flex-wrap gap-3">
-          <h2 className="text-[18px] font-bold inline-flex items-center gap-2" style={{ color: colors.text.primary }}>
-            <span>
-              Objects <span style={{ color: colors.text.info }} className="font-normal">({countLabel})</span>
-            </span>
-          </h2>
-        </div>
+        <div className="px-5 pt-5">
+          <div className="flex items-center justify-between mb-3 flex-wrap gap-3">
+            <h2 className="text-[18px] font-bold inline-flex items-center gap-2" style={{ color: colors.text.primary }}>
+              <span>
+                Objects <span style={{ color: colors.text.info }} className="font-normal">({countLabel})</span>
+              </span>
+            </h2>
+          </div>
 
-        <div className="flex items-center gap-2 mb-3 flex-wrap">
-          <AwsButton variant="icon" title="Refresh" onClick={() => load(currentToken, { force: true })} icon={<RefreshIcon />} />
-          <AwsButton disabled={!singleSelectedKey} onClick={copyS3Uri} icon={<AwsCopyIcon />}>Copy S3 URI</AwsButton>
-          <AwsButton disabled={!singleSelectedKey} onClick={copyUrl} icon={<AwsCopyIcon />}>Copy URL</AwsButton>
-          <AwsButton disabled={!singleSelectedKey} onClick={downloadSel} icon={<DownloadIcon />}>Download</AwsButton>
-          <AwsButton disabled={!singleSelectedKey} onClick={openSel} rightIcon={<OpenExternalIcon />}>Open</AwsButton>
-          <AwsButton disabled={!hasSelection} onClick={deleteSel}>Delete</AwsButton>
-          <AwsButton disabled>Actions ▾</AwsButton>
-          <AwsButton onClick={() => onOpenCreateFolder?.()}>Create folder</AwsButton>
-          <AwsButton variant="primary" onClick={() => onOpenUpload?.()} icon={<UploadIcon />}>Upload</AwsButton>
-        </div>
+          <div className="flex items-center gap-2 mb-3 flex-wrap">
+            <AwsButton variant="icon" title="Refresh" onClick={() => load(currentToken, { force: true })} icon={<RefreshIcon />} />
+            <AwsButton disabled={!singleSelectedKey} onClick={copyS3Uri} icon={<AwsCopyIcon />}>Copy S3 URI</AwsButton>
+            <AwsButton disabled={!singleSelectedKey} onClick={copyUrl} icon={<AwsCopyIcon />}>Copy URL</AwsButton>
+            <AwsButton disabled={!singleSelectedKey} onClick={downloadSel} icon={<DownloadIcon />}>Download</AwsButton>
+            <AwsButton disabled={!singleSelectedKey} onClick={openSel} rightIcon={<OpenExternalIcon />}>Open</AwsButton>
+            <AwsButton disabled={!hasSelection} onClick={deleteSel}>Delete</AwsButton>
+            <AwsButton disabled>Actions ▾</AwsButton>
+            <AwsButton onClick={() => onOpenCreateFolder?.()}>Create folder</AwsButton>
+            <AwsButton variant="primary" onClick={() => onOpenUpload?.()} icon={<UploadIcon />}>Upload</AwsButton>
+          </div>
 
-        <p className="text-[13px] mb-4" style={{ color: colors.text.info }}>
-          Objects are the fundamental entities stored in Amazon S3. You can use{' '}
-          <span className="underline decoration-dotted underline-offset-2 cursor-help" style={{ color: colors.text.buttonActive }}>Amazon S3 inventory</span>{' '}
-          to get a list of all objects in your bucket. For others to access your objects, you'll need to explicitly grant them permissions.{' '}
-          <span className="underline decoration-dotted underline-offset-2 cursor-help" style={{ color: colors.text.buttonActive }}>Learn more</span>
-        </p>
+          <p className="text-[13px] mb-4" style={{ color: colors.text.info }}>
+            Objects are the fundamental entities stored in Amazon S3. You can use{' '}
+            <span className="underline decoration-dotted underline-offset-2 cursor-help" style={{ color: colors.text.buttonActive }}>Amazon S3 inventory</span>{' '}
+            to get a list of all objects in your bucket. For others to access your objects, you'll need to explicitly grant them permissions.{' '}
+            <span className="underline decoration-dotted underline-offset-2 cursor-help" style={{ color: colors.text.buttonActive }}>Learn more</span>
+          </p>
 
-        <div className="flex items-center gap-3 mb-3 flex-wrap">
-          <div className="flex-1 max-w-[640px] min-w-[280px]">
-            <AwsSearchInput
-              value={filter}
-              onChange={setFilter}
-              placeholder="Find objects by prefix"
+          <div className="flex items-center gap-3 mb-4 flex-wrap">
+            <div className="flex-1 max-w-[640px] min-w-[280px]">
+              <AwsSearchInput
+                value={filter}
+                onChange={setFilter}
+                placeholder="Find objects by prefix"
+              />
+            </div>
+            <ObjectPager
+              hasPrev={pageStack.length > 0}
+              hasNext={!!data.is_truncated}
+              pageNumber={pageStack.length + 1}
+              onPrev={() => {
+                const next = [...pageStack];
+                const prevToken = next.pop();
+                setPageStack(next);
+                load(prevToken || null);
+              }}
+              onNext={() => {
+                setPageStack(prev => [...prev, currentToken]);
+                load(data.next_continuation_token);
+              }}
             />
           </div>
-          <ObjectPager
-            hasPrev={pageStack.length > 0}
-            hasNext={!!data.is_truncated}
-            pageNumber={pageStack.length + 1}
-            onPrev={() => {
-              const next = [...pageStack];
-              const prevToken = next.pop();
-              setPageStack(next);
-              load(prevToken || null);
-            }}
-            onNext={() => {
-              setPageStack(prev => [...prev, currentToken]);
-              load(data.next_continuation_token);
-            }}
-          />
         </div>
 
         <div
-          ref={scrollRef}
-          onScroll={handleScroll}
-          className="rounded-[4px] overflow-x-auto overflow-y-auto min-w-0"
-          style={{ maxHeight: '60vh' }}
+          className="overflow-x-auto overflow-y-auto min-w-0"
+          style={{
+            maxHeight: 760,
+            borderBottomLeftRadius: 8,
+            borderBottomRightRadius: 8,
+          }}
         >
           <table
             className="w-full text-[14px] text-left"
@@ -286,7 +306,7 @@ export default function ObjectList({
             </colgroup>
             <thead>
               <tr>
-                <HeaderCell aria-hidden="true" showDivider scrolled={scrolled}>
+                <HeaderCell aria-hidden="true" showDivider stuck={stuck}>
                   <AwsCheckbox
                     checked={allChecked}
                     indeterminate={someChecked}
@@ -298,7 +318,7 @@ export default function ObjectList({
                   const isSorted = sort.key === col.key;
                   const isLast = idx === COLUMNS.length - 1;
                   return (
-                    <HeaderCell key={col.key} showDivider={!isLast} scrolled={scrolled}>
+                    <HeaderCell key={col.key} showDivider={!isLast} stuck={stuck}>
                       <button
                         type="button"
                         onClick={() => toggleSort(col.key)}
@@ -455,10 +475,10 @@ function BodyMessage({ children }) {
   );
 }
 
-function HeaderCell({ children, showDivider, scrolled = false }) {
-  // The header sticks to the top of the scrollable container. Once any of the
-  // body has scrolled out the top, the underline doubles from 1px to 2px so
-  // the header feels lifted above the scrolled content.
+function HeaderCell({ children, showDivider, stuck = false }) {
+  // Header sticks to the top of the inner scroll container. When the whole
+  // panel becomes sticky-pinned to the viewport, the underline doubles from
+  // 1 -> 2px so the header reads as "lifted".
   return (
     <th
       style={{
@@ -469,7 +489,7 @@ function HeaderCell({ children, showDivider, scrolled = false }) {
         textAlign: 'left',
         fontWeight: 700,
         backgroundColor: colors.bg.card,
-        borderBottom: `${scrolled ? 2 : 1}px solid ${colors.border.rowSeparator}`,
+        borderBottom: `${stuck ? 2 : 1}px solid ${colors.border.rowSeparator}`,
         zIndex: 2,
       }}
     >
