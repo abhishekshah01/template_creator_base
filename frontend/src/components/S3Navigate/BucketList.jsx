@@ -81,6 +81,18 @@ export default function BucketList({ onOpenBucket }) {
         <SectionTab>Directory buckets</SectionTab>
       </div>
 
+      {err && (
+        <div className="mb-4">
+          <AwsAlert2
+            variant="error"
+            title="Couldn't load buckets"
+            onDismiss={() => setErr(null)}
+          >
+            {err}
+          </AwsAlert2>
+        </div>
+      )}
+
       <div
         className="rounded-[8px] p-5"
         style={{
@@ -123,16 +135,6 @@ export default function BucketList({ onOpenBucket }) {
           </div>
           <BucketPager page={page} pageCount={pageCount} onChange={setPage} />
         </div>
-
-        {err && (
-          <div className="mb-3">
-            <AwsAlert2
-              variant="error"
-              title={err}
-              onDismiss={() => setErr(null)}
-            />
-          </div>
-        )}
 
         <div className="rounded-[4px] overflow-x-auto min-w-0">
           <table
