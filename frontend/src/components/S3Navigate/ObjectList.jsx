@@ -272,7 +272,7 @@ export default function ObjectList({
           ref={scrollRef}
           onScroll={handleScroll}
           className="rounded-[4px] overflow-x-auto overflow-y-auto min-w-0"
-          style={{ maxHeight: '60vh' }}
+          style={{ maxHeight: 760 }}
         >
           <table
             className="w-full text-[14px] text-left"
