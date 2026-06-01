@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
 import AwsAlert2 from './AwsAlert2';
 import {
@@ -43,6 +43,14 @@ export default function ObjectList({
   const [pageStack, setPageStack] = useState([]);
   const [currentToken, setCurrentToken] = useState(null);
   const [sort, setSort] = useState({ key: 'name', dir: 'asc' });
+  const [scrolled, setScrolled] = useState(false);
+  const scrollRef = useRef(null);
+
+  function handleScroll() {
+    if (scrollRef.current) {
+      setScrolled(scrollRef.current.scrollTop > 0);
+    }
+  }
 
   async function load(token = null, { force = false } = {}) {
     setLoading(true);
@@ -260,7 +268,12 @@ export default function ObjectList({
           />
         </div>
 
-        <div className="rounded-[4px] overflow-x-auto min-w-0">
+        <div
+          ref={scrollRef}
+          onScroll={handleScroll}
+          className="rounded-[4px] overflow-x-auto overflow-y-auto min-w-0"
+          style={{ maxHeight: '60vh' }}
+        >
           <table
             className="w-full text-[14px] text-left"
             style={{ tableLayout: 'fixed', borderCollapse: 'separate', borderSpacing: 0 }}
@@ -273,7 +286,7 @@ export default function ObjectList({
             </colgroup>
             <thead>
               <tr>
-                <HeaderCell aria-hidden="true" showDivider>
+                <HeaderCell aria-hidden="true" showDivider scrolled={scrolled}>
                   <AwsCheckbox
                     checked={allChecked}
                     indeterminate={someChecked}
@@ -285,7 +298,7 @@ export default function ObjectList({
                   const isSorted = sort.key === col.key;
                   const isLast = idx === COLUMNS.length - 1;
                   return (
-                    <HeaderCell key={col.key} showDivider={!isLast}>
+                    <HeaderCell key={col.key} showDivider={!isLast} scrolled={scrolled}>
                       <button
                         type="button"
                         onClick={() => toggleSort(col.key)}
@@ -442,32 +455,40 @@ function BodyMessage({ children }) {
   );
 }
 
-function HeaderCell({ children, showDivider }) {
+function HeaderCell({ children, showDivider, scrolled = false }) {
+  // The header sticks to the top of the scrollable container. Once any of the
+  // body has scrolled out the top, the underline doubles from 1px to 2px so
+  // the header feels lifted above the scrolled content.
   return (
     <th
       style={{
         padding: '8px 12px',
         color: colors.text.info,
-        position: 'relative',
+        position: 'sticky',
+        top: 0,
         textAlign: 'left',
         fontWeight: 700,
-        borderBottom: `1px solid ${colors.border.rowSeparator}`,
+        backgroundColor: colors.bg.card,
+        borderBottom: `${scrolled ? 2 : 1}px solid ${colors.border.rowSeparator}`,
+        zIndex: 2,
       }}
     >
-      {children}
-      {showDivider && (
-        <span
-          aria-hidden="true"
-          style={{
-            position: 'absolute',
-            right: 0,
-            top: 6,
-            bottom: 6,
-            width: 1,
-            backgroundColor: colors.border.rowSeparator,
-          }}
-        />
-      )}
+      <span style={{ position: 'relative', display: 'block' }}>
+        {children}
+        {showDivider && (
+          <span
+            aria-hidden="true"
+            style={{
+              position: 'absolute',
+              right: -12,
+              top: -2,
+              bottom: -2,
+              width: 1,
+              backgroundColor: colors.border.rowSeparator,
+            }}
+          />
+        )}
+      </span>
     </th>
   );
 }
