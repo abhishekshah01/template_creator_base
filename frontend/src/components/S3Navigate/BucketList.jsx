@@ -314,8 +314,14 @@ function SectionTab({ active, children }) {
       {children}
       {active && (
         <span
-          className="absolute left-0 right-0 -bottom-[2px]"
-          style={{ height: 2, backgroundColor: colors.text.buttonActive }}
+          aria-hidden="true"
+          className="absolute left-0 right-0"
+          style={{
+            height: 3,
+            bottom: -2,
+            backgroundColor: colors.text.buttonActive,
+            zIndex: 2,
+          }}
         />
       )}
     </button>
@@ -370,9 +376,7 @@ function BucketPager({ page, pageCount, onChange }) {
   return (
     <div className="inline-flex items-center gap-2 text-[14px]" style={{ color: colors.text.selectedRow }}>
       <PagerBtn disabled={page <= 1} onClick={() => onChange(Math.max(1, page - 1))}>
-        <svg className="w-3.5 h-3.5" viewBox="0 0 16 16" fill="currentColor">
-          <path d="M9.78 12.78a.75.75 0 0 1-1.06 0L4.47 8.53a.75.75 0 0 1 0-1.06l4.25-4.25a.751.751 0 0 1 1.275.326.749.749 0 0 1-.215.734L6.06 8l3.72 3.72a.75.75 0 0 1 0 1.06Z" />
-        </svg>
+        <PagerChevron direction="left" />
       </PagerBtn>
       {pages.map((n) => (
         <button
@@ -389,9 +393,7 @@ function BucketPager({ page, pageCount, onChange }) {
         </button>
       ))}
       <PagerBtn disabled={page >= pageCount} onClick={() => onChange(Math.min(pageCount, page + 1))}>
-        <svg className="w-3.5 h-3.5" viewBox="0 0 16 16" fill="currentColor">
-          <path d="M6.22 3.22a.75.75 0 0 1 1.06 0l4.25 4.25a.75.75 0 0 1 0 1.06l-4.25 4.25a.749.749 0 0 1-1.275-.326.749.749 0 0 1 .215-.734L9.94 8 6.22 4.28a.75.75 0 0 1 0-1.06Z" />
-        </svg>
+        <PagerChevron direction="right" />
       </PagerBtn>
     </div>
   );
@@ -404,13 +406,31 @@ function PagerBtn({ disabled, onClick, children }) {
       onClick={onClick}
       className="px-2 py-1"
       style={{
-        color: colors.text.buttonActive,
+        color: colors.text.info,
         opacity: disabled ? 0.4 : 1,
         cursor: disabled ? 'not-allowed' : 'pointer',
       }}
     >
       {children}
     </button>
+  );
+}
+
+function PagerChevron({ direction }) {
+  const d = direction === 'left' ? 'M10 4l-4 4 4 4' : 'M6 4l4 4-4 4';
+  return (
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 16 16"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d={d} />
+    </svg>
   );
 }
 
