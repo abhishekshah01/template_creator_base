@@ -7,6 +7,7 @@ import { ConfigAll, ConfigCreate, ConfigSummary, ConfigDetailPage } from './comp
 import Settings from './components/Settings';
 import S3Navigate from './components/S3Navigate';
 import Banner from './components/Banner';
+import AwsAlert2 from './components/S3Navigate/AwsAlert2';
 import Guide from './components/Guide';
 import { api } from './api';
 
@@ -246,9 +247,13 @@ export default function App() {
                   </>
                 )}
                 {!envError && bearerToken && !infoBannerDismissed && (
-                  <Banner variant="upsell" onDismiss={() => setInfoBannerDismissed(true)}>
-                    API tokens are environment-specific. Ensure your token matches the active environment <strong className="text-white">({activeEnv})</strong>.
-                  </Banner>
+                  <AwsAlert2
+                    variant="info"
+                    title="API tokens are environment-specific"
+                    onDismiss={() => setInfoBannerDismissed(true)}
+                  >
+                    Ensure your token matches the active environment <strong style={{ color: '#ffffff' }}>({activeEnv})</strong>.
+                  </AwsAlert2>
                 )}
               </div>
             )}
