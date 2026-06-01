@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 
+import AwsAlert2 from './AwsAlert2';
 import { AwsButton, AwsRadio, AwsSearchInput, CopyIcon as AwsCopyIcon, RefreshIcon, SortTriangle } from './AwsControls';
 import { s3api } from './api';
 import { formatAwsDate } from './format';
@@ -123,6 +124,16 @@ export default function BucketList({ onOpenBucket }) {
           <BucketPager page={page} pageCount={pageCount} onChange={setPage} />
         </div>
 
+        {err && (
+          <div className="mb-3">
+            <AwsAlert2
+              variant="error"
+              title={err}
+              onDismiss={() => setErr(null)}
+            />
+          </div>
+        )}
+
         <div className="rounded-[4px] overflow-x-auto min-w-0">
           <table
             className="w-full text-[14px] text-left"
@@ -163,13 +174,10 @@ export default function BucketList({ onOpenBucket }) {
               {loading && (
                 <BodyMessage>Loading buckets…</BodyMessage>
               )}
-              {err && !loading && (
-                <BodyMessage error>{err}</BodyMessage>
-              )}
               {!loading && !err && pageItems.length === 0 && (
                 <BodyMessage>No buckets match your search.</BodyMessage>
               )}
-              {!loading && !err && pageItems.map(b => (
+              {!loading && pageItems.map(b => (
                 <BucketRow
                   key={b.name}
                   bucket={b}
