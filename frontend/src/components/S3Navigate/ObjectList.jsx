@@ -2,15 +2,16 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 
 import AwsAlert2 from './AwsAlert2';
 import {
+  ActionsArrowIcon,
   AwsButton,
   AwsCheckbox,
   AwsSearchInput,
   CopyIcon as AwsCopyIcon,
   DownloadIcon,
-  OpenExternalIcon,
+  OpenExternalIconV2,
   RefreshIcon,
   SortTriangleV2,
-  UploadIcon,
+  UploadIconV2,
 } from './AwsControls';
 import { s3api } from './api';
 import { bytesToHuman, formatAwsDate, fileExt } from './format';
@@ -210,10 +211,10 @@ export default function ObjectList({
       )}
 
       <div
-        className="rounded-[8px] p-5"
+        className="rounded-[12px] p-5"
         style={{
           backgroundColor: colors.bg.card,
-          border: `2px solid ${colors.border.cardOutline}`,
+          border: `1px solid ${colors.border.cardOutline}`,
         }}
       >
         <div className="flex items-center justify-between mb-3 flex-wrap gap-3">
@@ -229,11 +230,11 @@ export default function ObjectList({
           <AwsButton disabled={!singleSelectedKey} onClick={copyS3Uri} icon={<AwsCopyIcon />}>Copy S3 URI</AwsButton>
           <AwsButton disabled={!singleSelectedKey} onClick={copyUrl} icon={<AwsCopyIcon />}>Copy URL</AwsButton>
           <AwsButton disabled={!singleSelectedKey} onClick={downloadSel} icon={<DownloadIcon />}>Download</AwsButton>
-          <AwsButton disabled={!singleSelectedKey} onClick={openSel} rightIcon={<OpenExternalIcon />}>Open</AwsButton>
+          <AwsButton disabled={!singleSelectedKey} onClick={openSel} rightIcon={<OpenExternalIconV2 />}>Open</AwsButton>
           <AwsButton disabled={!hasSelection} onClick={deleteSel}>Delete</AwsButton>
-          <AwsButton disabled>Actions ▾</AwsButton>
+          <AwsButton disabled rightIcon={<ActionsArrowIcon />}>Actions</AwsButton>
           <AwsButton onClick={() => onOpenCreateFolder?.()}>Create folder</AwsButton>
-          <AwsButton variant="primary" onClick={() => onOpenUpload?.()} icon={<UploadIcon />}>Upload</AwsButton>
+          <AwsButton variant="primary" onClick={() => onOpenUpload?.()} icon={<UploadIconV2 />}>Upload</AwsButton>
         </div>
 
         <p className="text-[13px] mb-4" style={{ color: colors.text.info }}>
@@ -505,8 +506,8 @@ function SectionTab({ active, children }) {
           aria-hidden="true"
           className="absolute left-0 right-0"
           style={{
-            height: 3,
-            bottom: -2,
+            height: 4,
+            bottom: -3,
             backgroundColor: colors.text.buttonActive,
             zIndex: 2,
           }}
