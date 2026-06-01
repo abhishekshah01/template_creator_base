@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 
 import AwsAlert from './AwsAlert';
-import { AwsButton, AwsCheckbox, AwsSearchInput, RefreshIcon, SortTriangle } from './AwsControls';
+import { AwsButton, AwsCheckbox, AwsSearchInput, RefreshIcon, SortTriangleV2 } from './AwsControls';
 import { s3api } from './api';
 import { formatAwsDate } from './format';
 import { colors } from './theme';
@@ -198,7 +198,7 @@ export default function AdminsPage({ currentUsername, onSelfDeactivated, onCopyT
                       style={{ color: colors.text.tableHeader }}
                     >
                       <span>{col.label}</span>
-                      <SortTriangle
+                      <SortTriangleV2
                         active={isSorted}
                         direction={isSorted ? sort.dir : null}
                       />

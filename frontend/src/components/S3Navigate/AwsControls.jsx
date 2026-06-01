@@ -213,6 +213,41 @@ export function SortTriangle({ direction, active }) {
   );
 }
 
+// Active column = filled solid triangle in the sort direction.
+// Inactive columns = hollow (stroked-only) downward triangle as the sort affordance.
+export function SortTriangleV2({ direction, active, size = 16 }) {
+  if (!active) {
+    return (
+      <svg
+        width={size}
+        height={size}
+        viewBox="0 0 16 16"
+        fill="none"
+        stroke="#9ba0a6"
+        strokeWidth="1.4"
+        strokeLinejoin="round"
+        strokeLinecap="round"
+      >
+        <path d="m8 11 4-6H4l4 6Z" />
+      </svg>
+    );
+  }
+  const d = direction === 'asc' ? 'm8 5 4 6H4l4-6Z' : 'm8 11 4-6H4l4 6Z';
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 16 16"
+      fill={colors.text.selectedRow}
+      stroke={colors.text.selectedRow}
+      strokeWidth="1"
+      strokeLinejoin="round"
+    >
+      <path d={d} />
+    </svg>
+  );
+}
+
 function MagnifierIcon({ className = 'w-[14px] h-[14px]' }) {
   return (
     <svg className={className} {...ICON_BASE_PROPS}>

@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 
 import AwsAlert2 from './AwsAlert2';
-import { AwsButton, AwsRadio, AwsSearchInput, CopyIcon as AwsCopyIcon, RefreshIcon, SortTriangle } from './AwsControls';
+import { AwsButton, AwsRadio, AwsSearchInput, CopyIcon as AwsCopyIcon, RefreshIcon, SortTriangleV2 } from './AwsControls';
 import { s3api } from './api';
 import { formatAwsDate } from './format';
 import { colors } from './theme';
@@ -162,7 +162,7 @@ export default function BucketList({ onOpenBucket }) {
                         style={{ color: colors.text.info }}
                       >
                         <span>{col.label}</span>
-                        <SortTriangle
+                        <SortTriangleV2
                           active={isSorted}
                           direction={isSorted ? sort.dir : null}
                         />
@@ -279,11 +279,12 @@ function HeaderCell({ children, showDivider }) {
   return (
     <th
       style={{
-        padding: '6px 12px',
+        padding: '8px 12px',
         color: colors.text.info,
         position: 'relative',
         textAlign: 'left',
         fontWeight: 700,
+        borderBottom: `1px solid ${colors.border.rowSeparator}`,
       }}
     >
       {children}
@@ -352,28 +353,43 @@ function regionLabel(code) {
 }
 
 function BucketPager({ page, pageCount, onChange }) {
+  // Windowed view: keep the current page in the middle when there are many.
+  // For <= 7 pages, render them all. Beyond that, show 7 around current.
+  const windowSize = 7;
+  let start = 1;
+  let end = pageCount;
+  if (pageCount > windowSize) {
+    const half = Math.floor(windowSize / 2);
+    start = Math.max(1, page - half);
+    end = Math.min(pageCount, start + windowSize - 1);
+    start = Math.max(1, end - windowSize + 1);
+  }
+  const pages = [];
+  for (let i = start; i <= end; i += 1) pages.push(i);
+
   return (
-    <div className="inline-flex items-center gap-1 text-[14px]" style={{ color: colors.text.selectedRow }}>
+    <div className="inline-flex items-center gap-2 text-[14px]" style={{ color: colors.text.selectedRow }}>
       <PagerBtn disabled={page <= 1} onClick={() => onChange(Math.max(1, page - 1))}>
-        <svg className="w-3 h-3" viewBox="0 0 16 16" fill="currentColor">
+        <svg className="w-3.5 h-3.5" viewBox="0 0 16 16" fill="currentColor">
           <path d="M9.78 12.78a.75.75 0 0 1-1.06 0L4.47 8.53a.75.75 0 0 1 0-1.06l4.25-4.25a.751.751 0 0 1 1.275.326.749.749 0 0 1-.215.734L6.06 8l3.72 3.72a.75.75 0 0 1 0 1.06Z" />
         </svg>
       </PagerBtn>
-      {Array.from({ length: pageCount }).slice(0, 5).map((_, i) => (
+      {pages.map((n) => (
         <button
-          key={i}
-          onClick={() => onChange(i + 1)}
-          className="min-w-[24px] px-1.5 py-0.5 text-[13px]"
+          key={n}
+          onClick={() => onChange(n)}
+          className="min-w-[22px] px-1 text-[14px]"
           style={{
-            color: page === i + 1 ? colors.text.primary : colors.text.buttonActive,
-            fontWeight: page === i + 1 ? 700 : 400,
+            color: page === n ? colors.text.primary : colors.text.buttonActive,
+            fontWeight: page === n ? 700 : 400,
+            cursor: 'pointer',
           }}
         >
-          {i + 1}
+          {n}
         </button>
       ))}
       <PagerBtn disabled={page >= pageCount} onClick={() => onChange(Math.min(pageCount, page + 1))}>
-        <svg className="w-3 h-3" viewBox="0 0 16 16" fill="currentColor">
+        <svg className="w-3.5 h-3.5" viewBox="0 0 16 16" fill="currentColor">
           <path d="M6.22 3.22a.75.75 0 0 1 1.06 0l4.25 4.25a.75.75 0 0 1 0 1.06l-4.25 4.25a.749.749 0 0 1-1.275-.326.749.749 0 0 1 .215-.734L9.94 8 6.22 4.28a.75.75 0 0 1 0-1.06Z" />
         </svg>
       </PagerBtn>
