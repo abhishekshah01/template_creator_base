@@ -22,7 +22,7 @@ const VARIANTS = {
   tip: {
     bg: '#1a0a35',
     border: '#7730e8',
-    iconColor: '#c5a3ff',
+    iconColor: '#dcc6ff',
     Icon: LightbulbIcon,
   },
 };
@@ -124,11 +124,17 @@ function LightbulbIcon() {
       aria-hidden="true"
       focusable="false"
     >
+      {/* Rays — radiating outward from the bulb, suggest glow */}
+      <path d="M8 0.5v1.2" />
+      <path d="M2.5 3l.9.9" />
+      <path d="M13.5 3l-.9.9" />
+      <path d="M0.8 7.5h1.2" />
+      <path d="M14 7.5h1.2" />
       {/* Bulb */}
-      <path d="M8 1.5a4 4 0 0 0-2.5 7.13c.5.4.9 1.05 1 1.87h3c.1-.82.5-1.47 1-1.87A4 4 0 0 0 8 1.5Z" />
+      <path d="M8 3a3 3 0 0 0-1.9 5.32c.36.3.62.7.74 1.18h2.32c.12-.48.38-.88.74-1.18A3 3 0 0 0 8 3Z" />
       {/* Base bands */}
-      <path d="M6.5 12h3" />
-      <path d="M7 14h2" />
+      <path d="M6.6 11.5h2.8" />
+      <path d="M7.1 13.4h1.8" />
     </svg>
   );
 }
