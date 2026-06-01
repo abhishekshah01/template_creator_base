@@ -49,7 +49,7 @@ export default function App() {
           setCachedConfigs(Array.isArray(list) ? list : []);
           setConfigsLoaded(true);
         } catch {
-          setEnvError(`Could not reach "${data.active}". The environment may not exist or its services are not running.`);
+          setEnvError(`Could not reach "${data.active}". The environment may not exist, its services may be down, or your bearer token for this environment is missing or expired.`);
           setConfigsLoaded(true);
         }
       }
@@ -82,7 +82,7 @@ export default function App() {
           setConfigsStale(false);
           setConfigsLoaded(true);
         } catch (valErr) {
-          setEnvError(`Could not reach "${envName}". The environment may not exist or its services are not running.`);
+          setEnvError(`Could not reach "${envName}". The environment may not exist, its services may be down, or your bearer token for this environment is missing or expired.`);
           setCachedConfigs([]);
           setConfigsStale(false);
           setConfigsLoaded(true); // prevent AllConfigs from retrying
@@ -234,18 +234,44 @@ export default function App() {
             {/* S3 page banners — own padded zone, in flow above the full-bleed page */}
             {(envError || (bearerToken && !infoBannerDismissed)) && (
               <div className="shrink-0 px-6 pt-6 space-y-2">
-                {envError && (
-                  <>
-                    <Banner variant="critical" onDismiss={() => setEnvError(null)}>
-                      {envError}{previousEnv && <> — <button onClick={switchToPreviousEnv} className="text-[#58a6ff] hover:underline font-medium">switch back to {previousEnv}</button></>}
-                    </Banner>
-                    {!envWarningDismissed && (
-                      <Banner variant="warning" onDismiss={() => setEnvWarningDismissed(true)}>
-                        Switch to a valid environment using the dropdown in the sidebar, or check the environment name for typos.
-                      </Banner>
-                    )}
-                  </>
-                )}
+                {envError && (() => {
+                  const dot = envError.indexOf('. ');
+                  const errTitle = dot > 0 ? envError.slice(0, dot) : envError;
+                  const errDetail = dot > 0 ? envError.slice(dot + 2) : '';
+                  return (
+                    <>
+                      <AwsAlert2
+                        variant="error"
+                        title={errTitle}
+                        onDismiss={() => setEnvError(null)}
+                      >
+                        {errDetail}
+                        {previousEnv && (
+                          <>
+                            {errDetail ? ' ' : ''}
+                            <button
+                              type="button"
+                              onClick={switchToPreviousEnv}
+                              className="underline underline-offset-2 hover:opacity-90"
+                              style={{ color: '#ffffff' }}
+                            >
+                              Switch back to {previousEnv}
+                            </button>.
+                          </>
+                        )}
+                      </AwsAlert2>
+                      {!envWarningDismissed && (
+                        <AwsAlert2
+                          variant="warning"
+                          title="How to recover"
+                          onDismiss={() => setEnvWarningDismissed(true)}
+                        >
+                          Switch to a valid environment using the dropdown in the sidebar, check the environment name for typos, or re-enter your bearer token in Settings if it has expired.
+                        </AwsAlert2>
+                      )}
+                    </>
+                  );
+                })()}
                 {!envError && bearerToken && !infoBannerDismissed && (
                   <AwsAlert2
                     variant="tip"
