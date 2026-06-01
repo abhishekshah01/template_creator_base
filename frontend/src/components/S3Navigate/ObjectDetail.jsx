@@ -1,7 +1,15 @@
 import { useEffect, useState } from 'react';
+
+import AwsAlert2 from './AwsAlert2';
+import {
+  AwsButton,
+  CopyIcon as AwsCopyIcon,
+  DownloadIcon,
+  OpenExternalIcon,
+} from './AwsControls';
 import { s3api } from './api';
 import { bytesToHuman, formatAwsDate, fileExt } from './format';
-import { SecondaryBtn, CopyIcon, InfoIcon } from './BucketList';
+import { colors } from './theme';
 
 export default function ObjectDetail({ bucket, objKey, onCopyToast }) {
   const [meta, setMeta] = useState(null);
@@ -19,7 +27,12 @@ export default function ObjectDetail({ bucket, objKey, onCopyToast }) {
   }, [bucket, objKey]);
 
   async function copy(text) {
-    try { await navigator.clipboard.writeText(text); onCopyToast?.('Copied'); } catch { onCopyToast?.('Copy failed'); }
+    try {
+      await navigator.clipboard.writeText(text);
+      onCopyToast?.('Copied');
+    } catch {
+      onCopyToast?.('Copy failed');
+    }
   }
   async function openIn(download) {
     try {
@@ -32,27 +45,49 @@ export default function ObjectDetail({ bucket, objKey, onCopyToast }) {
 
   return (
     <div>
-      <div className="flex items-start justify-between mb-4 gap-4">
-        <h1 style={{ fontSize: 28, lineHeight: '36px' }} className="font-bold text-[#e6edf3] break-all">
-          {name} <InfoIcon />
+      <div className="flex items-start justify-between mb-4 gap-4 flex-wrap">
+        <h1 className="text-[24px] font-bold break-all" style={{ color: colors.text.primary }}>
+          {name}{' '}
+          <span className="text-[14px] font-normal underline decoration-dotted underline-offset-2 cursor-help" style={{ color: colors.text.buttonActive }}>
+            Info
+          </span>
         </h1>
-        <div className="flex items-center gap-2 shrink-0">
-          <SecondaryBtn icon={<CopyIcon />} onClick={() => meta && copy(meta.s3_uri)}>Copy S3 URI</SecondaryBtn>
-          <SecondaryBtn onClick={() => openIn(true)}>Download</SecondaryBtn>
-          <SecondaryBtn onClick={() => openIn(false)}>Open ↗</SecondaryBtn>
-          <SecondaryBtn>Object actions ▾</SecondaryBtn>
+        <div className="flex items-center gap-2 shrink-0 flex-wrap">
+          <AwsButton icon={<AwsCopyIcon />} onClick={() => meta && copy(meta.s3_uri)}>Copy S3 URI</AwsButton>
+          <AwsButton icon={<DownloadIcon />} onClick={() => openIn(true)}>Download</AwsButton>
+          <AwsButton rightIcon={<OpenExternalIcon />} onClick={() => openIn(false)}>Open</AwsButton>
+          <AwsButton disabled>Object actions ▾</AwsButton>
         </div>
       </div>
 
-      <div className="border-b border-[#30363d] mb-6 flex gap-6">
-        <Tab active>Properties</Tab>
+      <div className="mb-6 flex gap-6" style={{ borderBottom: `2px solid ${colors.border.rowSeparator}` }}>
+        <SectionTab active>Properties</SectionTab>
       </div>
 
-      <div className="border border-[#30363d] rounded-md bg-[#0d1117] p-6 mb-6">
-        <h2 className="text-[18px] font-bold text-[#e6edf3] mb-5">Object overview</h2>
+      {err && (
+        <div className="mb-4">
+          <AwsAlert2
+            variant="error"
+            title="Couldn't load object details"
+            onDismiss={() => setErr(null)}
+          >
+            {err}
+          </AwsAlert2>
+        </div>
+      )}
 
-        {loading && <div className="text-[14px] text-[#8b949e]">Loading…</div>}
-        {err && <div className="text-[14px] text-[#f85149]">{err}</div>}
+      <div
+        className="rounded-[8px] p-6 mb-6"
+        style={{
+          backgroundColor: colors.bg.card,
+          border: `2px solid ${colors.border.cardOutline}`,
+        }}
+      >
+        <h2 className="text-[18px] font-bold mb-5" style={{ color: colors.text.primary }}>Object overview</h2>
+
+        {loading && (
+          <div className="text-[14px]" style={{ color: colors.text.info }}>Loading…</div>
+        )}
 
         {meta && (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-y-5 gap-x-12">
@@ -89,7 +124,6 @@ export default function ObjectDetail({ bucket, objKey, onCopyToast }) {
           </div>
         )}
       </div>
-
     </div>
   );
 }
@@ -97,8 +131,8 @@ export default function ObjectDetail({ bucket, objKey, onCopyToast }) {
 function Field({ label, children }) {
   return (
     <div>
-      <div className="text-[14px] font-bold text-[#e6edf3] mb-1">{label}</div>
-      <div className="text-[14px] text-[#c9d1d9]">{children}</div>
+      <div className="text-[14px] font-bold mb-1" style={{ color: colors.text.primary }}>{label}</div>
+      <div className="text-[14px]" style={{ color: colors.text.selectedRow }}>{children}</div>
     </div>
   );
 }
@@ -106,10 +140,10 @@ function Field({ label, children }) {
 function CopyableMono({ value, onCopy }) {
   return (
     <div className="flex items-start gap-1.5">
-      <button onClick={onCopy} className="shrink-0 mt-0.5 text-[#58a6ff] hover:opacity-80" title="Copy">
-        <CopyIcon />
+      <button onClick={onCopy} className="shrink-0 mt-0.5 hover:opacity-80" style={{ color: colors.text.buttonActive }} title="Copy">
+        <AwsCopyIcon />
       </button>
-      <span className="font-mono text-[13px] text-[#c9d1d9] break-all">{value}</span>
+      <span className="font-mono text-[13px] break-all" style={{ color: colors.text.selectedRow }}>{value}</span>
     </div>
   );
 }
@@ -117,19 +151,35 @@ function CopyableMono({ value, onCopy }) {
 function CopyableLink({ value, onCopy }) {
   return (
     <div className="flex items-start gap-1.5">
-      <button onClick={onCopy} className="shrink-0 mt-0.5 text-[#58a6ff] hover:opacity-80" title="Copy">
-        <CopyIcon />
+      <button onClick={onCopy} className="shrink-0 mt-0.5 hover:opacity-80" style={{ color: colors.text.buttonActive }} title="Copy">
+        <AwsCopyIcon />
       </button>
-      <a href={value} target="_blank" rel="noreferrer" className="text-[#58a6ff] hover:underline break-all text-[13px]">{value}</a>
+      <a href={value} target="_blank" rel="noreferrer" className="underline break-all text-[13px]" style={{ color: colors.text.buttonActive }}>
+        {value}
+      </a>
     </div>
   );
 }
 
-function Tab({ active, children }) {
+function SectionTab({ active, children }) {
   return (
-    <button className={`relative py-2 text-[15px] font-semibold ${active ? 'text-[#58a6ff]' : 'text-[#c9d1d9] hover:text-[#e6edf3]'}`}>
+    <button
+      className="relative py-2 text-[15px] font-semibold"
+      style={{ color: active ? colors.text.buttonActive : colors.text.info }}
+    >
       {children}
-      {active && <span className="absolute left-0 right-0 -bottom-px h-[2px] bg-[#58a6ff]" />}
+      {active && (
+        <span
+          aria-hidden="true"
+          className="absolute left-0 right-0"
+          style={{
+            height: 3,
+            bottom: -2,
+            backgroundColor: colors.text.buttonActive,
+            zIndex: 2,
+          }}
+        />
+      )}
     </button>
   );
 }
