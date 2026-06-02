@@ -17,7 +17,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from clients import app_service_client, composer_client, mongo_client
-from routers import admin_auth, asset, category_config, env, job, template
+from routers import admin_auth, asset, category_config, env, job, permissions as permissions_router, template
 from services import admin_users
 from services.permissions import seed as permissions_seed
 
@@ -55,3 +55,4 @@ app.include_router(template.router)
 app.include_router(category_config.router)
 app.include_router(asset.router)
 app.include_router(admin_auth.router)
+app.include_router(permissions_router.router)
