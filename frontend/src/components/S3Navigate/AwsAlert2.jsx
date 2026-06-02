@@ -14,8 +14,8 @@ const VARIANTS = {
     Icon: WarningTriangleIcon,
   },
   info: {
-    bg: '#001f3a',
-    border: '#0073bb',
+    bg: '#002c3c',
+    border: '#005bbc',
     iconColor: '#45abfe',
     Icon: InfoCircleIcon,
   },
@@ -102,10 +102,7 @@ function InfoCircleIcon() {
       focusable="false"
     >
       <circle cx="8" cy="8" r="7" />
-      {/* 'i' body */}
-      <path d="M8 7v4" />
-      {/* 'i' dot — near-zero-length segment so the round line-cap renders as a circle */}
-      <path d="M8 5h.01" />
+      <path d="M8 12V7M8 6V4" />
     </svg>
   );
 }
