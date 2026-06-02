@@ -7,9 +7,18 @@ class AuthError extends Error {
   }
 }
 
+class PermissionDeniedError extends Error {
+  constructor({ action, resource, reason }) {
+    super(`Permission denied: ${action} on ${resource}`);
+    this.name = 'PermissionDeniedError';
+    this.action = action;
+    this.resource = resource;
+    this.reason = reason;
+  }
+}
+
 function sanitizeErrorMessage(text, status) {
   if (!text) return `Request failed (${status})`;
-  // Strip HTML responses (e.g. 404 pages from reverse proxies)
   if (text.includes('<html') || text.includes('<!DOCTYPE')) {
     const titleMatch = text.match(/<title>([^<]*)<\/title>/i);
     const h1Match = text.match(/<h1>([^<]*)<\/h1>/i);
@@ -20,14 +29,21 @@ function sanitizeErrorMessage(text, status) {
 }
 
 async function request(path, body) {
+  const headers = { 'Content-Type': 'application/json' };
+  const adminToken = localStorage.getItem('admin_auth_token') || '';
+  if (adminToken) headers['X-Admin-Token'] = adminToken;
+
   const resp = await fetch(`${BASE}${path}`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers,
     body: JSON.stringify(body),
   });
   const text = await resp.text();
   let data;
   try { data = JSON.parse(text); } catch { data = { message: sanitizeErrorMessage(text, resp.status) }; }
+  if (resp.status === 403 && data?.detail?.error === 'permission_denied') {
+    throw new PermissionDeniedError(data.detail);
+  }
   if (resp.status === 401 || resp.status === 403) {
     throw new AuthError('Token expired or invalid. Please update your API token in the sidebar.');
   }
@@ -38,7 +54,7 @@ async function request(path, body) {
   return data;
 }
 
-export { AuthError };
+export { AuthError, PermissionDeniedError };
 
 // ---------------------------------------------------------------------------
 // Admin auth gate (AWS S3 Navigate UI)
