@@ -112,7 +112,7 @@ export default function AllConfigs({ onNavigate, bearerToken, onTokenExpired, ca
 
   const configs = cachedConfigs;
 
-  async function handleRefresh() {
+  async function handleRefresh({ force = false } = {}) {
     if (!bearerToken) {
       setError('Set your API token in the sidebar first.');
       setIsAuthError(false);
@@ -122,7 +122,7 @@ export default function AllConfigs({ onNavigate, bearerToken, onTokenExpired, ca
     setError(null);
     setIsAuthError(false);
     try {
-      await refreshConfigs();
+      await refreshConfigs({ force });
     } catch (e) {
       if (e.name === 'AuthError') {
         setIsAuthError(true);
@@ -392,7 +392,7 @@ export default function AllConfigs({ onNavigate, bearerToken, onTokenExpired, ca
             ))}
           </div>
           {/* Refresh in header */}
-          <button onClick={handleRefresh} disabled={loading}
+          <button onClick={() => handleRefresh({ force: true })} disabled={loading}
             data-testid="refresh-configs-btn"
             title="Refresh configs"
             className="text-[14px] text-[#8b949e] hover:text-[#e6edf3] transition-colors disabled:opacity-50">

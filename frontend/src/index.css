@@ -72,3 +72,11 @@ body {
 .animate-shiny-text {
   animation: shiny-text 5s linear infinite;
 }
+
+/* AWS S3 Navigate section wrapper. Page bg matches the rest of the app
+ * (GitHub-dark canvas); font is inherited from the app default. AWS-faithful
+ * touches (button colours, row selection, sort triangles, separators) come
+ * from theme.js and the AwsControls primitives — not from here. */
+.aws-s3-section {
+  background-color: #0d1117;
+}

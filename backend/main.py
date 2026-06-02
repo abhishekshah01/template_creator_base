@@ -22,6 +22,7 @@ from routers import admin_auth, asset, category_config, env, job, template
 
 @asynccontextmanager
 async def lifespan(_app: FastAPI):
+    await mongo_client.ensure_indexes()
     yield
     await app_service_client.aclose()
     await composer_client.aclose()

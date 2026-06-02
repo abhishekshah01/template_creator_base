@@ -7,6 +7,7 @@ import { ConfigAll, ConfigCreate, ConfigSummary, ConfigDetailPage } from './comp
 import Settings from './components/Settings';
 import S3Navigate from './components/S3Navigate';
 import Banner from './components/Banner';
+import AwsAlert2 from './components/S3Navigate/AwsAlert2';
 import Guide from './components/Guide';
 import { api } from './api';
 
@@ -48,7 +49,7 @@ export default function App() {
           setCachedConfigs(Array.isArray(list) ? list : []);
           setConfigsLoaded(true);
         } catch {
-          setEnvError(`Could not reach "${data.active}". The environment may not exist or its services are not running.`);
+          setEnvError(`Could not reach "${data.active}". The environment may not exist, its services may be down, or your bearer token for this environment is missing or expired.`);
           setConfigsLoaded(true);
         }
       }
@@ -81,7 +82,7 @@ export default function App() {
           setConfigsStale(false);
           setConfigsLoaded(true);
         } catch (valErr) {
-          setEnvError(`Could not reach "${envName}". The environment may not exist or its services are not running.`);
+          setEnvError(`Could not reach "${envName}". The environment may not exist, its services may be down, or your bearer token for this environment is missing or expired.`);
           setCachedConfigs([]);
           setConfigsStale(false);
           setConfigsLoaded(true); // prevent AllConfigs from retrying
@@ -106,9 +107,9 @@ export default function App() {
   const [configsStale, setConfigsStale] = useState(false);
   const [configsLoaded, setConfigsLoaded] = useState(false);
 
-  async function refreshConfigs() {
+  async function refreshConfigs({ force = false } = {}) {
     if (!bearerToken) return [];
-    const data = await api.listCategoryConfigs(bearerToken);
+    const data = await api.listCategoryConfigs(bearerToken, force);
     const list = Array.isArray(data) ? data : (data?.configs || data?.data || data?.results || []);
     const configs = Array.isArray(list) ? list : [];
     setCachedConfigs(configs);
@@ -233,22 +234,72 @@ export default function App() {
             {/* S3 page banners — own padded zone, in flow above the full-bleed page */}
             {(envError || (bearerToken && !infoBannerDismissed)) && (
               <div className="shrink-0 px-6 pt-6 space-y-2">
-                {envError && (
-                  <>
-                    <Banner variant="critical" onDismiss={() => setEnvError(null)}>
-                      {envError}{previousEnv && <> — <button onClick={switchToPreviousEnv} className="text-[#58a6ff] hover:underline font-medium">switch back to {previousEnv}</button></>}
-                    </Banner>
-                    {!envWarningDismissed && (
-                      <Banner variant="warning" onDismiss={() => setEnvWarningDismissed(true)}>
-                        Switch to a valid environment using the dropdown in the sidebar, or check the environment name for typos.
-                      </Banner>
-                    )}
-                  </>
-                )}
+                {envError && (() => {
+                  const isConn = envError.startsWith('Could not reach');
+                  const dot = envError.indexOf('. ');
+                  const colon = envError.indexOf(': ');
+                  const errTitle = isConn
+                    ? (dot > 0 ? envError.slice(0, dot) : envError)
+                    : (colon > 0 ? envError.slice(0, colon) : envError);
+                  const switchDetail = !isConn && colon > 0 ? envError.slice(colon + 2) : null;
+                  const switchBack = previousEnv && (
+                    <button
+                      type="button"
+                      onClick={switchToPreviousEnv}
+                      className="underline underline-offset-2 hover:opacity-90"
+                      style={{ color: '#ffffff' }}
+                    >
+                      Switch back to {previousEnv}
+                    </button>
+                  );
+                  return (
+                    <>
+                      <AwsAlert2
+                        variant="error"
+                        title={errTitle}
+                        onDismiss={() => setEnvError(null)}
+                      >
+                        {isConn ? (
+                          <>
+                            The environment may not exist, its services may be down and need a redeploy, or your bearer token for <strong style={{ color: '#ffffff' }}>{activeEnv}</strong> is missing or expired.
+                            {switchBack && <> {switchBack}.</>}
+                          </>
+                        ) : (
+                          <>
+                            {switchDetail}
+                            {switchBack && <>{switchDetail ? ' ' : ''}{switchBack}.</>}
+                          </>
+                        )}
+                      </AwsAlert2>
+                      {!envWarningDismissed && (
+                        <AwsAlert2
+                          variant="warning"
+                          title="How to recover"
+                          onDismiss={() => setEnvWarningDismissed(true)}
+                        >
+                          Switch environments via the sidebar dropdown, double-check the name for typos, or open{' '}
+                          <button
+                            type="button"
+                            onClick={() => setActivePage('settings')}
+                            className="underline underline-offset-2 hover:opacity-90"
+                            style={{ color: '#ffffff' }}
+                          >
+                            Settings
+                          </button>
+                          {' '}to paste a fresh bearer token if yours has expired.
+                        </AwsAlert2>
+                      )}
+                    </>
+                  );
+                })()}
                 {!envError && bearerToken && !infoBannerDismissed && (
-                  <Banner variant="upsell" onDismiss={() => setInfoBannerDismissed(true)}>
-                    API tokens are environment-specific. Ensure your token matches the active environment <strong className="text-white">({activeEnv})</strong>.
-                  </Banner>
+                  <AwsAlert2
+                    variant="tip"
+                    title="API tokens are environment-specific"
+                    onDismiss={() => setInfoBannerDismissed(true)}
+                  >
+                    Ensure your token matches the active environment <strong style={{ color: '#ffffff' }}>({activeEnv})</strong>.
+                  </AwsAlert2>
                 )}
               </div>
             )}

@@ -1,8 +1,17 @@
 import { useEffect, useMemo, useState } from 'react';
+
+import AwsAlert2 from './AwsAlert2';
+import { AwsButton, AwsRadio, AwsSearchInput, CopyIcon as AwsCopyIcon, RefreshIcon, SortTriangleV2 } from './AwsControls';
 import { s3api } from './api';
 import { formatAwsDate } from './format';
+import { colors } from './theme';
 
 const PAGE_SIZE = 10;
+const COLUMNS = [
+  { key: 'name',          label: 'Name',          width: null },          // leftover
+  { key: 'region',        label: 'AWS Region',    width: 260 },
+  { key: 'creation_date', label: 'Creation date', width: 260 },
+];
 
 export default function BucketList({ onOpenBucket }) {
   const [buckets, setBuckets] = useState([]);
@@ -10,13 +19,14 @@ export default function BucketList({ onOpenBucket }) {
   const [err, setErr] = useState(null);
   const [filter, setFilter] = useState('');
   const [page, setPage] = useState(1);
-  const [selected, setSelected] = useState(null); // bucket name
+  const [selected, setSelected] = useState(null);
+  const [sort, setSort] = useState({ key: 'name', dir: 'asc' });
 
-  async function load() {
+  async function load({ force = false } = {}) {
     setLoading(true);
     setErr(null);
     try {
-      const data = await s3api.listBuckets();
+      const data = await s3api.listBuckets(force);
       setBuckets(data.buckets || []);
     } catch (e) {
       setErr(e.message);
@@ -29,100 +39,306 @@ export default function BucketList({ onOpenBucket }) {
 
   const filtered = useMemo(() => {
     const q = filter.trim().toLowerCase();
-    if (!q) return buckets;
-    return buckets.filter(b => b.name.toLowerCase().includes(q));
-  }, [buckets, filter]);
+    const rows = q ? buckets.filter(b => b.name.toLowerCase().includes(q)) : buckets;
+    const { key, dir } = sort;
+    const mult = dir === 'asc' ? 1 : -1;
+    return [...rows].sort((a, b) => {
+      const av = a[key];
+      const bv = b[key];
+      if (av == null && bv == null) return 0;
+      if (av == null) return 1;
+      if (bv == null) return -1;
+      if (av < bv) return -1 * mult;
+      if (av > bv) return  1 * mult;
+      return 0;
+    });
+  }, [buckets, filter, sort]);
 
   const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const pageItems = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
   useEffect(() => { if (page > pageCount) setPage(1); }, [pageCount, page]);
 
+  const selectedBucket = pageItems.find(b => b.name === selected) || filtered.find(b => b.name === selected) || null;
+  const hasSelection = !!selectedBucket;
+
+  function toggleSort(key) {
+    setSort(prev => prev.key === key ? { key, dir: prev.dir === 'asc' ? 'desc' : 'asc' } : { key, dir: 'asc' });
+  }
+
+  function copyArn() {
+    if (!selectedBucket) return;
+    navigator.clipboard.writeText(`arn:aws:s3:::${selectedBucket.name}`);
+  }
+
   return (
     <div>
-      <h1 style={{ fontSize: 28, lineHeight: '36px' }} className="font-bold text-[#e6edf3] mb-1">Buckets</h1>
+      <h1 className="text-[24px] font-bold mb-3" style={{ color: colors.text.primary }}>Buckets</h1>
 
-      <div className="border-b border-[#30363d] mb-6 flex gap-6">
-        <Tab active>General purpose buckets <Pill>All AWS Regions</Pill></Tab>
+      <div className="mb-6 flex gap-6" style={{ borderBottom: `2px solid ${colors.border.rowSeparator}` }}>
+        <SectionTab active>
+          General purpose buckets <RegionPill>All AWS Regions</RegionPill>
+        </SectionTab>
+        <SectionTab>Directory buckets</SectionTab>
       </div>
 
-      <div className="border border-[#30363d] rounded-md bg-[#0d1117] p-5">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-[18px] font-bold text-[#e6edf3]">
-            General purpose buckets <span className="text-[#8b949e] font-normal">({buckets.length})</span>
-            <InfoIcon />
+      {err && (
+        <div className="mb-4">
+          <AwsAlert2
+            variant="error"
+            title="Couldn't load buckets"
+            onDismiss={() => setErr(null)}
+          >
+            {err}
+          </AwsAlert2>
+        </div>
+      )}
+
+      <div
+        className="rounded-[12px] p-5"
+        style={{
+          backgroundColor: colors.bg.card,
+          border: `1px solid ${colors.border.cardOutline}`,
+        }}
+      >
+        <div className="flex items-center justify-between mb-3 flex-wrap gap-3">
+          <h2 className="text-[18px] font-bold inline-flex items-center gap-2" style={{ color: colors.text.primary }}>
+            <span>
+              General purpose buckets <span style={{ color: colors.text.info }} className="font-normal">
+                {hasSelection ? `(1/${buckets.length})` : `(${buckets.length})`}
+              </span>
+            </span>
+            <span className="text-[14px] font-normal underline decoration-dotted underline-offset-2 cursor-help" style={{ color: colors.text.buttonActive }}>Info</span>
           </h2>
         </div>
 
         <div className="flex items-center gap-2 mb-3 flex-wrap">
-          <RefreshButton onClick={load} loading={loading} />
+          <AwsButton variant="icon" title="Refresh" onClick={() => load({ force: true })} icon={<RefreshIcon />} />
+          <AwsButton disabled={!hasSelection} onClick={copyArn} icon={<AwsCopyIcon />}>Copy ARN</AwsButton>
+          <AwsButton disabled>Empty</AwsButton>
+          <AwsButton disabled>Delete</AwsButton>
+          <div className="ml-auto">
+            <AwsButton variant="primary" disabled>Create bucket</AwsButton>
+          </div>
         </div>
 
-        <p className="text-[13px] text-[#8b949e] mb-3">Buckets are containers for data stored in S3.</p>
+        <p className="text-[13px] mb-4" style={{ color: colors.text.info }}>
+          Buckets are containers for data stored in S3.
+        </p>
 
-        <div className="flex items-center gap-3 mb-3">
-          <div className="flex-1 relative max-w-[640px]">
-            <SearchIcon />
-            <input
+        <div className="flex items-center gap-3 mb-3 flex-wrap">
+          <div className="flex-1 max-w-[640px] min-w-[280px]">
+            <AwsSearchInput
               value={filter}
-              onChange={e => { setFilter(e.target.value); setPage(1); }}
+              onChange={(v) => { setFilter(v); setPage(1); }}
               placeholder="Find buckets by name"
-              data-testid="s3-bucket-search"
-              className="w-full pl-9 pr-3 py-2 bg-[#0d1117] border border-[#30363d] rounded-[4px] text-[14px] text-[#e6edf3] outline-none focus:border-[#1f6feb]"
             />
           </div>
-          <Pager page={page} pageCount={pageCount} onChange={setPage} />
+          <BucketPager page={page} pageCount={pageCount} onChange={setPage} />
         </div>
 
-        {/* Table */}
-        <div className="border border-[#30363d] rounded-[4px] overflow-hidden">
-          <table className="w-full text-[14px]">
+        <div className="rounded-[4px] overflow-x-auto min-w-0">
+          <table
+            className="w-full text-[14px] text-left"
+            style={{ tableLayout: 'fixed', borderCollapse: 'separate', borderSpacing: 0 }}
+          >
+            <colgroup>
+              <col style={{ width: 44 }} />
+              {COLUMNS.map((c) => (
+                <col key={c.key} style={c.width ? { width: c.width } : undefined} />
+              ))}
+            </colgroup>
             <thead>
-              <tr className="bg-[#0d1117] border-b border-[#30363d] text-[#e6edf3]">
-                <th className="w-10 px-3 py-2"></th>
-                <th className="text-left px-3 py-2 font-semibold">
-                  <span className="inline-flex items-center gap-1">Name <SortArrows /></span>
-                </th>
-                <th className="text-left px-3 py-2 font-semibold">
-                  <span className="inline-flex items-center gap-1">AWS Region <FilterTriangle /></span>
-                </th>
-                <th className="text-left px-3 py-2 font-semibold">
-                  <span className="inline-flex items-center gap-1">Creation date <FilterTriangle /></span>
-                </th>
+              <tr>
+                <HeaderCell aria-hidden="true" showDivider />
+                {COLUMNS.map((col, idx) => {
+                  const isSorted = sort.key === col.key;
+                  const isLast = idx === COLUMNS.length - 1;
+                  return (
+                    <HeaderCell key={col.key} showDivider={!isLast}>
+                      <button
+                        type="button"
+                        onClick={() => toggleSort(col.key)}
+                        className="flex items-center justify-between w-full pr-2"
+                        style={{ color: colors.text.info }}
+                      >
+                        <span>{col.label}</span>
+                        <SortTriangleV2
+                          active={isSorted}
+                          direction={isSorted ? sort.dir : null}
+                        />
+                      </button>
+                    </HeaderCell>
+                  );
+                })}
               </tr>
             </thead>
             <tbody>
               {loading && (
-                <tr><td colSpan={4} className="px-3 py-8 text-center text-[#8b949e] text-[13px]">Loading buckets…</td></tr>
-              )}
-              {err && !loading && (
-                <tr><td colSpan={4} className="px-3 py-6 text-[13px] text-[#f85149]">{err}</td></tr>
+                <BodyMessage>Loading buckets…</BodyMessage>
               )}
               {!loading && !err && pageItems.length === 0 && (
-                <tr><td colSpan={4} className="px-3 py-8 text-center text-[#8b949e] text-[13px]">No buckets match your search.</td></tr>
+                <BodyMessage>No buckets match your search.</BodyMessage>
               )}
-              {!loading && !err && pageItems.map(b => (
-                <tr key={b.name}
-                  className={`border-b border-[#21262d] hover:bg-[#161b22] transition-colors ${selected === b.name ? 'bg-[#1f6feb]/10' : ''}`}>
-                  <td className="px-3 py-3">
-                    <input type="radio" name="bucket" className="accent-[#1f6feb] w-4 h-4"
-                      checked={selected === b.name} onChange={() => setSelected(b.name)} />
-                  </td>
-                  <td className="px-3 py-3">
-                    <button onClick={() => onOpenBucket(b)}
-                      data-testid={`s3-bucket-${b.name}`}
-                      className="text-[#58a6ff] hover:underline decoration-1 underline-offset-2 text-left">
-                      {b.name}
-                    </button>
-                  </td>
-                  <td className="px-3 py-3 text-[#c9d1d9]">{regionLabel(b.region)}</td>
-                  <td className="px-3 py-3 text-[#c9d1d9] whitespace-nowrap">{formatAwsDate(b.creation_date)}</td>
-                </tr>
+              {!loading && pageItems.map(b => (
+                <BucketRow
+                  key={b.name}
+                  bucket={b}
+                  selected={selected === b.name}
+                  onSelect={() => setSelected(selected === b.name ? null : b.name)}
+                  onOpen={() => onOpenBucket(b)}
+                />
               ))}
             </tbody>
           </table>
         </div>
       </div>
     </div>
+  );
+}
+
+function BucketRow({ bucket, selected, onSelect, onOpen }) {
+  const ringColor = selected ? colors.border.rowSelected : 'transparent';
+  const separator = `1px solid ${colors.border.rowSeparator}`;
+  const cellBase = {
+    padding: '8px 12px',
+    backgroundColor: selected ? colors.bg.rowSelected : 'transparent',
+    color: colors.text.selectedRow,
+    verticalAlign: 'middle',
+  };
+  const top = `2px solid ${ringColor}`;
+  const bottom = selected
+    ? `2px solid ${ringColor}`
+    : separator;
+
+  return (
+    <tr>
+      <td
+        style={{
+          ...cellBase,
+          borderTop: top,
+          borderBottom: bottom,
+          borderLeft: `2px solid ${ringColor}`,
+          borderTopLeftRadius: selected ? 8 : 0,
+          borderBottomLeftRadius: selected ? 8 : 0,
+        }}
+      >
+        <AwsRadio
+          checked={selected}
+          onChange={onSelect}
+          ariaLabel={`Select bucket ${bucket.name}`}
+        />
+      </td>
+      <td style={{ ...cellBase, borderTop: top, borderBottom: bottom }}>
+        <button
+          type="button"
+          onClick={onOpen}
+          className="text-left underline decoration-1 underline-offset-2 break-words"
+          style={{ color: colors.text.buttonActive }}
+        >
+          {bucket.name}
+        </button>
+      </td>
+      <td style={{ ...cellBase, borderTop: top, borderBottom: bottom }}>
+        {regionLabel(bucket.region)}
+      </td>
+      <td
+        style={{
+          ...cellBase,
+          borderTop: top,
+          borderBottom: bottom,
+          borderRight: `2px solid ${ringColor}`,
+          borderTopRightRadius: selected ? 8 : 0,
+          borderBottomRightRadius: selected ? 8 : 0,
+        }}
+      >
+        {formatAwsDate(bucket.creation_date)}
+      </td>
+    </tr>
+  );
+}
+
+function BodyMessage({ children, error = false }) {
+  return (
+    <tr>
+      <td
+        colSpan={4}
+        style={{
+          padding: '24px 12px',
+          textAlign: 'center',
+          color: error ? '#e35b66' : colors.text.info,
+          fontSize: 13,
+        }}
+      >
+        {children}
+      </td>
+    </tr>
+  );
+}
+
+function HeaderCell({ children, showDivider }) {
+  return (
+    <th
+      style={{
+        padding: '8px 12px',
+        color: colors.text.info,
+        position: 'relative',
+        textAlign: 'left',
+        fontWeight: 700,
+        borderBottom: `1px solid ${colors.border.rowSeparator}`,
+      }}
+    >
+      {children}
+      {showDivider && (
+        <span
+          aria-hidden="true"
+          style={{
+            position: 'absolute',
+            right: 0,
+            top: 6,
+            bottom: 6,
+            width: 1,
+            backgroundColor: colors.border.rowSeparator,
+          }}
+        />
+      )}
+    </th>
+  );
+}
+
+function SectionTab({ active, children }) {
+  return (
+    <button
+      className="relative py-2 text-[15px] font-semibold"
+      style={{ color: active ? colors.text.buttonActive : colors.text.info }}
+    >
+      {children}
+      {active && (
+        <span
+          aria-hidden="true"
+          className="absolute left-0 right-0"
+          style={{
+            height: 3,
+            bottom: 0,
+            backgroundColor: colors.text.buttonActive,
+            zIndex: 2,
+          }}
+        />
+      )}
+    </button>
+  );
+}
+
+function RegionPill({ children }) {
+  return (
+    <span
+      className="ml-1.5 px-1.5 py-0.5 rounded text-[11px] align-middle font-normal"
+      style={{
+        backgroundColor: '#21262d',
+        color: colors.text.selectedRow,
+      }}
+    >
+      {children}
+    </span>
   );
 }
 
@@ -142,7 +358,84 @@ function regionLabel(code) {
   return map[code] || code;
 }
 
-// ---------- Shared button / icon primitives (used by other views too) ----------
+function BucketPager({ page, pageCount, onChange }) {
+  // Windowed view: keep the current page in the middle when there are many.
+  // For <= 7 pages, render them all. Beyond that, show 7 around current.
+  const windowSize = 7;
+  let start = 1;
+  let end = pageCount;
+  if (pageCount > windowSize) {
+    const half = Math.floor(windowSize / 2);
+    start = Math.max(1, page - half);
+    end = Math.min(pageCount, start + windowSize - 1);
+    start = Math.max(1, end - windowSize + 1);
+  }
+  const pages = [];
+  for (let i = start; i <= end; i += 1) pages.push(i);
+
+  return (
+    <div className="inline-flex items-center gap-2 text-[14px]" style={{ color: colors.text.selectedRow }}>
+      <PagerBtn disabled={page <= 1} onClick={() => onChange(Math.max(1, page - 1))}>
+        <PagerChevron direction="left" />
+      </PagerBtn>
+      {pages.map((n) => (
+        <button
+          key={n}
+          onClick={() => onChange(n)}
+          className="min-w-[24px] px-1 text-[16px]"
+          style={{
+            color: page === n ? colors.text.primary : colors.text.buttonActive,
+            fontWeight: page === n ? 700 : 600,
+            cursor: 'pointer',
+          }}
+        >
+          {n}
+        </button>
+      ))}
+      <PagerBtn disabled={page >= pageCount} onClick={() => onChange(Math.min(pageCount, page + 1))}>
+        <PagerChevron direction="right" />
+      </PagerBtn>
+    </div>
+  );
+}
+
+function PagerBtn({ disabled, onClick, children }) {
+  return (
+    <button
+      disabled={disabled}
+      onClick={onClick}
+      className="px-2 py-1"
+      style={{
+        color: colors.text.info,
+        opacity: disabled ? 0.4 : 1,
+        cursor: disabled ? 'not-allowed' : 'pointer',
+      }}
+    >
+      {children}
+    </button>
+  );
+}
+
+function PagerChevron({ direction }) {
+  const d = direction === 'left' ? 'M10 4l-4 4 4 4' : 'M6 4l4 4-4 4';
+  return (
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 16 16"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d={d} />
+    </svg>
+  );
+}
+
+// Helpers reused by ObjectList / ObjectDetail / UploadPage / etc. Kept exported
+// from this file for back-compat with their existing import paths.
 
 export function Tab({ active, children }) {
   return (
