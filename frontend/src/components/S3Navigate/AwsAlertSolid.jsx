@@ -28,7 +28,6 @@ export default function AwsAlertSolid({
       className={`flex items-start gap-3 px-4 py-3 rounded-[8px] text-[14px] leading-[1.45] ${className}`}
       style={{
         backgroundColor: v.bg,
-        border: `2px solid ${v.bg}`,
         color: v.textColor,
       }}
     >

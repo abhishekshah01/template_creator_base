@@ -56,7 +56,7 @@ export default function DeletePage({ bucket, prefix, objects, onCancel, onDone }
 
       {denied && (
         <div className="mb-4">
-          <PermissionDeniedBanner error={denied} />
+          <PermissionDeniedBanner error={denied} tone="solid" />
         </div>
       )}
 

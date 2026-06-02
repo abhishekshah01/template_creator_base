@@ -1,5 +1,5 @@
+import AwsAlert2 from './AwsAlert2';
 import AwsAlertSolid from './AwsAlertSolid';
-import { colors } from './theme';
 
 const ACTION_LABELS = {
   'tc:s3:ListBuckets': 'list buckets',
@@ -12,34 +12,44 @@ const ACTION_LABELS = {
   'tc:s3:InvalidateCache': 'invalidate the cache',
 };
 
-export default function PermissionDeniedBanner({ error, onRefresh, className = '' }) {
+const LINK_COLOR = '#45abfe';
+
+export default function PermissionDeniedBanner({ error, onRefresh, tone = 'outlined', className = '' }) {
   if (!error) return null;
   const action = error.action || 'perform this action';
   const label = ACTION_LABELS[action] || action;
-  return (
-    <AwsAlertSolid
-      variant="error"
-      title={`You don't have permissions to ${label}`}
-      className={className}
-    >
-      Your administrator must grant you{' '}
-      <code style={{ fontFamily: 'inherit', fontWeight: 600 }}>{action}</code>{' '}
-      to perform this action.
-      {onRefresh && (
-        <>
-          {' '}After you obtain the necessary permission, choose{' '}
-          <button
-            type="button"
-            onClick={onRefresh}
-            className="underline underline-offset-2 hover:opacity-90"
-            style={{ color: colors.text.primary, fontWeight: 600 }}
-          >
-            Refresh
-          </button>
-          .
-        </>
+  const title = `You don't have permissions to ${label}`;
+  const body = (
+    <>
+      After you or your administrator has updated your permissions to allow the{' '}
+      <code style={{ fontFamily: 'inherit', fontWeight: 600 }}>{action}</code> action,{' '}
+      {onRefresh ? (
+        <button
+          type="button"
+          onClick={onRefresh}
+          className="underline underline-offset-2 hover:opacity-90"
+          style={{ color: LINK_COLOR }}
+        >
+          refresh this page
+        </button>
+      ) : (
+        'refresh this page'
       )}
-    </AwsAlertSolid>
+      .
+    </>
+  );
+
+  if (tone === 'solid') {
+    return (
+      <AwsAlertSolid variant="error" title={title} className={className}>
+        {body}
+      </AwsAlertSolid>
+    );
+  }
+  return (
+    <AwsAlert2 variant="error" title={title} className={className}>
+      {body}
+    </AwsAlert2>
   );
 }
 
