@@ -1,13 +1,10 @@
 import { useState } from 'react';
-import { s3api } from './api';
-import { PrimaryBtn, InfoIcon } from './BucketList';
-import AwsAlert from './AwsAlert';
 
-// AWS-console-style Create folder page. S3 doesn't have real folders —
-// we create a zero-byte object whose key ends in "/" so the listing
-// shows it as a folder. The slash is auto-appended; user can't type one.
-//
-// onDone(folderName) is called after a successful create.
+import AwsAlert2 from './AwsAlert2';
+import { AwsButton, OpenExternalIconV2 } from './AwsControls';
+import { s3api } from './api';
+import { colors } from './theme';
+
 export default function CreateFolderPage({ bucket, prefix, onCancel, onDone }) {
   const [name, setName] = useState('');
   const [err, setErr] = useState(null);
@@ -46,66 +43,90 @@ export default function CreateFolderPage({ bucket, prefix, onCancel, onDone }) {
   }
 
   return (
-    <div className="max-w-[920px]">
-      <h1 style={{ fontSize: 28, lineHeight: '36px' }} className="font-bold text-[#e6edf3] mb-1">
-        Create folder <InfoIcon />
+    <div className="max-w-[1100px]">
+      <h1 className="text-[28px] font-bold mb-1 inline-flex items-baseline gap-2" style={{ color: colors.text.primary }}>
+        Create folder
+        <span className="text-[14px] font-normal underline decoration-dotted underline-offset-2 cursor-help" style={{ color: colors.text.buttonActive }}>
+          Info
+        </span>
       </h1>
-      <p className="text-[13px] text-[#8b949e] mb-5">
-        Use folders to group objects in buckets. When you create a folder, S3 creates an object
-        using the name that you specify followed by a slash (/). This object then appears as a
-        folder in the console.
+      <p className="text-[14px] mb-5 max-w-[1000px]" style={{ color: colors.text.info }}>
+        Use folders to group objects in buckets. When you create a folder, S3 creates an object using the name that you specify followed by a slash (/). This object then appears as a folder in the console.
       </p>
 
       <div className="mb-4">
-        <AwsAlert variant="info" tone="outlined">
-          Folders are a UX convenience over S3 prefixes — they don't enforce
-          permissions and aren't billed separately.
-        </AwsAlert>
+        <AwsAlert2 variant="info" title="Folders are a UX convenience over S3 prefixes">
+          They don't enforce permissions and aren't billed separately — the slash in the key is what makes the object appear as a folder when you list the bucket.
+        </AwsAlert2>
       </div>
 
       {err && (
         <div className="mb-4">
-          <AwsAlert variant="error" tone="outlined" onDismiss={() => setErr(null)}>
+          <AwsAlert2 variant="error" title="Could not create the folder" onDismiss={() => setErr(null)}>
             {err}
-          </AwsAlert>
+          </AwsAlert2>
         </div>
       )}
 
-      <form onSubmit={handleCreate} className="border border-[#30363d] rounded-md bg-[#0d1117] p-5 mb-6">
-        <h2 className="text-[16px] font-bold text-[#e6edf3] mb-4">Folder</h2>
-        <label className="block text-[13px] font-semibold text-[#e6edf3] mb-1">Folder name</label>
-        <div className="flex items-center gap-2 max-w-[640px]">
+      <form
+        onSubmit={handleCreate}
+        className="rounded-[12px] p-5 mb-6"
+        style={{ backgroundColor: colors.bg.card, border: `1px solid ${colors.border.cardOutline}` }}
+      >
+        <h2 className="text-[18px] font-bold mb-4" style={{ color: colors.text.primary }}>Folder</h2>
+        <label className="block text-[14px] font-bold mb-1" style={{ color: colors.text.primary }}>
+          Folder name
+        </label>
+        <div className="flex items-center gap-3 max-w-[860px]">
           <input
             type="text"
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder="Enter folder name"
             disabled={creating}
-            className="flex-1 px-3 py-2 bg-[#0d1117] border border-[#30363d] rounded-[2px] text-[14px] text-[#e6edf3] outline-none focus:border-[#1f6feb] focus:shadow-[0_0_0_3px_rgba(31,111,235,0.25)] placeholder:text-[#484f58]"
             autoFocus
+            className="flex-1 h-[34px] px-3 text-[14px] outline-none focus:shadow-[0_0_0_2px_rgba(31,111,235,0.3)] placeholder:italic"
+            style={{
+              backgroundColor: '#0d1117',
+              border: `1px solid ${colors.border.inputDefault}`,
+              borderRadius: 8,
+              color: colors.text.primary,
+            }}
           />
-          <span className="text-[14px] text-[#8b949e]">/</span>
+          <span className="text-[18px]" style={{ color: colors.text.selectedRow }}>/</span>
         </div>
-        <p className="mt-2 text-[12px] text-[#8b949e]">
+        <p className="mt-2 text-[14px]" style={{ color: colors.text.info }}>
           Folder names can't contain "/".{' '}
           <a
             href="https://docs.aws.amazon.com/AmazonS3/latest/userguide/object-keys.html"
             target="_blank"
             rel="noreferrer"
-            className="text-[#58a6ff] underline decoration-dashed underline-offset-2"
+            className="inline-flex items-center gap-1 underline underline-offset-2"
+            style={{ color: colors.text.buttonActive }}
           >
             See rules for naming
+            <OpenExternalIconV2 />
           </a>
         </p>
       </form>
 
       <div className="flex items-center justify-end gap-3">
-        <button onClick={onCancel} className="px-4 py-1.5 text-[14px] text-[#58a6ff] hover:underline">
+        <button
+          type="button"
+          onClick={onCancel}
+          disabled={creating}
+          className="px-4 py-1.5 text-[14px] disabled:opacity-50 disabled:cursor-not-allowed"
+          style={{ color: colors.text.buttonActive }}
+        >
           Cancel
         </button>
-        <PrimaryBtn onClick={handleCreate} disabled={creating || !name.trim()}>
+        <AwsButton
+          variant="primary"
+          onClick={handleCreate}
+          disabled={creating || !name.trim()}
+        >
           {creating ? 'Creating…' : 'Create folder'}
-        </PrimaryBtn>
+        </AwsButton>
       </div>
     </div>
   );
