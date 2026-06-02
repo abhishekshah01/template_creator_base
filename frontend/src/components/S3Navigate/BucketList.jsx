@@ -187,7 +187,7 @@ export default function BucketList({ onOpenBucket }) {
               )}
               {!loading && denied && (
                 <tr>
-                  <td colSpan={4} style={{ padding: 0 }}>
+                  <td colSpan={4} style={{ padding: '12px 0' }}>
                     <PermissionDeniedBanner
                       error={denied}
                       onRefresh={() => load({ force: true })}
