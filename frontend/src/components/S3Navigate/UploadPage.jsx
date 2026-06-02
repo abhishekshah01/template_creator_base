@@ -17,9 +17,6 @@ export default function UploadPage({ bucket, prefix, onCancel, onDone }) {
   const [selected, setSelected] = useState(new Set());
   const [sort, setSort] = useState({ key: 'name', dir: 'asc' });
   const [dragging, setDragging] = useState(false);
-  const [destOpen, setDestOpen] = useState(false);
-  const [permOpen, setPermOpen] = useState(false);
-  const [propsOpen, setPropsOpen] = useState(false);
 
   const totalBytes = items.reduce((s, it) => s + (it.file.size || 0), 0);
   const hasProgress = Object.keys(progress).length > 0;
@@ -126,8 +123,8 @@ export default function UploadPage({ bucket, prefix, onCancel, onDone }) {
           Info
         </span>
       </h1>
-      <p className="text-[13px] mb-5 max-w-[820px]" style={{ color: colors.text.info }}>
-        Add the files and folders you want to upload to S3. Files are uploaded with a presigned PUT URL minted by app-service; this app never touches AWS credentials directly.
+      <p className="text-[14px] mb-5 max-w-[860px]" style={{ color: colors.text.info }}>
+        Add the files and folders you want to upload to S3. Files are uploaded with a presigned PUT URL minted by the Emergent app-service; this app never touches AWS credentials directly.
       </p>
 
       {err && (
@@ -202,7 +199,7 @@ export default function UploadPage({ bucket, prefix, onCancel, onDone }) {
                   : '(0)'}
               </span>
             </h2>
-            <p className="text-[12px] mt-0.5" style={{ color: colors.text.info }}>
+            <p className="text-[14px] mt-1" style={{ color: colors.text.info }}>
               All files and folders in this table will be uploaded.
             </p>
           </div>
@@ -338,60 +335,16 @@ export default function UploadPage({ bucket, prefix, onCancel, onDone }) {
             Info
           </span>
         </h2>
-        <div className="text-[13px] font-bold mb-1" style={{ color: colors.text.primary }}>Destination</div>
+        <div className="text-[14px] font-bold mb-1" style={{ color: colors.text.primary }}>Destination</div>
         <a
           href="#"
           onClick={(e) => e.preventDefault()}
           className="inline-flex items-center gap-1.5 underline underline-offset-2 text-[14px]"
-          style={{ color: colors.text.buttonActive, fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace' }}
+          style={{ color: colors.text.buttonActive }}
         >
           s3://{bucket}/{prefix || ''}
           <OpenExternalIconV2 />
         </a>
-
-        <Collapsible
-          open={destOpen}
-          onToggle={() => setDestOpen(!destOpen)}
-          title="Destination details"
-          description="Bucket settings that impact new objects stored in the specified destination."
-          className="mt-4"
-        >
-          <p className="text-[13px]" style={{ color: colors.text.info }}>
-            These settings inherit from the bucket and cannot be overridden from this app.
-          </p>
-        </Collapsible>
-      </div>
-
-      <div
-        className="rounded-[12px] p-5 mb-4"
-        style={{ backgroundColor: colors.bg.card, border: `1px solid ${colors.border.cardOutline}` }}
-      >
-        <Collapsible
-          open={permOpen}
-          onToggle={() => setPermOpen(!permOpen)}
-          title="Permissions"
-          description="Grant public access and access to other AWS accounts."
-        >
-          <p className="text-[13px]" style={{ color: colors.text.info }}>
-            Object ACLs follow the bucket's defaults and can't be set from this app. Uploads are private unless the bucket policy says otherwise.
-          </p>
-        </Collapsible>
-      </div>
-
-      <div
-        className="rounded-[12px] p-5 mb-6"
-        style={{ backgroundColor: colors.bg.card, border: `1px solid ${colors.border.cardOutline}` }}
-      >
-        <Collapsible
-          open={propsOpen}
-          onToggle={() => setPropsOpen(!propsOpen)}
-          title="Properties"
-          description="Specify storage class, encryption settings, tags, and more."
-        >
-          <p className="text-[13px]" style={{ color: colors.text.info }}>
-            Storage class, server-side encryption, and tags follow the bucket's defaults. Configure these on the bucket itself, not from this upload.
-          </p>
-        </Collapsible>
       </div>
 
       <div className="flex items-center justify-end gap-3 mt-6">
@@ -535,48 +488,6 @@ function StatusCell({ progress }) {
   if (progress.status === 'done') return <span style={{ color: '#3fb950' }}>Done</span>;
   if (progress.status === 'failed') return <span style={{ color: '#fe6b58' }} title={progress.err}>Failed</span>;
   return null;
-}
-
-function Collapsible({ open, onToggle, title, description, children, className = '' }) {
-  return (
-    <div className={className}>
-      <button
-        type="button"
-        onClick={onToggle}
-        className="flex items-start gap-2 text-left w-full"
-      >
-        <CaretIcon open={open} />
-        <div>
-          <div className="text-[16px] font-bold" style={{ color: colors.text.primary }}>{title}</div>
-          <div className="text-[12px] mt-0.5" style={{ color: colors.text.info }}>{description}</div>
-        </div>
-      </button>
-      {open && <div className="mt-3 pl-6">{children}</div>}
-    </div>
-  );
-}
-
-function CaretIcon({ open }) {
-  return (
-    <svg
-      width="12"
-      height="12"
-      viewBox="0 0 16 16"
-      fill={colors.text.selectedRow}
-      stroke={colors.text.selectedRow}
-      strokeWidth="1"
-      strokeLinejoin="round"
-      style={{
-        transform: open ? 'rotate(90deg)' : 'rotate(0deg)',
-        transition: 'transform 120ms ease',
-        marginTop: 5,
-        flexShrink: 0,
-      }}
-      aria-hidden="true"
-    >
-      <path d="m6 4 6 4-6 4V4Z" />
-    </svg>
-  );
 }
 
 function putWithProgress(url, file, onProgress) {
