@@ -331,7 +331,7 @@ export default function ObjectList({
               )}
               {!loading && denied && (
                 <tr>
-                  <td colSpan={6} style={{ padding: 16 }}>
+                  <td colSpan={6} style={{ padding: 0 }}>
                     <PermissionDeniedBanner
                       error={denied}
                       onRefresh={() => load(currentToken, { force: true })}
