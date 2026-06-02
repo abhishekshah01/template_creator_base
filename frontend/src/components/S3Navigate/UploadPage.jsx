@@ -1,20 +1,28 @@
-import { useRef, useState } from 'react';
+import { useRef, useState, useMemo } from 'react';
+
+import AwsAlert2 from './AwsAlert2';
+import { AwsButton, AwsCheckbox, AwsSearchInput, SortTriangleV2, OpenExternalIconV2 } from './AwsControls';
 import { s3api } from './api';
 import { bytesToHuman, fileExt } from './format';
-import { PrimaryBtn, SecondaryBtn, InfoIcon } from './BucketList';
-import AwsAlert from './AwsAlert';
+import { colors } from './theme';
 
-// AWS-console-style full-page Upload view. Replaces the modal flow.
-//   destination = s3://{bucket}/{prefix}
-// Calls onDone(uploadedCount) when at least one file succeeds, so the parent
-// can refresh the listing and show a success banner.
 export default function UploadPage({ bucket, prefix, onCancel, onDone }) {
   const inputRef = useRef(null);
   const folderInputRef = useRef(null);
-  const [items, setItems] = useState([]); // {file, relPath}
+  const [items, setItems] = useState([]);
   const [progress, setProgress] = useState({});
   const [running, setRunning] = useState(false);
   const [err, setErr] = useState(null);
+  const [filter, setFilter] = useState('');
+  const [selected, setSelected] = useState(new Set());
+  const [sort, setSort] = useState({ key: 'name', dir: 'asc' });
+  const [dragging, setDragging] = useState(false);
+  const [destOpen, setDestOpen] = useState(false);
+  const [permOpen, setPermOpen] = useState(false);
+  const [propsOpen, setPropsOpen] = useState(false);
+
+  const totalBytes = items.reduce((s, it) => s + (it.file.size || 0), 0);
+  const hasProgress = Object.keys(progress).length > 0;
 
   function addFiles(fileList, { isFolder = false } = {}) {
     const next = Array.from(fileList || []).map(f => ({
@@ -27,19 +35,54 @@ export default function UploadPage({ bucket, prefix, onCancel, onDone }) {
     const seen = new Set();
     const out = [];
     for (const it of list) {
-      const key = it.relPath;
-      if (seen.has(key)) continue;
-      seen.add(key);
+      if (seen.has(it.relPath)) continue;
+      seen.add(it.relPath);
       out.push(it);
     }
     return out;
   }
   function onDrop(e) {
     e.preventDefault();
+    setDragging(false);
     if (e.dataTransfer?.files) addFiles(e.dataTransfer.files);
   }
-  function removeAt(idx) {
-    setItems(prev => prev.filter((_, i) => i !== idx));
+
+  const filtered = useMemo(() => items.filter(
+    it => !filter.trim() || it.relPath.toLowerCase().includes(filter.trim().toLowerCase())
+  ), [items, filter]);
+
+  const sorted = useMemo(() => {
+    const arr = [...filtered];
+    const dir = sort.dir === 'asc' ? 1 : -1;
+    arr.sort((a, b) => {
+      const an = basename(a.relPath), bn = basename(b.relPath);
+      const af = dirname(a.relPath),  bf = dirname(b.relPath);
+      switch (sort.key) {
+        case 'name':   return dir * an.localeCompare(bn);
+        case 'folder': return dir * af.localeCompare(bf);
+        case 'type':   return dir * (a.file.type || '').localeCompare(b.file.type || '');
+        case 'size':   return dir * ((a.file.size || 0) - (b.file.size || 0));
+        default:       return 0;
+      }
+    });
+    return arr;
+  }, [filtered, sort]);
+
+  function toggleOne(key) {
+    const next = new Set(selected);
+    if (next.has(key)) next.delete(key); else next.add(key);
+    setSelected(next);
+  }
+  function toggleAll() {
+    if (sorted.length > 0 && selected.size >= sorted.length) {
+      setSelected(new Set());
+    } else {
+      setSelected(new Set(sorted.map(it => it.relPath)));
+    }
+  }
+  function removeSelected() {
+    setItems(prev => prev.filter(it => !selected.has(it.relPath)));
+    setSelected(new Set());
   }
 
   async function uploadAll() {
@@ -65,164 +108,474 @@ export default function UploadPage({ bucket, prefix, onCancel, onDone }) {
     setRunning(false);
     const failed = items.length - done;
     if (failed === 0 && done > 0) {
-      // All succeeded — bubble up so the parent banner + listing refresh.
       onDone?.(done);
     } else if (failed > 0) {
-      // Keep the user on the page so they can see which rows failed and retry.
       setErr(`${failed} file${failed === 1 ? '' : 's'} failed to upload. Remove or retry the failed rows.`);
     }
   }
 
   const allDone = items.length > 0 && items.every(it => progress[it.relPath]?.status === 'done');
+  const allChecked = sorted.length > 0 && selected.size >= sorted.length;
+  const someChecked = !allChecked && selected.size > 0;
 
   return (
     <div>
-      <h1 style={{ fontSize: 28, lineHeight: '36px' }} className="font-bold text-[#e6edf3] mb-1">
-        Upload <InfoIcon />
+      <h1 className="text-[28px] font-bold mb-1 inline-flex items-baseline gap-2" style={{ color: colors.text.primary }}>
+        Upload
+        <span className="text-[14px] font-normal underline decoration-dotted underline-offset-2 cursor-help" style={{ color: colors.text.buttonActive }}>
+          Info
+        </span>
       </h1>
-      <p className="text-[13px] text-[#8b949e] mb-5 max-w-[820px]">
-        Add the files and folders you want to upload to S3. Files are uploaded with
-        a presigned PUT URL minted by app-service; this app never touches AWS
-        credentials directly.
+      <p className="text-[13px] mb-5 max-w-[820px]" style={{ color: colors.text.info }}>
+        Add the files and folders you want to upload to S3. Files are uploaded with a presigned PUT URL minted by app-service; this app never touches AWS credentials directly.
       </p>
 
       {err && (
         <div className="mb-4">
-          <AwsAlert variant="error" tone="outlined" onDismiss={() => setErr(null)}>
+          <AwsAlert2 variant="error" title="Upload error" onDismiss={() => setErr(null)}>
             {err}
-          </AwsAlert>
+          </AwsAlert2>
         </div>
       )}
 
-      {/* Dropzone */}
       <div
-        onDragOver={(e) => e.preventDefault()}
+        onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
+        onDragLeave={() => setDragging(false)}
         onDrop={onDrop}
-        className="border border-dashed border-[#30363d] rounded-[4px] bg-[#0d1117] px-6 py-8 mb-4 text-center text-[14px] text-[#c9d1d9]"
+        className="px-6 py-9 mb-4 text-center text-[14px] transition-colors"
+        style={{
+          border: `2px dashed ${colors.border.rowSelected}`,
+          borderRadius: 8,
+          backgroundColor: dragging ? 'rgba(69,171,254,0.06)' : 'transparent',
+          color: colors.text.selectedRow,
+        }}
       >
         Drag and drop files and folders you want to upload here, or choose{' '}
-        <button onClick={() => inputRef.current?.click()} className="text-[#58a6ff] underline">
+        <button
+          type="button"
+          onClick={() => inputRef.current?.click()}
+          className="font-bold hover:underline underline-offset-2"
+          style={{ color: colors.text.primary }}
+        >
           Add files
         </button>
         {' '}or{' '}
-        <button onClick={() => folderInputRef.current?.click()} className="text-[#58a6ff] underline">
+        <button
+          type="button"
+          onClick={() => folderInputRef.current?.click()}
+          className="font-bold hover:underline underline-offset-2"
+          style={{ color: colors.text.primary }}
+        >
           Add folder
         </button>
         .
       </div>
 
-      {/* Files table */}
-      <div className="border border-[#30363d] rounded-md bg-[#0d1117] p-5 mb-4">
-        <div className="flex items-center justify-between mb-3">
-          <h2 className="text-[16px] font-bold text-[#e6edf3]">
-            Files and folders <span className="text-[#8b949e] font-normal">({items.length})</span>
-          </h2>
-          <div className="flex items-center gap-2">
-            <SecondaryBtn disabled={!items.length} onClick={() => setItems([])}>Remove</SecondaryBtn>
-            <SecondaryBtn onClick={() => inputRef.current?.click()}>Add files</SecondaryBtn>
-            <SecondaryBtn onClick={() => folderInputRef.current?.click()}>Add folder</SecondaryBtn>
+      <input
+        ref={inputRef}
+        type="file"
+        multiple
+        className="hidden"
+        onChange={(e) => { addFiles(e.target.files); e.target.value = ''; }}
+      />
+      <input
+        ref={folderInputRef}
+        type="file"
+        multiple
+        className="hidden"
+        webkitdirectory=""
+        directory=""
+        onChange={(e) => { addFiles(e.target.files, { isFolder: true }); e.target.value = ''; }}
+      />
+
+      <div
+        className="rounded-[12px] p-5 mb-4"
+        style={{ backgroundColor: colors.bg.card, border: `1px solid ${colors.border.cardOutline}` }}
+      >
+        <div className="flex items-start justify-between gap-4 mb-1">
+          <div>
+            <h2 className="text-[18px] font-bold" style={{ color: colors.text.primary }}>
+              Files and folders{' '}
+              <span className="font-normal" style={{ color: colors.text.info }}>
+                {items.length > 0
+                  ? `(${items.length} total, ${bytesToHuman(totalBytes)})`
+                  : '(0)'}
+              </span>
+            </h2>
+            <p className="text-[12px] mt-0.5" style={{ color: colors.text.info }}>
+              All files and folders in this table will be uploaded.
+            </p>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            <AwsButton
+              disabled={selected.size === 0 || running}
+              onClick={removeSelected}
+            >
+              Remove
+            </AwsButton>
+            <AwsButton disabled={running} onClick={() => inputRef.current?.click()}>
+              Add files
+            </AwsButton>
+            <AwsButton disabled={running} onClick={() => folderInputRef.current?.click()}>
+              Add folder
+            </AwsButton>
           </div>
         </div>
-        <p className="text-[12px] text-[#8b949e] mb-3">
-          All files and folders in this table will be uploaded.
-        </p>
 
-        <input ref={inputRef} type="file" multiple className="hidden"
-          onChange={(e) => { addFiles(e.target.files); e.target.value = ''; }} />
-        <input
-          ref={folderInputRef}
-          type="file"
-          multiple
-          className="hidden"
-          // webkitdirectory enables folder picking in Chromium/Safari; harmless elsewhere
-          webkitdirectory=""
-          directory=""
-          onChange={(e) => { addFiles(e.target.files, { isFolder: true }); e.target.value = ''; }}
-        />
+        <div className="flex items-center justify-between gap-3 mt-3 mb-3">
+          <div className="flex-1 max-w-[400px]">
+            <AwsSearchInput value={filter} onChange={setFilter} placeholder="Find by name" />
+          </div>
+          <div className="flex items-center gap-2 text-[14px]" style={{ color: colors.text.info }}>
+            <button
+              type="button"
+              className="w-[22px] h-[22px] inline-flex items-center justify-center rounded hover:bg-white/5"
+              aria-label="Previous page"
+            >
+              ‹
+            </button>
+            <span>1</span>
+            <button
+              type="button"
+              className="w-[22px] h-[22px] inline-flex items-center justify-center rounded hover:bg-white/5"
+              aria-label="Next page"
+            >
+              ›
+            </button>
+          </div>
+        </div>
 
-        <div className="border border-[#30363d] rounded-[4px] overflow-hidden">
-          <table className="w-full text-[14px]">
+        <div className="rounded-[4px] overflow-x-auto min-w-0">
+          <table
+            className="w-full text-[14px] text-left"
+            style={{ tableLayout: 'fixed', borderCollapse: 'separate', borderSpacing: 0 }}
+          >
+            <colgroup>
+              <col style={{ width: 44 }} />
+              <col />
+              <col style={{ width: 180 }} />
+              <col style={{ width: 140 }} />
+              <col style={{ width: 110 }} />
+              {hasProgress && <col style={{ width: 130 }} />}
+            </colgroup>
             <thead>
-              <tr className="bg-[#0d1117] border-b border-[#30363d] text-[#e6edf3]">
-                <th className="text-left px-3 py-2 font-semibold">Name</th>
-                <th className="text-left px-3 py-2 font-semibold">Folder</th>
-                <th className="text-left px-3 py-2 font-semibold">Type</th>
-                <th className="text-left px-3 py-2 font-semibold">Size</th>
-                <th className="text-left px-3 py-2 font-semibold">Status</th>
-                <th className="w-20"></th>
+              <tr>
+                <HeaderCell showDivider>
+                  <AwsCheckbox
+                    checked={allChecked}
+                    indeterminate={someChecked}
+                    onChange={toggleAll}
+                    ariaLabel="Select all rows"
+                  />
+                </HeaderCell>
+                <SortHeader label="Name" col="name" sort={sort} setSort={setSort} showDivider />
+                <SortHeader label="Folder" col="folder" sort={sort} setSort={setSort} showDivider />
+                <SortHeader label="Type" col="type" sort={sort} setSort={setSort} showDivider />
+                <SortHeader
+                  label="Size"
+                  col="size"
+                  sort={sort}
+                  setSort={setSort}
+                  showDivider={hasProgress}
+                />
+                {hasProgress && (
+                  <HeaderCell>
+                    <span style={{ color: colors.text.info, fontWeight: 700 }}>Status</span>
+                  </HeaderCell>
+                )}
               </tr>
             </thead>
             <tbody>
-              {items.length === 0 && (
+              {sorted.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-3 py-8 text-center text-[13px] text-[#8b949e]">
-                    <div className="font-semibold text-[#c9d1d9]">No files or folders</div>
-                    <div className="mt-1">You have not chosen any files or folders to upload.</div>
+                  <td
+                    colSpan={hasProgress ? 6 : 5}
+                    style={{
+                      padding: '40px 12px',
+                      textAlign: 'center',
+                      borderBottom: `1px solid ${colors.border.rowSeparator}`,
+                    }}
+                  >
+                    <div className="font-bold mb-1" style={{ color: colors.text.primary }}>
+                      No files or folders
+                    </div>
+                    <div className="text-[13px]" style={{ color: colors.text.info }}>
+                      You have not chosen any files or folders to upload.
+                    </div>
                   </td>
                 </tr>
+              ) : (
+                sorted.map((it, idx) => {
+                  const isSel = selected.has(it.relPath);
+                  const prevSel = idx > 0 && selected.has(sorted[idx - 1].relPath);
+                  const nextSel = idx < sorted.length - 1 && selected.has(sorted[idx + 1].relPath);
+                  return (
+                    <FileRow
+                      key={it.relPath + idx}
+                      item={it}
+                      selected={isSel}
+                      mergeTop={isSel && prevSel}
+                      mergeBottom={isSel && nextSel}
+                      onSelect={() => toggleOne(it.relPath)}
+                      progress={progress[it.relPath]}
+                      showProgress={hasProgress}
+                    />
+                  );
+                })
               )}
-              {items.map((it, i) => {
-                const parts = it.relPath.split('/');
-                const name = parts[parts.length - 1];
-                const folder = parts.slice(0, -1).join('/') || '-';
-                const p = progress[it.relPath];
-                return (
-                  <tr key={it.relPath + i} className="border-b border-[#21262d]">
-                    <td className="px-3 py-2.5 text-[#c9d1d9] break-all">{name}</td>
-                    <td className="px-3 py-2.5 text-[#8b949e]">{folder}</td>
-                    <td className="px-3 py-2.5 text-[#c9d1d9]">{fileExt(name) || '-'}</td>
-                    <td className="px-3 py-2.5 text-[#c9d1d9]">{bytesToHuman(it.file.size)}</td>
-                    <td className="px-3 py-2.5">
-                      {!p && <span className="text-[#8b949e]">queued</span>}
-                      {p?.status === 'starting' && <span className="text-[#8b949e]">starting…</span>}
-                      {p?.status === 'uploading' && <span className="text-[#c9d1d9]">{p.pct}%</span>}
-                      {p?.status === 'done' && <span className="text-[#3fb950]">done</span>}
-                      {p?.status === 'failed' && <span className="text-[#f85149]" title={p.err}>failed</span>}
-                    </td>
-                    <td className="px-3 py-2.5 text-right">
-                      {!running && (
-                        <button onClick={() => removeAt(i)} className="text-[12px] text-[#58a6ff] hover:underline">
-                          Remove
-                        </button>
-                      )}
-                    </td>
-                  </tr>
-                );
-              })}
             </tbody>
           </table>
         </div>
       </div>
 
-      {/* Destination */}
-      <div className="border border-[#30363d] rounded-md bg-[#0d1117] p-5 mb-6">
-        <h2 className="text-[16px] font-bold text-[#e6edf3] mb-0.5">Destination <InfoIcon /></h2>
-        <div className="mt-3 text-[13px] text-[#c9d1d9]">
-          <div className="font-bold mb-1">Destination</div>
-          <div className="font-mono text-[#58a6ff] break-all">
-            s3://{bucket}/{prefix || ''}
-          </div>
-        </div>
+      <div
+        className="rounded-[12px] p-5 mb-4"
+        style={{ backgroundColor: colors.bg.card, border: `1px solid ${colors.border.cardOutline}` }}
+      >
+        <h2 className="text-[18px] font-bold inline-flex items-baseline gap-2 mb-3" style={{ color: colors.text.primary }}>
+          Destination
+          <span className="text-[12px] font-normal underline decoration-dotted underline-offset-2 cursor-help" style={{ color: colors.text.buttonActive }}>
+            Info
+          </span>
+        </h2>
+        <div className="text-[13px] font-bold mb-1" style={{ color: colors.text.primary }}>Destination</div>
+        <a
+          href="#"
+          onClick={(e) => e.preventDefault()}
+          className="inline-flex items-center gap-1.5 underline underline-offset-2 text-[14px]"
+          style={{ color: colors.text.buttonActive, fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace' }}
+        >
+          s3://{bucket}/{prefix || ''}
+          <OpenExternalIconV2 />
+        </a>
+
+        <Collapsible
+          open={destOpen}
+          onToggle={() => setDestOpen(!destOpen)}
+          title="Destination details"
+          description="Bucket settings that impact new objects stored in the specified destination."
+          className="mt-4"
+        >
+          <p className="text-[13px]" style={{ color: colors.text.info }}>
+            These settings inherit from the bucket and cannot be overridden from this app.
+          </p>
+        </Collapsible>
       </div>
 
-      {/* Footer actions */}
+      <div
+        className="rounded-[12px] p-5 mb-4"
+        style={{ backgroundColor: colors.bg.card, border: `1px solid ${colors.border.cardOutline}` }}
+      >
+        <Collapsible
+          open={permOpen}
+          onToggle={() => setPermOpen(!permOpen)}
+          title="Permissions"
+          description="Grant public access and access to other AWS accounts."
+        >
+          <p className="text-[13px]" style={{ color: colors.text.info }}>
+            Object ACLs follow the bucket's defaults and can't be set from this app. Uploads are private unless the bucket policy says otherwise.
+          </p>
+        </Collapsible>
+      </div>
+
+      <div
+        className="rounded-[12px] p-5 mb-6"
+        style={{ backgroundColor: colors.bg.card, border: `1px solid ${colors.border.cardOutline}` }}
+      >
+        <Collapsible
+          open={propsOpen}
+          onToggle={() => setPropsOpen(!propsOpen)}
+          title="Properties"
+          description="Specify storage class, encryption settings, tags, and more."
+        >
+          <p className="text-[13px]" style={{ color: colors.text.info }}>
+            Storage class, server-side encryption, and tags follow the bucket's defaults. Configure these on the bucket itself, not from this upload.
+          </p>
+        </Collapsible>
+      </div>
+
       <div className="flex items-center justify-end gap-3 mt-6">
         <button
+          type="button"
           onClick={onCancel}
           disabled={running}
-          className="px-4 py-1.5 text-[14px] text-[#58a6ff] hover:underline disabled:opacity-50 disabled:cursor-not-allowed disabled:no-underline"
+          className="px-4 py-1.5 text-[14px] disabled:opacity-50 disabled:cursor-not-allowed"
+          style={{ color: colors.text.buttonActive }}
         >
           {allDone ? 'Close' : 'Cancel'}
         </button>
         {allDone ? (
-          <PrimaryBtn onClick={onCancel}>Done</PrimaryBtn>
+          <AwsButton variant="primary" onClick={onCancel}>Done</AwsButton>
         ) : (
-          <PrimaryBtn onClick={uploadAll} disabled={running || items.length === 0}>
+          <AwsButton
+            variant="primary"
+            onClick={uploadAll}
+            disabled={running || items.length === 0}
+          >
             {running ? 'Uploading…' : 'Upload'}
-          </PrimaryBtn>
+          </AwsButton>
         )}
       </div>
     </div>
+  );
+}
+
+function basename(p) {
+  const parts = p.split('/');
+  return parts[parts.length - 1];
+}
+function dirname(p) {
+  const parts = p.split('/');
+  return parts.slice(0, -1).join('/') || '-';
+}
+
+function HeaderCell({ children, showDivider }) {
+  return (
+    <th
+      style={{
+        padding: '8px 12px',
+        color: colors.text.info,
+        position: 'relative',
+        textAlign: 'left',
+        fontWeight: 700,
+        borderBottom: `1px solid ${colors.border.rowSeparator}`,
+      }}
+    >
+      <span style={{ position: 'relative', display: 'block' }}>
+        {children}
+        {showDivider && (
+          <span
+            aria-hidden="true"
+            style={{
+              position: 'absolute',
+              right: -12,
+              top: -2,
+              bottom: -2,
+              width: 1,
+              backgroundColor: colors.border.rowSeparator,
+            }}
+          />
+        )}
+      </span>
+    </th>
+  );
+}
+
+function SortHeader({ label, col, sort, setSort, showDivider }) {
+  const active = sort.key === col;
+  function onClick() {
+    if (active) setSort({ key: col, dir: sort.dir === 'asc' ? 'desc' : 'asc' });
+    else setSort({ key: col, dir: 'asc' });
+  }
+  return (
+    <HeaderCell showDivider={showDivider}>
+      <button
+        type="button"
+        onClick={onClick}
+        className="flex items-center justify-between w-full pr-2"
+        style={{ color: colors.text.info }}
+      >
+        <span>{label}</span>
+        <SortTriangleV2 active={active} direction={active ? sort.dir : null} />
+      </button>
+    </HeaderCell>
+  );
+}
+
+function FileRow({ item, selected, mergeTop, mergeBottom, onSelect, progress, showProgress }) {
+  const ringColor = selected ? colors.border.rowSelected : 'transparent';
+  const separator = `1px solid ${colors.border.rowSeparator}`;
+  const top = (selected && mergeTop) ? 'none' : `2px solid ${ringColor}`;
+  const bottom = selected ? `2px solid ${ringColor}` : separator;
+  const left = selected ? `2px solid ${ringColor}` : 'none';
+  const right = selected ? `2px solid ${ringColor}` : 'none';
+
+  const baseTd = {
+    padding: '8px 12px',
+    verticalAlign: 'middle',
+    backgroundColor: selected ? colors.bg.rowSelected : 'transparent',
+    color: colors.text.selectedRow,
+    borderTop: top,
+    borderBottom: bottom,
+  };
+
+  const name = basename(item.relPath);
+  const folder = dirname(item.relPath);
+
+  return (
+    <tr>
+      <td style={{ ...baseTd, borderLeft: left }}>
+        <AwsCheckbox checked={selected} onChange={onSelect} ariaLabel={`Select ${name}`} />
+      </td>
+      <td style={baseTd}>
+        <span className="break-all" style={{ color: colors.text.selectedRow }}>
+          {name}
+        </span>
+      </td>
+      <td style={baseTd}>
+        <span style={{ color: colors.text.info }}>{folder}</span>
+      </td>
+      <td style={baseTd}>{item.file.type || '-'}</td>
+      <td style={{ ...baseTd, borderRight: showProgress ? undefined : right }}>
+        {bytesToHuman(item.file.size)}
+      </td>
+      {showProgress && (
+        <td style={{ ...baseTd, borderRight: right }}>
+          <StatusCell progress={progress} />
+        </td>
+      )}
+    </tr>
+  );
+}
+
+function StatusCell({ progress }) {
+  if (!progress) return <span style={{ color: colors.text.info }}>Queued</span>;
+  if (progress.status === 'starting') return <span style={{ color: colors.text.info }}>Starting…</span>;
+  if (progress.status === 'uploading') return <span style={{ color: colors.text.selectedRow }}>{progress.pct}%</span>;
+  if (progress.status === 'done') return <span style={{ color: '#3fb950' }}>Done</span>;
+  if (progress.status === 'failed') return <span style={{ color: '#fe6b58' }} title={progress.err}>Failed</span>;
+  return null;
+}
+
+function Collapsible({ open, onToggle, title, description, children, className = '' }) {
+  return (
+    <div className={className}>
+      <button
+        type="button"
+        onClick={onToggle}
+        className="flex items-start gap-2 text-left w-full"
+      >
+        <CaretIcon open={open} />
+        <div>
+          <div className="text-[16px] font-bold" style={{ color: colors.text.primary }}>{title}</div>
+          <div className="text-[12px] mt-0.5" style={{ color: colors.text.info }}>{description}</div>
+        </div>
+      </button>
+      {open && <div className="mt-3 pl-6">{children}</div>}
+    </div>
+  );
+}
+
+function CaretIcon({ open }) {
+  return (
+    <svg
+      width="12"
+      height="12"
+      viewBox="0 0 16 16"
+      fill={colors.text.selectedRow}
+      stroke={colors.text.selectedRow}
+      strokeWidth="1"
+      strokeLinejoin="round"
+      style={{
+        transform: open ? 'rotate(90deg)' : 'rotate(0deg)',
+        transition: 'transform 120ms ease',
+        marginTop: 5,
+        flexShrink: 0,
+      }}
+      aria-hidden="true"
+    >
+      <path d="m6 4 6 4-6 4V4Z" />
+    </svg>
   );
 }
 
