@@ -49,9 +49,22 @@ async function request(path, body) {
   }
   if (!resp.ok) {
     const raw = data.detail || data.message || `Request failed (${resp.status})`;
-    throw new Error(sanitizeErrorMessage(raw, resp.status));
+    throw new Error(sanitizeErrorMessage(stringifyDetail(raw), resp.status));
   }
   return data;
+}
+
+function stringifyDetail(raw) {
+  if (typeof raw === 'string') return raw;
+  if (!raw) return '';
+  if (Array.isArray(raw)) {
+    return raw.map(stringifyDetail).filter(Boolean).join('; ');
+  }
+  if (typeof raw === 'object') {
+    if (raw.msg && raw.loc) return `${raw.loc.join('.')}: ${raw.msg}`;
+    return raw.msg || raw.message || raw.detail || JSON.stringify(raw);
+  }
+  return String(raw);
 }
 
 export { AuthError, PermissionDeniedError };
