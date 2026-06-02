@@ -7,7 +7,9 @@ import {
   DownloadIcon,
   OpenExternalIcon,
 } from './AwsControls';
+import PermissionDeniedBanner from './PermissionDeniedBanner';
 import { s3api } from './api';
+import { PermissionDeniedError } from '../../api';
 import { bytesToHuman, formatAwsDate, fileExt } from './format';
 import { colors } from './theme';
 
@@ -15,13 +17,17 @@ export default function ObjectDetail({ bucket, objKey, onCopyToast }) {
   const [meta, setMeta] = useState(null);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState(null);
+  const [denied, setDenied] = useState(null);
 
   useEffect(() => {
     let alive = true;
     s3api.objectMeta(bucket, objKey).then(d => {
       if (alive) { setMeta(d); setLoading(false); }
     }).catch(e => {
-      if (alive) { setErr(e.message); setLoading(false); }
+      if (!alive) return;
+      if (e instanceof PermissionDeniedError) setDenied(e);
+      else setErr(e.message);
+      setLoading(false);
     });
     return () => { alive = false; };
   }, [bucket, objKey]);
@@ -38,7 +44,10 @@ export default function ObjectDetail({ bucket, objKey, onCopyToast }) {
     try {
       const { url } = await s3api.objectUrl(bucket, objKey, download);
       window.open(url, '_blank', 'noopener');
-    } catch (e) { setErr(e.message); }
+    } catch (e) {
+      if (e instanceof PermissionDeniedError) setDenied(e);
+      else setErr(e.message);
+    }
   }
 
   const name = objKey.split('/').pop();
@@ -63,6 +72,12 @@ export default function ObjectDetail({ bucket, objKey, onCopyToast }) {
       <div className="mb-6 flex gap-6" style={{ borderBottom: `2px solid ${colors.border.rowSeparator}` }}>
         <SectionTab active>Properties</SectionTab>
       </div>
+
+      {denied && (
+        <div className="mb-4">
+          <PermissionDeniedBanner error={denied} />
+        </div>
+      )}
 
       {err && (
         <div className="mb-4">
