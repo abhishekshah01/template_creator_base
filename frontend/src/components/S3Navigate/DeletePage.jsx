@@ -2,7 +2,9 @@ import { useState } from 'react';
 
 import AwsAlert2 from './AwsAlert2';
 import { AwsButton, AwsSearchInput, SortTriangleV2 } from './AwsControls';
+import PermissionDeniedBanner from './PermissionDeniedBanner';
 import { s3api } from './api';
+import { PermissionDeniedError } from '../../api';
 import { bytesToHuman, formatAwsDate, fileExt } from './format';
 import { colors } from './theme';
 
@@ -10,6 +12,7 @@ export default function DeletePage({ bucket, prefix, objects, onCancel, onDone }
   const [confirmText, setConfirmText] = useState('');
   const [filter, setFilter] = useState('');
   const [deleting, setDeleting] = useState(false);
+  const [denied, setDenied] = useState(null);
   const canDelete = confirmText === 'delete' && !deleting && objects.length > 0;
 
   const filtered = objects.filter(o => !filter.trim()
@@ -18,16 +21,24 @@ export default function DeletePage({ bucket, prefix, objects, onCancel, onDone }
   async function handleDelete() {
     if (!canDelete) return;
     setDeleting(true);
+    setDenied(null);
     const results = [];
+    let permissionBlocked = false;
     for (const o of objects) {
       try {
         await s3api.deleteObject(bucket, o.key);
         results.push({ ...o, ok: true });
       } catch (e) {
+        if (e instanceof PermissionDeniedError) {
+          setDenied(e);
+          permissionBlocked = true;
+          break;
+        }
         results.push({ ...o, ok: false, error: e.message || 'Access denied' });
       }
     }
     setDeleting(false);
+    if (permissionBlocked) return;
     onDone?.({
       source: `s3://${bucket}/${prefix || ''}`,
       results,
@@ -42,6 +53,12 @@ export default function DeletePage({ bucket, prefix, objects, onCancel, onDone }
           Info
         </span>
       </h1>
+
+      {denied && (
+        <div className="mb-4">
+          <PermissionDeniedBanner error={denied} />
+        </div>
+      )}
 
       <div className="mb-6">
         <AwsAlert2
