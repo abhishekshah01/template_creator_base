@@ -39,6 +39,9 @@ def patch_environment(monkeypatch, fake_audit_collector):
             "is_admin": False,
         }
 
+    async def passthrough(session):
+        return session
+    monkeypatch.setattr("services.permissions.deps.load_actor", passthrough)
     monkeypatch.setattr("services.permissions.deps.evaluator.evaluate", fake_evaluate)
     monkeypatch.setattr("services.permissions.deps.audit.record", fake_record)
     monkeypatch.setattr("services.permissions.deps.get_current_admin", fake_admin)

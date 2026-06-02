@@ -1,12 +1,3 @@
-"""FastAPI dependency factory: require(action, resource_fn).
-
-  @router.post("/upload-url", dependencies=[Depends(require(S3_PUT_OBJECT, lambda req: f"s3://{req.bucket}/{req.key}"))])
-
-evaluator.evaluate() is called for the current admin; the decision plus
-its reason is written to permission_audit either way. If the decision is
-deny AND PERMISSIONS_ENFORCE is on, raises HTTP 403. With the flag off,
-the request continues — dry-run mode while we wire every route."""
-
 from __future__ import annotations
 
 import logging
@@ -17,6 +8,7 @@ from fastapi import Depends, HTTPException, Request
 
 import config
 from routers.admin_auth import get_current_admin
+from services import admin_users as users_svc
 from services.permissions import audit, evaluator
 
 log = logging.getLogger(__name__)
@@ -34,14 +26,36 @@ async def _resolve_resource(resource_fn: ResourceFn, request: Request) -> str:
         return resource_fn
     out = resource_fn(request)
     if hasattr(out, "__await__"):
-        out = await out  # type: ignore[assignment]
+        out = await out
     return str(out)
 
 
+async def load_actor(session: dict) -> dict:
+    if not session:
+        return session
+    # Session already enriched (test fixtures or future cache).
+    if "type" in session and "attached_roles" in session:
+        return session
+    admin_id = session.get("admin_id")
+    if not admin_id:
+        return session
+    doc = await users_svc.find_by_id(admin_id)
+    if not doc:
+        return session
+    return {
+        **session,
+        "_id": doc.get("_id"),
+        "type": doc.get("type"),
+        "attached_roles": doc.get("attached_roles", []),
+        "inline_policy": doc.get("inline_policy", []),
+        "is_admin": doc.get("is_admin", False),
+        "is_active": doc.get("is_active", True),
+    }
+
+
 async def check(user: dict, action: str, resource: str, request: Request) -> None:
-    """Evaluate + audit + maybe raise. Shared by the require() dep below and
-    routes (like upload-url) where the action is chosen by the request body."""
-    decision = await evaluator.evaluate(user, action, resource)
+    actor = await load_actor(user)
+    decision = await evaluator.evaluate(actor, action, resource)
 
     request_id = (
         request.headers.get("x-request-id")
@@ -50,7 +64,7 @@ async def check(user: dict, action: str, resource: str, request: Request) -> Non
     )
 
     await audit.record(
-        user=user,
+        user=actor,
         action=action,
         resource=resource,
         decision=decision,
@@ -72,7 +86,7 @@ async def check(user: dict, action: str, resource: str, request: Request) -> Non
     if not decision.allowed:
         log.info(
             "permissions.dry_run: deny would have fired action=%s resource=%s user=%s reason=%s",
-            action, resource, user.get("username"), decision.reason,
+            action, resource, actor.get("username"), decision.reason,
         )
 
 

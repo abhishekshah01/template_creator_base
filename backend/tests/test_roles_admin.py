@@ -128,6 +128,9 @@ def stub_env(monkeypatch, audit_log, fake_roles, fake_admin_users):
     async def fake_record(**kwargs):
         audit_log.append(kwargs)
 
+    async def passthrough(session):
+        return session
+    monkeypatch.setattr("services.permissions.deps.load_actor", passthrough)
     monkeypatch.setattr("services.permissions.deps.audit.record", fake_record)
     monkeypatch.setattr("clients.mongo_client.roles", fake_roles)
     monkeypatch.setattr("services.role_service.roles_coll", fake_roles)
