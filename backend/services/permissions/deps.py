@@ -38,46 +38,51 @@ async def _resolve_resource(resource_fn: ResourceFn, request: Request) -> str:
     return str(out)
 
 
+async def check(user: dict, action: str, resource: str, request: Request) -> None:
+    """Evaluate + audit + maybe raise. Shared by the require() dep below and
+    routes (like upload-url) where the action is chosen by the request body."""
+    decision = await evaluator.evaluate(user, action, resource)
+
+    request_id = (
+        request.headers.get("x-request-id")
+        or getattr(request.state, "request_id", None)
+        or str(uuid.uuid4())
+    )
+
+    await audit.record(
+        user=user,
+        action=action,
+        resource=resource,
+        decision=decision,
+        route=request.url.path,
+        request_id=request_id,
+    )
+
+    if not decision.allowed and config.PERMISSIONS_ENFORCE:
+        raise HTTPException(
+            status_code=403,
+            detail={
+                "error": "permission_denied",
+                "action": action,
+                "resource": resource,
+                "reason": decision.reason,
+            },
+        )
+
+    if not decision.allowed:
+        log.info(
+            "permissions.dry_run: deny would have fired action=%s resource=%s user=%s reason=%s",
+            action, resource, user.get("username"), decision.reason,
+        )
+
+
 def require(action: str, resource_fn: ResourceFn):
     async def dep(
         request: Request,
         user: dict = Depends(get_current_admin),
     ) -> dict:
         resource = await _resolve_resource(resource_fn, request)
-        decision = await evaluator.evaluate(user, action, resource)
-
-        request_id = (
-            request.headers.get("x-request-id")
-            or getattr(request.state, "request_id", None)
-            or str(uuid.uuid4())
-        )
-        route = request.url.path
-
-        await audit.record(
-            user=user,
-            action=action,
-            resource=resource,
-            decision=decision,
-            route=route,
-            request_id=request_id,
-        )
-
-        if not decision.allowed and config.PERMISSIONS_ENFORCE:
-            raise HTTPException(
-                status_code=403,
-                detail={
-                    "error": "permission_denied",
-                    "action": action,
-                    "resource": resource,
-                    "reason": decision.reason,
-                },
-            )
-
-        if not decision.allowed:
-            log.info(
-                "permissions.dry_run: deny would have fired action=%s resource=%s user=%s reason=%s",
-                action, resource, user.get("username"), decision.reason,
-            )
+        await check(user, action, resource, request)
         return user
 
     return dep

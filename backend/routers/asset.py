@@ -1,7 +1,12 @@
-"""/api/asset/* — S3 + CloudFront proxies."""
+"""/api/asset/* — S3 + CloudFront proxies. Each route resolves the
+action (and resource URI) from its request body before calling check(),
+which evaluates against the caller's policy and writes a permission_audit
+row. Enforcement (raise 403) only kicks in when PERMISSIONS_ENFORCE is on.
+"""
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends, Request
 
+from routers.admin_auth import get_current_admin
 from schemas.asset import (
     AssetDeleteRequest,
     AssetDownloadUrlRequest,
@@ -12,12 +17,23 @@ from schemas.asset import (
     BearerTokenRequest,
 )
 from services import asset_service
+from services.permissions import actions
+from services.permissions.deps import check
 
 router = APIRouter(prefix="/api/asset", tags=["asset"])
 
 
 @router.post("/upload-url")
-async def upload_url(req: AssetUploadUrlRequest):
+async def upload_url(
+    req: AssetUploadUrlRequest,
+    request: Request,
+    user: dict = Depends(get_current_admin),
+):
+    # Folder marker = zero-byte object with key ending in '/'. Same endpoint
+    # in AWS too — we split the permission so an uploader can be granted
+    # file uploads without folder-creation rights.
+    action = actions.S3_CREATE_FOLDER if req.key.endswith("/") else actions.S3_PUT_OBJECT
+    await check(user, action, f"s3://{req.bucket}/{req.key}", request)
     return await asset_service.mint_upload_url(
         bucket=req.bucket,
         key=req.key,
@@ -28,12 +44,25 @@ async def upload_url(req: AssetUploadUrlRequest):
 
 
 @router.post("/delete")
-async def delete(req: AssetDeleteRequest):
+async def delete(
+    req: AssetDeleteRequest,
+    request: Request,
+    user: dict = Depends(get_current_admin),
+):
+    await check(user, actions.S3_DELETE_OBJECT, f"s3://{req.bucket}/{req.key}", request)
     return await asset_service.delete_object(bucket=req.bucket, key=req.key, bearer_token=req.bearer_token)
 
 
 @router.post("/invalidate")
-async def invalidate(req: AssetInvalidateRequest):
+async def invalidate(
+    req: AssetInvalidateRequest,
+    request: Request,
+    user: dict = Depends(get_current_admin),
+):
+    # CloudFront invalidations target a path, not a key — bucket-agnostic URI
+    # so per-bucket scoping isn't accidentally implied.
+    resource = f"cloudfront://{req.cloudfront_distribution_id}{req.path}"
+    await check(user, actions.S3_INVALIDATE_CACHE, resource, request)
     return await asset_service.invalidate_cache(
         cloudfront_distribution_id=req.cloudfront_distribution_id,
         path=req.path,
@@ -42,12 +71,23 @@ async def invalidate(req: AssetInvalidateRequest):
 
 
 @router.post("/buckets")
-async def buckets(req: BearerTokenRequest):
+async def buckets(
+    req: BearerTokenRequest,
+    request: Request,
+    user: dict = Depends(get_current_admin),
+):
+    await check(user, actions.S3_LIST_BUCKETS, "s3://*", request)
     return await asset_service.list_buckets(bearer_token=req.bearer_token, force=req.force)
 
 
 @router.post("/objects")
-async def objects(req: AssetListObjectsRequest):
+async def objects(
+    req: AssetListObjectsRequest,
+    request: Request,
+    user: dict = Depends(get_current_admin),
+):
+    resource = f"s3://{req.bucket}/{req.prefix or ''}"
+    await check(user, actions.S3_LIST_BUCKET, resource, request)
     return await asset_service.list_objects(
         bucket=req.bucket,
         prefix=req.prefix,
@@ -59,14 +99,24 @@ async def objects(req: AssetListObjectsRequest):
 
 
 @router.post("/object-meta")
-async def object_meta(req: AssetObjectMetaRequest):
+async def object_meta(
+    req: AssetObjectMetaRequest,
+    request: Request,
+    user: dict = Depends(get_current_admin),
+):
+    await check(user, actions.S3_GET_OBJECT, f"s3://{req.bucket}/{req.key}", request)
     return await asset_service.object_meta(
         bucket=req.bucket, key=req.key, bearer_token=req.bearer_token, force=req.force,
     )
 
 
 @router.post("/download-url")
-async def download_url(req: AssetDownloadUrlRequest):
+async def download_url(
+    req: AssetDownloadUrlRequest,
+    request: Request,
+    user: dict = Depends(get_current_admin),
+):
+    await check(user, actions.S3_GET_OBJECT, f"s3://{req.bucket}/{req.key}", request)
     return await asset_service.mint_download_url(
         bucket=req.bucket,
         key=req.key,
