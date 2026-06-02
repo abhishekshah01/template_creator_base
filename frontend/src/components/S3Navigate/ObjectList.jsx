@@ -13,7 +13,9 @@ import {
   SortTriangleV2,
   UploadIconV2,
 } from './AwsControls';
+import PermissionDeniedBanner from './PermissionDeniedBanner';
 import { s3api } from './api';
+import { PermissionDeniedError } from '../../api';
 import { bytesToHuman, formatAwsDate, fileExt } from './format';
 import { colors } from './theme';
 
@@ -39,6 +41,7 @@ export default function ObjectList({
   const [data, setData] = useState({ folders: [], files: [], is_truncated: false, next_continuation_token: null });
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState(null);
+  const [denied, setDenied] = useState(null);
   const [filter, setFilter] = useState('');
   const [selected, setSelected] = useState(new Set());
   const [pageStack, setPageStack] = useState([]);
@@ -56,13 +59,18 @@ export default function ObjectList({
   async function load(token = null, { force = false } = {}) {
     setLoading(true);
     setErr(null);
+    setDenied(null);
     try {
       const d = await s3api.listObjects(bucket, prefix, token, force);
       setData(d);
       setCurrentToken(token);
       setSelected(new Set());
     } catch (e) {
-      setErr(e.message);
+      if (e instanceof PermissionDeniedError) {
+        setDenied(e);
+      } else {
+        setErr(e.message);
+      }
       setData({ folders: [], files: [], is_truncated: false, next_continuation_token: null });
     } finally {
       setLoading(false);
@@ -197,6 +205,12 @@ export default function ObjectList({
       <div className="mb-6 flex gap-6" style={{ borderBottom: `2px solid ${colors.border.rowSeparator}` }}>
         <SectionTab active>Objects</SectionTab>
       </div>
+
+      {denied && (
+        <div className="mb-4">
+          <PermissionDeniedBanner error={denied} onRefresh={() => load(currentToken, { force: true })} />
+        </div>
+      )}
 
       {err && (
         <div className="mb-4">
