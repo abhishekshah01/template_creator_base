@@ -119,8 +119,8 @@ async def test_every_attachable_role_carries_only_known_actions(fake_roles):
 
 
 @pytest.mark.asyncio
-async def test_kind_default_roles_exist(fake_roles):
-    """Every user kind has its `-default` role seeded so user creation can
+async def test_type_default_roles_exist(fake_roles):
+    """Every user type has its `-default` role seeded so user creation can
     auto-attach without a runtime existence check."""
     from services.permissions import seed
 

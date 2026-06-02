@@ -1,22 +1,6 @@
-"""Idempotent seeding of system roles.
-
-Runs on application startup (wired into main.py's lifespan). System roles
-are upserted by name so editing the seed file is the canonical way to
-change what "S3ReadOnlyAccess" or "admin-default" means — never edit a
-system role document directly in Mongo, the next startup will overwrite
-your change.
-
-Naming convention:
-  S3ReadOnlyAccess / S3ReadWriteAccess / S3FullAccess
-      AWS-style managed-policy names. These are *attachable* roles —
-      admins assign them to specific users.
-
-  owner-default / admin-default / user-default
-      The implicit role for each user kind. Auto-attached on user
-      creation. Renaming or removing these from a user's
-      attached_role_ids is a no-op — the kind itself is the source of
-      truth for which default is active (see the evaluator).
-"""
+"""Idempotent seeding of system roles. Runs on every app startup; editing
+this file is the canonical way to change what a system role grants — direct
+Mongo edits to a system role doc will be overwritten on the next start."""
 
 from __future__ import annotations
 
@@ -31,14 +15,11 @@ log = logging.getLogger(__name__)
 
 
 def _stmt_allow(action_set, resources):
-    """Helper: produce a single allow statement with sorted action codes.
-    Sorting keeps the persisted policy deterministic across restarts so
-    Mongo doesn't see a "modified" document every time the seed runs.
-    """
+    # Sort actions so the persisted policy is deterministic — without this,
+    # set-iteration order would make Mongo see a 'modified' doc every restart.
     return Statement(effect="allow", actions=sorted(action_set), resources=list(resources))
 
 
-# Attachable roles — admins assign these to specific users.
 ATTACHABLE_ROLES: tuple[Role, ...] = (
     Role(
         name="S3ReadOnlyAccess",
@@ -60,10 +41,10 @@ ATTACHABLE_ROLES: tuple[Role, ...] = (
     ),
 )
 
-# Kind defaults — auto-attached when a user of that kind is created.
-# The owner kind also has a short-circuit in the evaluator, so the
-# owner-default role is mostly cosmetic / for audit-log clarity.
-KIND_DEFAULT_ROLES: tuple[Role, ...] = (
+# Auto-attached when a user of the matching type is created. The owner
+# type also has a short-circuit in the evaluator, so owner-default is
+# mostly for audit-log clarity.
+TYPE_DEFAULT_ROLES: tuple[Role, ...] = (
     Role(
         name="owner-default",
         description="Default role attached to every owner user. Mirrors the owner short-circuit in the evaluator.",
@@ -84,14 +65,11 @@ KIND_DEFAULT_ROLES: tuple[Role, ...] = (
     ),
 )
 
-SYSTEM_ROLES: tuple[Role, ...] = ATTACHABLE_ROLES + KIND_DEFAULT_ROLES
+SYSTEM_ROLES: tuple[Role, ...] = ATTACHABLE_ROLES + TYPE_DEFAULT_ROLES
 SYSTEM_ROLE_NAMES: frozenset[str] = frozenset(r.name for r in SYSTEM_ROLES)
 
 
 def _to_mongo_doc(role: Role) -> dict:
-    """Serialize for MongoDB. We strip default-empty timestamp fields and
-    let `$setOnInsert` handle created_at so re-runs don't touch it.
-    """
     return {
         "name": role.name,
         "description": role.description,
@@ -101,11 +79,6 @@ def _to_mongo_doc(role: Role) -> dict:
 
 
 async def seed_system_roles() -> dict[str, int]:
-    """Upsert every system role. Idempotent.
-
-    Returns counts so the caller (lifespan + the admin endpoint) can log
-    "X created, Y updated, Z unchanged" without re-querying.
-    """
     now = datetime.now(timezone.utc)
     created = updated = unchanged = 0
 
@@ -117,10 +90,6 @@ async def seed_system_roles() -> dict[str, int]:
             created += 1
             continue
 
-        # Only write when the policy or description has actually changed.
-        # Comparing serialized dicts keeps the check simple and accurate —
-        # field order in `policy` is deterministic because actions are
-        # sorted at construction time.
         same = (
             existing.get("description") == doc["description"]
             and existing.get("is_system") == doc["is_system"]
@@ -136,7 +105,5 @@ async def seed_system_roles() -> dict[str, int]:
         )
         updated += 1
 
-    log.info(
-        "permissions.seed: created=%d updated=%d unchanged=%d", created, updated, unchanged
-    )
+    log.info("permissions.seed: created=%d updated=%d unchanged=%d", created, updated, unchanged)
     return {"created": created, "updated": updated, "unchanged": unchanged}

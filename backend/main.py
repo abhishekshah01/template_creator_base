@@ -18,6 +18,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from clients import app_service_client, composer_client, mongo_client
 from routers import admin_auth, asset, category_config, env, job, template
+from services import admin_users
 from services.permissions import seed as permissions_seed
 
 
@@ -25,6 +26,7 @@ from services.permissions import seed as permissions_seed
 async def lifespan(_app: FastAPI):
     await mongo_client.ensure_indexes()
     await permissions_seed.seed_system_roles()
+    await admin_users.ensure_rbac_fields()
     yield
     await app_service_client.aclose()
     await composer_client.aclose()

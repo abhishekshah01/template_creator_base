@@ -70,6 +70,7 @@ async def create_admin_user(
         email=req.email,
         username=req.username,
         password=req.password,
+        user_type=req.type,
         created_by=me["admin_id"],
     )
     return _admin_response(doc)
@@ -154,4 +155,7 @@ def _admin_response(doc: dict) -> AdminUserResponse:
         last_login_at=doc.get("last_login_at"),
         created_by=str(doc["created_by"]) if doc.get("created_by") else None,
         updated_by=str(doc["updated_by"]) if doc.get("updated_by") else None,
+        type=doc.get("type", "admin"),
+        attached_roles=doc.get("attached_roles", []),
+        inline_policy=doc.get("inline_policy", []),
     )

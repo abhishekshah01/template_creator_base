@@ -1,13 +1,17 @@
 """Request/response models for /api/admin-auth/*."""
 
 from datetime import datetime
-from typing import Optional
+from typing import Literal, Optional
 
 from pydantic import BaseModel, Field
 
+from schemas.permissions import Statement
+
+UserType = Literal["owner", "admin", "user"]
+
+
 class AdminLoginRequest(BaseModel):
     # `account` accepts either the 12-digit Account ID or an @emergent.sh email.
-    # Backend resolves which it is at lookup time.
     account: str = Field(min_length=1, max_length=256)
     username: str = Field(min_length=1, max_length=128)
     password: str = Field(min_length=1, max_length=256)
@@ -26,6 +30,7 @@ class CreateAdminRequest(BaseModel):
     email: str = Field(min_length=3, max_length=256)
     username: str = Field(min_length=2, max_length=64)
     password: str = Field(min_length=8, max_length=256)
+    type: UserType = "admin"
 
 
 class UpdateAdminRequest(BaseModel):
@@ -49,6 +54,9 @@ class AdminUserResponse(BaseModel):
     last_login_at: Optional[datetime] = None
     created_by: Optional[str] = None
     updated_by: Optional[str] = None
+    type: UserType = "admin"
+    attached_roles: list[str] = Field(default_factory=list)
+    inline_policy: list[Statement] = Field(default_factory=list)
 
 
 class AdminUserListResponse(BaseModel):

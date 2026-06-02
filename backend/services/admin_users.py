@@ -131,12 +131,27 @@ async def revoke_sessions(user_id: ObjectId) -> int:
     return res.deleted_count
 
 
+USER_TYPES: tuple[str, ...] = ("owner", "admin", "user")
+USER_TYPE_DEFAULT_ROLE: dict[str, str] = {
+    "owner": "owner-default",
+    "admin": "admin-default",
+    "user": "user-default",
+}
+
+
+def validate_user_type(user_type: str) -> str:
+    if user_type not in USER_TYPES:
+        raise HTTPException(400, f"type must be one of {USER_TYPES}.")
+    return user_type
+
+
 async def create_admin(
     *,
     account_id: str,
     email: str,
     username: str,
     password: str,
+    user_type: str = "admin",
     created_by: Optional[ObjectId] = None,
 ) -> dict:
     """Validate, hash, and insert. Returns the inserted doc (sans password_hash)."""
@@ -144,6 +159,7 @@ async def create_admin(
     email = validate_email(email)
     username = validate_username(username)
     validate_password(password)
+    user_type = validate_user_type(user_type)
 
     now = datetime.now(timezone.utc)
     doc = {
@@ -152,6 +168,9 @@ async def create_admin(
         "username": username,
         "password_hash": await hash_password(password),
         "is_active": True,
+        "type": user_type,
+        "attached_roles": [USER_TYPE_DEFAULT_ROLE[user_type]],
+        "inline_policy": [],
         "created_at": now,
         "updated_at": now,
         "last_login_at": None,
@@ -266,3 +285,20 @@ def _strip_secret(doc: dict) -> dict:
     doc = dict(doc)
     doc.pop("password_hash", None)
     return doc
+
+
+async def ensure_rbac_fields() -> int:
+    """Backfill type/attached_roles/inline_policy on docs that predate
+    PR3. Idempotent — only touches docs where `type` is missing, so a
+    manually emptied attached_roles list is preserved."""
+    res = await admin_users.update_many(
+        {"type": {"$exists": False}},
+        {
+            "$set": {
+                "type": "admin",
+                "attached_roles": [USER_TYPE_DEFAULT_ROLE["admin"]],
+                "inline_policy": [],
+            }
+        },
+    )
+    return res.modified_count

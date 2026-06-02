@@ -1,16 +1,6 @@
-"""Pydantic models for the permission system.
-
-`Statement` is the atomic unit of a grant — an effect (allow/deny), a list
-of actions it applies to, and a list of resource URIs it applies to. AWS
-IAM uses this exact shape.
-
-`Role` is a named bundle of statements that can be attached to users.
-
-`Decision` is what the evaluator returns. It carries the reason as a
-human-readable string so the audit log can record *why* a request was
-allowed or denied — useful for "why was this allowed?" investigations
-that a pure bool would not support.
-"""
+"""Statement / Role / Decision pydantic models. Statement is the security
+boundary — its validators must reject unknown actions and no-op wildcards
+so a malformed policy can't reach the database."""
 
 from __future__ import annotations
 
@@ -25,15 +15,6 @@ Effect = Literal["allow", "deny"]
 
 
 class Statement(BaseModel):
-    """One allow/deny rule.
-
-    `actions` accepts both literal action codes (validated against
-    `ALL_ACTIONS`) and wildcards (`tc:*`, `tc:s3:*`, `*`). Wildcards are
-    permitted so admins can author broad policies, but a wildcard MUST
-    cover at least one known action — otherwise the policy is a no-op
-    and almost certainly a typo.
-    """
-
     effect: Effect
     actions: list[str] = Field(min_length=1)
     resources: list[str] = Field(min_length=1)
@@ -47,17 +28,18 @@ class Statement(BaseModel):
             if not entry:
                 raise ValueError("action entries must be non-empty")
             if "*" in entry:
+                # Wildcard must cover at least one known action — otherwise
+                # the statement is a no-op and almost certainly a typo.
                 if not action_matches_any(entry, actions_mod.ALL_ACTIONS):
                     raise ValueError(
                         f"wildcard action '{entry}' matches no known action; "
                         f"check the spelling against services.permissions.actions"
                     )
-            else:
-                if not actions_mod.is_known(entry):
-                    raise ValueError(
-                        f"unknown action '{entry}'. "
-                        f"Add it to services.permissions.actions first."
-                    )
+            elif not actions_mod.is_known(entry):
+                raise ValueError(
+                    f"unknown action '{entry}'. "
+                    f"Add it to services.permissions.actions first."
+                )
         return v
 
     @field_validator("resources")
@@ -66,15 +48,10 @@ class Statement(BaseModel):
         for entry in v:
             if not entry:
                 raise ValueError("resource entries must be non-empty")
-            # We deliberately don't restrict the resource grammar beyond
-            # non-empty — the matcher handles wildcards and the route's
-            # resource_fn is the only thing that constructs them.
         return v
 
 
 class Role(BaseModel):
-    """A named bundle of statements attached to users."""
-
     name: str = Field(min_length=1, max_length=128)
     description: str = Field(default="", max_length=512)
     policy: list[Statement] = Field(default_factory=list)
@@ -84,13 +61,6 @@ class Role(BaseModel):
 
 
 class Decision(BaseModel):
-    """The result of evaluating (user, action, resource).
-
-    `effect` is `"allow"` or `"deny"`. `reason` is a short, machine-stable
-    string the audit log records verbatim — keep it stable across releases
-    if you ever want to query the audit log by reason.
-    """
-
     effect: Effect
     reason: str
 
