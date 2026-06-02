@@ -90,12 +90,6 @@ export default function BucketList({ onOpenBucket }) {
         <SectionTab>Directory buckets</SectionTab>
       </div>
 
-      {denied && (
-        <div className="mb-4">
-          <PermissionDeniedBanner error={denied} onRefresh={() => load({ force: true })} />
-        </div>
-      )}
-
       {err && (
         <div className="mb-4">
           <AwsAlert2
@@ -191,10 +185,20 @@ export default function BucketList({ onOpenBucket }) {
               {loading && (
                 <BodyMessage>Loading buckets…</BodyMessage>
               )}
-              {!loading && !err && pageItems.length === 0 && (
+              {!loading && denied && (
+                <tr>
+                  <td colSpan={4} style={{ padding: 16 }}>
+                    <PermissionDeniedBanner
+                      error={denied}
+                      onRefresh={() => load({ force: true })}
+                    />
+                  </td>
+                </tr>
+              )}
+              {!loading && !denied && !err && pageItems.length === 0 && (
                 <BodyMessage>No buckets match your search.</BodyMessage>
               )}
-              {!loading && pageItems.map(b => (
+              {!loading && !denied && pageItems.map(b => (
                 <BucketRow
                   key={b.name}
                   bucket={b}
