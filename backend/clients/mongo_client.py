@@ -17,6 +17,8 @@ _db = _client[config.DB_NAME]
 template_jobs = _db["template_jobs"]
 admin_users = _db["admin_users"]
 admin_sessions = _db["admin_sessions"]
+roles = _db["roles"]
+permission_audit = _db["permission_audit"]
 
 
 async def ensure_indexes() -> None:
@@ -33,6 +35,17 @@ async def ensure_indexes() -> None:
     # `expireAfterSeconds: 0` means "expire at the timestamp in this field, no grace".
     await admin_sessions.create_index("expires_at", expireAfterSeconds=0)
     await admin_sessions.create_index("token", unique=True)
+
+    # roles: role name is the lookup key and must be unique across both
+    # system-seeded and user-defined roles.
+    await roles.create_index("name", unique=True)
+
+    # permission_audit: per-user time-ordered queries ("show me everything
+    # Bob did this week") + a global time index for cross-user audits.
+    # NO TTL — audit rows are kept indefinitely per product decision.
+    await permission_audit.create_index([("user_id", 1), ("ts", -1)])
+    await permission_audit.create_index([("ts", -1)])
+    await permission_audit.create_index([("action", 1), ("ts", -1)])
 
 
 async def aclose() -> None:

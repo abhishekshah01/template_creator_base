@@ -18,11 +18,13 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from clients import app_service_client, composer_client, mongo_client
 from routers import admin_auth, asset, category_config, env, job, template
+from services.permissions import seed as permissions_seed
 
 
 @asynccontextmanager
 async def lifespan(_app: FastAPI):
     await mongo_client.ensure_indexes()
+    await permissions_seed.seed_system_roles()
     yield
     await app_service_client.aclose()
     await composer_client.aclose()
