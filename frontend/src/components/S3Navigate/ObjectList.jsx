@@ -206,12 +206,6 @@ export default function ObjectList({
         <SectionTab active>Objects</SectionTab>
       </div>
 
-      {denied && (
-        <div className="mb-4">
-          <PermissionDeniedBanner error={denied} onRefresh={() => load(currentToken, { force: true })} />
-        </div>
-      )}
-
       {err && (
         <div className="mb-4">
           <AwsAlert2
@@ -335,15 +329,25 @@ export default function ObjectList({
               {loading && (
                 <BodyMessage>Loading objects…</BodyMessage>
               )}
-              {!loading && !err && filteredFolders.length === 0 && sortedFiles.length === 0 && (
+              {!loading && denied && (
+                <tr>
+                  <td colSpan={6} style={{ padding: 16 }}>
+                    <PermissionDeniedBanner
+                      error={denied}
+                      onRefresh={() => load(currentToken, { force: true })}
+                    />
+                  </td>
+                </tr>
+              )}
+              {!loading && !denied && !err && filteredFolders.length === 0 && sortedFiles.length === 0 && (
                 <BodyMessage>No objects here.</BodyMessage>
               )}
 
-              {!loading && filteredFolders.map(f => (
+              {!loading && !denied && filteredFolders.map(f => (
                 <FolderRow key={f.prefix} folder={f} onOpen={() => onOpenPrefix(f.prefix)} />
               ))}
 
-              {!loading && sortedFiles.map((f, idx) => {
+              {!loading && !denied && sortedFiles.map((f, idx) => {
                 const isSel = selected.has(f.key);
                 const prevSel = idx > 0 && selected.has(sortedFiles[idx - 1].key);
                 const nextSel = idx < sortedFiles.length - 1 && selected.has(sortedFiles[idx + 1].key);
