@@ -2,12 +2,15 @@ import { useState } from 'react';
 
 import AwsAlert2 from './AwsAlert2';
 import { AwsButton, OpenExternalIconV2 } from './AwsControls';
+import PermissionDeniedBanner from './PermissionDeniedBanner';
 import { s3api } from './api';
+import { PermissionDeniedError } from '../../api';
 import { colors } from './theme';
 
 export default function CreateFolderPage({ bucket, prefix, onCancel, onDone }) {
   const [name, setName] = useState('');
   const [err, setErr] = useState(null);
+  const [denied, setDenied] = useState(null);
   const [creating, setCreating] = useState(false);
 
   function validate(value) {
@@ -24,12 +27,14 @@ export default function CreateFolderPage({ bucket, prefix, onCancel, onDone }) {
     if (v) { setErr(v); return; }
     setCreating(true);
     setErr(null);
+    setDenied(null);
     const key = (prefix || '') + trimmed + '/';
     try {
       await s3api.createFolder(bucket, key);
       onDone?.(trimmed);
     } catch (e) {
-      setErr(e.message);
+      if (e instanceof PermissionDeniedError) setDenied(e);
+      else setErr(e.message);
     } finally {
       setCreating(false);
     }
@@ -52,6 +57,12 @@ export default function CreateFolderPage({ bucket, prefix, onCancel, onDone }) {
           They don't enforce permissions and aren't billed separately — the slash in the key is what makes the object appear as a folder when you list the bucket.
         </AwsAlert2>
       </div>
+
+      {denied && (
+        <div className="mb-4">
+          <PermissionDeniedBanner error={denied} />
+        </div>
+      )}
 
       {err && (
         <div className="mb-4">

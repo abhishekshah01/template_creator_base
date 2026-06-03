@@ -2,7 +2,9 @@ import { useEffect, useMemo, useState } from 'react';
 
 import AwsAlert2 from './AwsAlert2';
 import { AwsButton, AwsRadio, AwsSearchInput, CopyIcon as AwsCopyIcon, RefreshIcon, SortTriangleV2 } from './AwsControls';
+import PermissionDeniedBanner from './PermissionDeniedBanner';
 import { s3api } from './api';
+import { PermissionDeniedError } from '../../api';
 import { formatAwsDate } from './format';
 import { colors } from './theme';
 
@@ -17,6 +19,7 @@ export default function BucketList({ onOpenBucket }) {
   const [buckets, setBuckets] = useState([]);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState(null);
+  const [denied, setDenied] = useState(null);
   const [filter, setFilter] = useState('');
   const [page, setPage] = useState(1);
   const [selected, setSelected] = useState(null);
@@ -25,11 +28,17 @@ export default function BucketList({ onOpenBucket }) {
   async function load({ force = false } = {}) {
     setLoading(true);
     setErr(null);
+    setDenied(null);
     try {
       const data = await s3api.listBuckets(force);
       setBuckets(data.buckets || []);
     } catch (e) {
-      setErr(e.message);
+      if (e instanceof PermissionDeniedError) {
+        setDenied(e);
+        setBuckets([]);
+      } else {
+        setErr(e.message);
+      }
     } finally {
       setLoading(false);
     }
@@ -80,6 +89,12 @@ export default function BucketList({ onOpenBucket }) {
         </SectionTab>
         <SectionTab>Directory buckets</SectionTab>
       </div>
+
+      {denied && (
+        <div className="mb-4">
+          <PermissionDeniedBanner error={denied} onRefresh={() => load({ force: true })} />
+        </div>
+      )}
 
       {err && (
         <div className="mb-4">

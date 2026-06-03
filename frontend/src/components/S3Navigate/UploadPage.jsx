@@ -2,7 +2,9 @@ import { useRef, useState, useMemo } from 'react';
 
 import AwsAlert2 from './AwsAlert2';
 import { AwsButton, AwsCheckbox, AwsSearchInput, SortTriangleV2, OpenExternalIconV2 } from './AwsControls';
+import PermissionDeniedBanner from './PermissionDeniedBanner';
 import { s3api } from './api';
+import { PermissionDeniedError } from '../../api';
 import { bytesToHuman, fileExt } from './format';
 import { colors } from './theme';
 
@@ -13,6 +15,7 @@ export default function UploadPage({ bucket, prefix, onCancel, onDone }) {
   const [progress, setProgress] = useState({});
   const [running, setRunning] = useState(false);
   const [err, setErr] = useState(null);
+  const [denied, setDenied] = useState(null);
   const [filter, setFilter] = useState('');
   const [selected, setSelected] = useState(new Set());
   const [sort, setSort] = useState({ key: 'name', dir: 'asc' });
@@ -86,7 +89,9 @@ export default function UploadPage({ bucket, prefix, onCancel, onDone }) {
     if (!items.length) return;
     setRunning(true);
     setErr(null);
+    setDenied(null);
     let done = 0;
+    let permissionBlocked = false;
     for (const { file, relPath } of items) {
       const key = (prefix || '') + relPath;
       setProgress(p => ({ ...p, [relPath]: { pct: 0, status: 'starting' } }));
@@ -98,10 +103,16 @@ export default function UploadPage({ bucket, prefix, onCancel, onDone }) {
         done += 1;
       } catch (e) {
         setProgress(p => ({ ...p, [relPath]: { pct: 0, status: 'failed', err: e.message } }));
+        if (e instanceof PermissionDeniedError) {
+          setDenied(e);
+          permissionBlocked = true;
+          break;
+        }
         setErr(e.message);
       }
     }
     setRunning(false);
+    if (permissionBlocked) return;
     const failed = items.length - done;
     if (failed === 0 && done > 0) {
       onDone?.(done);
@@ -125,6 +136,12 @@ export default function UploadPage({ bucket, prefix, onCancel, onDone }) {
       <p className="text-[14px] mb-5 max-w-[860px]" style={{ color: colors.text.info }}>
         Add the files and folders you want to upload to S3. Files are uploaded with a presigned PUT URL minted by the Emergent app-service; this app never touches AWS credentials directly.
       </p>
+
+      {denied && (
+        <div className="mb-4">
+          <PermissionDeniedBanner error={denied} />
+        </div>
+      )}
 
       {err && (
         <div className="mb-4">
