@@ -454,7 +454,7 @@ function FolderRow({ folder, selected, mergeTop = false, mergeBottom = false, on
         <button
           type="button"
           onClick={onOpen}
-          className="text-left underline decoration-1 underline-offset-2 break-words inline-flex items-center gap-2"
+          className="text-left underline decoration-1 underline-offset-4 break-words inline-flex items-center gap-2"
           style={{ color: colors.text.buttonActive }}
         >
           <FolderIcon />
@@ -521,7 +521,7 @@ function FileRow({ file, selected, mergeTop = false, mergeBottom = false, onSele
           style={{ color: colors.text.buttonActive }}
         >
           <span className="inline-block align-text-bottom mr-2"><FileIcon16 /></span>
-          <span className="underline decoration-1 underline-offset-2">
+          <span className="underline decoration-1 underline-offset-4">
             {file.name}
           </span>
         </button>
