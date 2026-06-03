@@ -7,10 +7,10 @@ statements against.
 
 from __future__ import annotations
 
-from enum import StrEnum
+from enum import Enum
 
 
-class S3Action(StrEnum):
+class S3Action(str, Enum):
     LIST_BUCKETS = "tc:s3:ListBuckets"
     GET_BUCKET_LOCATION = "tc:s3:GetBucketLocation"
     LIST_BUCKET = "tc:s3:ListBucket"
@@ -19,6 +19,9 @@ class S3Action(StrEnum):
     DELETE_OBJECT = "tc:s3:DeleteObject"
     CREATE_FOLDER = "tc:s3:CreateFolder"
     INVALIDATE_CACHE = "tc:s3:InvalidateCache"
+
+    def __str__(self) -> str:
+        return self.value
 
 
 ALL_S3_ACTIONS: frozenset[str] = frozenset(action.value for action in S3Action)

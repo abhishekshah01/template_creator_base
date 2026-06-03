@@ -15,9 +15,14 @@ log = logging.getLogger(__name__)
 
 
 def _allow_statement(actions, resources) -> PolicyStatement:
-    # Sort actions so the persisted policy is stable across restarts (otherwise
-    # set-iteration order makes Mongo see a "modified" doc every time).
-    return PolicyStatement(effect="allow", actions=sorted(actions), resources=list(resources))
+    # Coerce enum members to plain strings and sort so the persisted policy is
+    # stable across restarts (otherwise set-iteration order makes Mongo see a
+    # "modified" doc every time).
+    return PolicyStatement(
+        effect="allow",
+        actions=sorted(str(action) for action in actions),
+        resources=list(resources),
+    )
 
 
 ATTACHABLE_ROLES: tuple[Role, ...] = (
