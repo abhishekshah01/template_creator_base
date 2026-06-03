@@ -36,6 +36,16 @@ class DuplicateResourceError(HTTPException):
         super().__init__(status_code=409, detail=message)
 
 
+class ConflictError(HTTPException):
+    def __init__(self, message: str) -> None:
+        super().__init__(status_code=409, detail=message)
+
+
+class ForbiddenError(HTTPException):
+    def __init__(self, message: str) -> None:
+        super().__init__(status_code=403, detail=message)
+
+
 class PermissionDeniedError(HTTPException):
     """403 carrying the denied (action, resource) so the frontend can render a
     targeted banner instead of a generic auth error."""
