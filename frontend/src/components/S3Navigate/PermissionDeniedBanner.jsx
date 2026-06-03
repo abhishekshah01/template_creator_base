@@ -34,8 +34,7 @@ function titleFor(action, resource) {
   if (bucket && BUCKET_SCOPED_VERB[action]) {
     return (
       <>
-        Insufficient permissions to {BUCKET_SCOPED_VERB[action]}{' '}
-        <span style={{ fontStyle: 'italic' }}>s3bucket:{bucket}</span>
+        Insufficient permissions to {BUCKET_SCOPED_VERB[action]} s3bucket:{bucket}
       </>
     );
   }
