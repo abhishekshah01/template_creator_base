@@ -108,20 +108,25 @@ export default function ObjectList({
     return data.files.filter(f => f.name.toLowerCase().includes(q));
   }, [data.files, filter]);
 
-  const sortedFiles = useMemo(() => {
+  const sortedRows = useMemo(() => {
+    const folders = filteredFolders.map(f => ({ ...f, _kind: 'folder', _id: f.prefix }));
+    const files = filteredFiles.map(f => ({ ...f, _kind: 'file', _id: f.key }));
+    const out = [...folders, ...files];
     const { key, dir } = sort;
     const mult = dir === 'asc' ? 1 : -1;
-    const out = [...filteredFiles];
+
+    function valueFor(row) {
+      if (key === 'name') return row.name || '';
+      if (key === 'type') return row._kind === 'folder' ? 'Folder' : (fileExt(row.name) || '');
+      if (key === 'last_modified') return row._kind === 'folder' ? null : row.last_modified;
+      if (key === 'size') return row._kind === 'folder' ? null : row.size;
+      if (key === 'storage_class') return row._kind === 'folder' ? null : row.storage_class;
+      return null;
+    }
+
     out.sort((a, b) => {
-      const av = a[key === 'type' ? 'name' : key];
-      const bv = b[key === 'type' ? 'name' : key];
-      if (key === 'type') {
-        const at = fileExt(a.name) || '';
-        const bt = fileExt(b.name) || '';
-        if (at < bt) return -1 * mult;
-        if (at > bt) return  1 * mult;
-        return 0;
-      }
+      const av = valueFor(a);
+      const bv = valueFor(b);
       if (av == null && bv == null) return 0;
       if (av == null) return 1;
       if (bv == null) return -1;
@@ -130,7 +135,7 @@ export default function ObjectList({
       return 0;
     });
     return out;
-  }, [filteredFiles, sort]);
+  }, [filteredFolders, filteredFiles, sort]);
 
   const totalCount = (data.folders?.length || 0) + (data.files?.length || 0);
   const selectedKeys = Array.from(selected);
@@ -148,8 +153,9 @@ export default function ObjectList({
     setSelected(next);
   }
   function toggleAll() {
-    if (selected.size === sortedFiles.length && sortedFiles.length > 0) setSelected(new Set());
-    else setSelected(new Set(sortedFiles.map(f => f.key)));
+    const ids = sortedRows.map(r => r._id);
+    if (selected.size === ids.length && ids.length > 0) setSelected(new Set());
+    else setSelected(new Set(ids));
   }
 
   async function copy(text) {
@@ -215,7 +221,7 @@ export default function ObjectList({
   }
 
   const countLabel = hasSelection ? `${selected.size}/${totalCount}` : `${totalCount}`;
-  const allChecked = sortedFiles.length > 0 && selected.size >= sortedFiles.length;
+  const allChecked = sortedRows.length > 0 && selected.size >= sortedRows.length;
   const someChecked = !allChecked && selected.size > 0;
 
   return (
@@ -367,27 +373,36 @@ export default function ObjectList({
                   </td>
                 </tr>
               )}
-              {!loading && !denied && !loadFailed && filteredFolders.length === 0 && sortedFiles.length === 0 && (
+              {!loading && !denied && !loadFailed && sortedRows.length === 0 && (
                 <BodyMessage>No objects here.</BodyMessage>
               )}
 
-              {!loading && !denied && filteredFolders.map(f => (
-                <FolderRow key={f.prefix} folder={f} onOpen={() => onOpenPrefix(f.prefix)} />
-              ))}
-
-              {!loading && !denied && sortedFiles.map((f, idx) => {
-                const isSel = selected.has(f.key);
-                const prevSel = idx > 0 && selected.has(sortedFiles[idx - 1].key);
-                const nextSel = idx < sortedFiles.length - 1 && selected.has(sortedFiles[idx + 1].key);
+              {!loading && !denied && sortedRows.map((row, idx) => {
+                const isSel = selected.has(row._id);
+                const prevSel = idx > 0 && selected.has(sortedRows[idx - 1]._id);
+                const nextSel = idx < sortedRows.length - 1 && selected.has(sortedRows[idx + 1]._id);
+                if (row._kind === 'folder') {
+                  return (
+                    <FolderRow
+                      key={row._id}
+                      folder={row}
+                      selected={isSel}
+                      mergeTop={isSel && prevSel}
+                      mergeBottom={isSel && nextSel}
+                      onSelect={() => toggleSelect(row._id)}
+                      onOpen={() => onOpenPrefix(row.prefix)}
+                    />
+                  );
+                }
                 return (
                   <FileRow
-                    key={f.key}
-                    file={f}
+                    key={row._id}
+                    file={row}
                     selected={isSel}
                     mergeTop={isSel && prevSel}
                     mergeBottom={isSel && nextSel}
-                    onSelect={() => toggleSelect(f.key)}
-                    onOpen={() => onOpenObject(f)}
+                    onSelect={() => toggleSelect(row._id)}
+                    onOpen={() => onOpenObject(row)}
                   />
                 );
               })}
@@ -399,19 +414,38 @@ export default function ObjectList({
   );
 }
 
-function FolderRow({ folder, onOpen }) {
+function FolderRow({ folder, selected, mergeTop = false, mergeBottom = false, onSelect, onOpen }) {
+  const ringColor = selected ? colors.border.rowSelected : 'transparent';
   const separator = `1px solid ${colors.border.rowSeparator}`;
   const cellBase = {
     padding: '8px 12px',
+    backgroundColor: selected ? colors.bg.rowSelected : 'transparent',
     color: colors.text.selectedRow,
     verticalAlign: 'middle',
-    borderTop: '2px solid transparent',
-    borderBottom: separator,
   };
+  const top = (selected && mergeTop) ? 'none' : `2px solid ${ringColor}`;
+  const bottom = selected ? `2px solid ${ringColor}` : separator;
+  const roundTop = selected && !mergeTop;
+  const roundBottom = selected && !mergeBottom;
   return (
     <tr>
-      <td style={{ ...cellBase, borderLeft: '2px solid transparent' }} />
-      <td style={cellBase}>
+      <td
+        style={{
+          ...cellBase,
+          borderTop: top,
+          borderBottom: bottom,
+          borderLeft: `2px solid ${ringColor}`,
+          borderTopLeftRadius: roundTop ? 8 : 0,
+          borderBottomLeftRadius: roundBottom ? 8 : 0,
+        }}
+      >
+        <AwsCheckbox
+          checked={selected}
+          onChange={onSelect}
+          ariaLabel={`Select folder ${folder.name}`}
+        />
+      </td>
+      <td style={{ ...cellBase, borderTop: top, borderBottom: bottom }}>
         <button
           type="button"
           onClick={onOpen}
@@ -422,10 +456,22 @@ function FolderRow({ folder, onOpen }) {
           <span>{folder.name}/</span>
         </button>
       </td>
-      <td style={cellBase}>Folder</td>
-      <td style={{ ...cellBase, color: colors.text.info }}>—</td>
-      <td style={{ ...cellBase, color: colors.text.info }}>—</td>
-      <td style={{ ...cellBase, borderRight: '2px solid transparent', color: colors.text.info }}>—</td>
+      <td style={{ ...cellBase, borderTop: top, borderBottom: bottom }}>Folder</td>
+      <td style={{ ...cellBase, borderTop: top, borderBottom: bottom, color: colors.text.info }}>—</td>
+      <td style={{ ...cellBase, borderTop: top, borderBottom: bottom, color: colors.text.info }}>—</td>
+      <td
+        style={{
+          ...cellBase,
+          borderTop: top,
+          borderBottom: bottom,
+          borderRight: `2px solid ${ringColor}`,
+          borderTopRightRadius: roundTop ? 8 : 0,
+          borderBottomRightRadius: roundBottom ? 8 : 0,
+          color: colors.text.info,
+        }}
+      >
+        —
+      </td>
     </tr>
   );
 }
