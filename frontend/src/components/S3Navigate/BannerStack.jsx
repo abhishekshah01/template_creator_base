@@ -122,13 +122,20 @@ function StackedGroup({ items, dismiss }) {
           key={b.id}
           style={
             i === 0
-              ? { position: 'relative', zIndex: items.length }
+              ? {
+                  position: 'relative',
+                  zIndex: items.length,
+                  borderRadius: 8,
+                  boxShadow: '0 4px 10px rgba(0,0,0,0.55)',
+                }
               : {
                   position: 'absolute',
                   top: i * PEEK_Y,
                   left: i * PEEK_X,
                   right: i * PEEK_X,
                   zIndex: items.length - i,
+                  borderRadius: 8,
+                  boxShadow: '0 4px 10px rgba(0,0,0,0.45)',
                 }
           }
         >
