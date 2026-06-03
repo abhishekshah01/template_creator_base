@@ -14,6 +14,12 @@ const VARIANTS = {
     textColor: '#e5e2df',
     Icon: InfoCircleIcon,
   },
+  success: {
+    bg: '#016626',
+    iconColor: '#e5e2df',
+    textColor: '#e5e2df',
+    Icon: SuccessCircleIcon,
+  },
 };
 
 export default function AwsAlertSolid({
@@ -27,7 +33,7 @@ export default function AwsAlertSolid({
   const Icon = v.Icon;
   return (
     <div
-      role={variant === 'info' ? 'status' : 'alert'}
+      role={variant === 'info' || variant === 'success' ? 'status' : 'alert'}
       className={`flex items-start gap-3 px-4 py-3 rounded-[8px] text-[14px] leading-[1.45] ${className}`}
       style={{
         backgroundColor: v.bg,
@@ -97,6 +103,26 @@ function InfoCircleIcon() {
     >
       <circle cx="8" cy="8" r="7" />
       <path d="M8 12V7M8 6V4" />
+    </svg>
+  );
+}
+
+function SuccessCircleIcon() {
+  return (
+    <svg
+      viewBox="0 0 16 16"
+      width="20"
+      height="20"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.6"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+      focusable="false"
+    >
+      <circle cx="8" cy="8" r="7" />
+      <path d="M4.5 7.5 7 10l4-5" />
     </svg>
   );
 }
