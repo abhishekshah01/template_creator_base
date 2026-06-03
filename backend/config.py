@@ -146,3 +146,8 @@ TEMPLATE_JOB_WEBHOOK_BASE_URL = os.environ.get("TEMPLATE_JOB_WEBHOOK_BASE_URL", 
 # --- MongoDB (template-job status persistence) ---
 MONGO_URL = os.environ.get("MONGO_URL", "mongodb://localhost:27017/template_automation")
 DB_NAME = os.environ.get("DB_NAME", "template_automation")
+
+# --- Access control ---
+# When false, permission checks still evaluate and audit but never raise 403 —
+# lets us ship the wiring, watch the audit log, then enforce without redeploying.
+PERMISSIONS_ENFORCE = os.environ.get("PERMISSIONS_ENFORCE", "false").lower() in ("1", "true", "yes")
