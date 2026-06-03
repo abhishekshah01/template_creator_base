@@ -62,11 +62,12 @@ export default function ObjectList({
     setLoading(true);
     setDenied(null);
     setLoadFailed(false);
+    setSelected(new Set());
+    topBanners.clear();
     try {
       const d = await s3api.listObjects(bucket, prefix, token, force);
       setData(d);
       setCurrentToken(token);
-      setSelected(new Set());
     } catch (e) {
       if (e instanceof PermissionDeniedError) {
         setDenied(e);
