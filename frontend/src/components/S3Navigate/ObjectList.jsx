@@ -512,11 +512,11 @@ function FileRow({ file, selected, mergeTop = false, mergeBottom = false, onSele
         <button
           type="button"
           onClick={onOpen}
-          className="text-left flex items-start gap-2 w-full"
+          className="text-left break-all"
           style={{ color: colors.text.buttonActive }}
         >
-          <span className="mt-0.5 shrink-0"><FileIcon16 /></span>
-          <span className="underline decoration-1 underline-offset-2 break-all min-w-0">
+          <span className="inline-block align-text-bottom mr-2"><FileIcon16 /></span>
+          <span className="underline decoration-1 underline-offset-2">
             {file.name}
           </span>
         </button>
@@ -561,11 +561,10 @@ function BodyMessage({ children }) {
 }
 
 function HeaderCell({ children, showDivider, scrolled = false }) {
-  // Underline thickens from 1px to 2px once body has scrolled, lifting the sticky header.
   return (
     <th
       style={{
-        padding: '8px 12px',
+        padding: '4px 12px',
         color: colors.text.info,
         position: 'sticky',
         top: 0,
@@ -584,10 +583,10 @@ function HeaderCell({ children, showDivider, scrolled = false }) {
             style={{
               position: 'absolute',
               right: -12,
-              top: -2,
-              bottom: -2,
-              width: 1,
-              backgroundColor: colors.border.rowSeparator,
+              top: -4,
+              bottom: -4,
+              width: 2,
+              backgroundColor: '#8c8c95',
             }}
           />
         )}
