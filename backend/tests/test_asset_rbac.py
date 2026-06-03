@@ -37,7 +37,7 @@ def stub_rbac(monkeypatch, audit_log):
 
     async def passthrough(session):
         return session
-    monkeypatch.setattr("services.permissions.deps.load_actor", passthrough)
+    monkeypatch.setattr("services.permissions.deps.resolve_user", passthrough)
     monkeypatch.setattr("services.permissions.deps.evaluator.evaluate", fake_evaluate)
     monkeypatch.setattr("services.permissions.deps.audit.record", fake_record)
     # Asset router imports get_current_admin from routers.admin_auth.

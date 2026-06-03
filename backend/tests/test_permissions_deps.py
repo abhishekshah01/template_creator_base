@@ -41,7 +41,7 @@ def patch_environment(monkeypatch, fake_audit_collector):
 
     async def passthrough(session):
         return session
-    monkeypatch.setattr("services.permissions.deps.load_actor", passthrough)
+    monkeypatch.setattr("services.permissions.deps.resolve_user", passthrough)
     monkeypatch.setattr("services.permissions.deps.evaluator.evaluate", fake_evaluate)
     monkeypatch.setattr("services.permissions.deps.audit.record", fake_record)
     monkeypatch.setattr("services.permissions.deps.get_current_admin", fake_admin)
@@ -154,22 +154,22 @@ def test_request_id_uses_x_request_id_header_when_present(client, fake_audit_col
 
 @pytest.mark.asyncio
 async def test_effective_policy_owner_returns_wildcard():
-    from services.permissions.deps import effective_policy
+    from services.permissions.deps import get_effective_policy
 
-    out = await effective_policy({"type": "owner"})
+    out = await get_effective_policy({"type": "owner"})
     assert out == [{"effect": "allow", "actions": ["*"], "resources": ["*"]}]
 
 
 @pytest.mark.asyncio
 async def test_effective_policy_legacy_is_admin_returns_wildcard():
-    from services.permissions.deps import effective_policy
+    from services.permissions.deps import get_effective_policy
 
-    out = await effective_policy({"type": "admin", "is_admin": True})
+    out = await get_effective_policy({"type": "admin", "is_admin": True})
     assert out == [{"effect": "allow", "actions": ["*"], "resources": ["*"]}]
 
 
 @pytest.mark.asyncio
 async def test_effective_policy_no_user_returns_empty():
-    from services.permissions.deps import effective_policy
+    from services.permissions.deps import get_effective_policy
 
-    assert await effective_policy(None) == []
+    assert await get_effective_policy(None) == []

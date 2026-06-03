@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import logging
 import uuid
 from typing import Awaitable, Callable, Optional, Union
 
@@ -11,8 +10,6 @@ from routers.admin_auth import get_current_admin
 from services import admin_users as users_svc
 from services.permissions import audit, evaluator
 
-log = logging.getLogger(__name__)
-
 
 ResourceFn = Union[
     Callable[[Request], str],
@@ -21,7 +18,7 @@ ResourceFn = Union[
 ]
 
 
-async def _resolve_resource(resource_fn: ResourceFn, request: Request) -> str:
+async def resolve_resource(resource_fn: ResourceFn, request: Request) -> str:
     if isinstance(resource_fn, str):
         return resource_fn
     out = resource_fn(request)
@@ -30,41 +27,44 @@ async def _resolve_resource(resource_fn: ResourceFn, request: Request) -> str:
     return str(out)
 
 
-async def load_actor(session: dict) -> dict:
+async def resolve_user(session: dict) -> dict:
+    """Load the full user (with type/attached_roles/inline_policy) for the
+    authenticated session. The session itself was produced by
+    admin_auth_service.require() — it validates the X-Admin-Token header
+    against the admin_sessions Mongo collection and carries only auth
+    fields, not RBAC ones."""
     if not session:
-        return session
-    # Session already enriched (test fixtures or future cache).
+        raise HTTPException(401, "Sign in required.")
     if "type" in session and "attached_roles" in session:
         return session
-    admin_id = session.get("admin_id")
-    if not admin_id:
-        return session
-    doc = await users_svc.find_by_id(admin_id)
-    if not doc:
-        return session
+    # admin_id is the legacy session field name; treat it as the user id.
+    user_id = session.get("admin_id")
+    if not user_id:
+        raise HTTPException(401, "Sign in required.")
+    user_doc = await users_svc.find_by_id(user_id)
+    if not user_doc:
+        raise HTTPException(401, "Account no longer exists. Sign in again.")
     return {
         **session,
-        "_id": doc.get("_id"),
-        "type": doc.get("type"),
-        "attached_roles": doc.get("attached_roles", []),
-        "inline_policy": doc.get("inline_policy", []),
-        "is_admin": doc.get("is_admin", False),
-        "is_active": doc.get("is_active", True),
+        "_id": user_doc.get("_id"),
+        "type": user_doc.get("type"),
+        "attached_roles": user_doc.get("attached_roles", []),
+        "inline_policy": user_doc.get("inline_policy", []),
+        "is_admin": user_doc.get("is_admin", False),
+        "is_active": user_doc.get("is_active", True),
     }
 
 
-async def check(user: dict, action: str, resource: str, request: Request) -> None:
-    actor = await load_actor(user)
-    decision = await evaluator.evaluate(actor, action, resource)
+async def authorize(session: dict, action: str, resource: str, request: Request) -> None:
+    """Resolve the user, evaluate (action, resource), write one audit row,
+    raise 403 when denied AND enforcement is on."""
+    user = await resolve_user(session)
+    decision = await evaluator.evaluate(user, action, resource)
 
-    request_id = (
-        request.headers.get("x-request-id")
-        or getattr(request.state, "request_id", None)
-        or str(uuid.uuid4())
-    )
+    request_id = request.headers.get("x-request-id") or str(uuid.uuid4())
 
     await audit.record(
-        user=actor,
+        user=user,
         action=action,
         resource=resource,
         decision=decision,
@@ -83,26 +83,20 @@ async def check(user: dict, action: str, resource: str, request: Request) -> Non
             },
         )
 
-    if not decision.allowed:
-        log.info(
-            "permissions.dry_run: deny would have fired action=%s resource=%s user=%s reason=%s",
-            action, resource, actor.get("username"), decision.reason,
-        )
-
 
 def require(action: str, resource_fn: ResourceFn):
+    """FastAPI dependency factory: enforces (action, resource) on each request."""
     async def dep(
         request: Request,
-        user: dict = Depends(get_current_admin),
+        session: dict = Depends(get_current_admin),
     ) -> dict:
-        resource = await _resolve_resource(resource_fn, request)
-        await check(user, action, resource, request)
-        return user
-
+        resource = await resolve_resource(resource_fn, request)
+        await authorize(session, action, resource, request)
+        return session
     return dep
 
 
-async def effective_policy(user: Optional[dict]) -> list[dict]:
+async def get_effective_policy(user: Optional[dict]) -> list[dict]:
     if not user:
         return []
     if user.get("type") == "owner" or user.get("is_admin") is True:

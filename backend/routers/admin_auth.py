@@ -52,14 +52,14 @@ async def me(me: dict = Depends(get_current_admin)) -> AdminSessionResponse:
 async def me_permissions(me: dict = Depends(get_current_admin)) -> dict:
     # Local import to avoid the circular: deps.py imports get_current_admin
     # from this module.
-    from services.permissions.deps import effective_policy
+    from services.permissions.deps import get_effective_policy
 
     admin = await users_svc.find_by_id(me["admin_id"])
     return {
         "username": me.get("username"),
         "type": (admin or {}).get("type", "admin"),
         "attached_roles": (admin or {}).get("attached_roles", []),
-        "effective_policy": await effective_policy(admin),
+        "effective_policy": await get_effective_policy(admin),
     }
 
 

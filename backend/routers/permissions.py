@@ -23,7 +23,7 @@ from schemas.roles import (
 )
 from services import admin_users as users_svc
 from services import role_service, user_roles_service
-from services.permissions.deps import check
+from services.permissions.deps import authorize
 
 router = APIRouter(prefix="/api/admin-auth", tags=["permissions"])
 
@@ -32,7 +32,7 @@ PSEUDO_RESOURCE = "tc://rbac/admin"
 
 
 async def _owner_only(action: str, request: Request, user: dict) -> None:
-    await check(user, action, PSEUDO_RESOURCE, request)
+    await authorize(user, action, PSEUDO_RESOURCE, request)
 
 
 def _to_object_id(raw: str) -> ObjectId:
