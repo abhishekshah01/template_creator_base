@@ -439,10 +439,7 @@ function FileRow({ file, selected, mergeTop = false, mergeBottom = false, onSele
     color: colors.text.selectedRow,
     verticalAlign: 'middle',
   };
-  // Outer ring stays 2px. Internal boundaries between consecutive selected
-  // rows also render at 2px (matching the outer borders) — the upper row
-  // keeps its 2px borderBottom and the lower row drops borderTop so they
-  // don't stack to 4px.
+  // mergeTop drops the upper row's borderTop so adjacent selections don't stack to 4px.
   const top = (selected && mergeTop) ? 'none' : `2px solid ${ringColor}`;
   const bottom = selected ? `2px solid ${ringColor}` : separator;
   const roundTop = selected && !mergeTop;
@@ -516,9 +513,7 @@ function BodyMessage({ children }) {
 }
 
 function HeaderCell({ children, showDivider, scrolled = false }) {
-  // The header sticks to the top of the scrollable container. Once any of the
-  // body has scrolled out the top, the underline doubles from 1px to 2px so
-  // the header feels lifted above the scrolled content.
+  // Underline thickens from 1px to 2px once body has scrolled, lifting the sticky header.
   return (
     <th
       style={{

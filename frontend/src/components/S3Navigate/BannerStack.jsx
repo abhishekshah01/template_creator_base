@@ -51,10 +51,7 @@ export default function BannerStack({
 }) {
   if (!banners.length) return null;
 
-  // Group consecutive entries that the caller declared as having identical
-  // rendered content (same groupKey). Any difference in groupKey — or no
-  // groupKey at all — starts a new group, so banners whose title/body
-  // differ never collapse together.
+  // Same groupKey = same rendered content; differing keys start a new group.
   const groups = [];
   for (const b of banners) {
     const last = groups[groups.length - 1];

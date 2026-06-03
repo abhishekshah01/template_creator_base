@@ -1,8 +1,5 @@
-// Solid-tone sibling to AwsAlert2. AWS uses these for the page-top
-// "you don't have permission" / "failed to delete objects" banners —
-// the same icon/title/body shape as the outlined variants, but a
-// saturated background instead of an outline so it reads as a hard
-// stop rather than an inline notice.
+// Solid-tone sibling to AwsAlert2 — saturated bg instead of an outline,
+// for page-top "hard stop" banners.
 
 const VARIANTS = {
   error: {
