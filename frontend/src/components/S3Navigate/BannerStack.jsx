@@ -73,13 +73,23 @@ export default function BannerStack({
 
   return (
     <div className={`relative flex flex-col gap-2 ${className}`}>
-      {groups.flatMap(g => {
-        const items = expanded || g.items.length <= VISIBLE_PER_GROUP
-          ? g.items
-          : g.items.slice(0, VISIBLE_PER_GROUP);
-        return items.map(b => (
-          <div key={b.id}>{b.render(() => dismiss(b.id))}</div>
-        ));
+      {groups.map(g => {
+        if (expanded) {
+          return g.items.map(b => (
+            <div key={b.id}>{b.render(() => dismiss(b.id))}</div>
+          ));
+        }
+        if (g.items.length === 1) {
+          const b = g.items[0];
+          return <div key={b.id}>{b.render(() => dismiss(b.id))}</div>;
+        }
+        return (
+          <StackedGroup
+            key={g.items[0].id}
+            items={g.items.slice(0, VISIBLE_PER_GROUP)}
+            dismiss={dismiss}
+          />
+        );
       })}
       {showBar && (
         <div className="flex justify-center relative" style={{ marginTop: -10, zIndex: 10 }}>
@@ -91,6 +101,40 @@ export default function BannerStack({
           />
         </div>
       )}
+    </div>
+  );
+}
+
+
+const PEEK_Y = 5;
+const PEEK_X = 8;
+
+function StackedGroup({ items, dismiss }) {
+  return (
+    <div
+      style={{
+        position: 'relative',
+        paddingBottom: (items.length - 1) * PEEK_Y,
+      }}
+    >
+      {items.map((b, i) => (
+        <div
+          key={b.id}
+          style={
+            i === 0
+              ? { position: 'relative', zIndex: items.length }
+              : {
+                  position: 'absolute',
+                  top: i * PEEK_Y,
+                  left: i * PEEK_X,
+                  right: i * PEEK_X,
+                  zIndex: items.length - i,
+                }
+          }
+        >
+          {b.render(() => dismiss(b.id))}
+        </div>
+      ))}
     </div>
   );
 }
