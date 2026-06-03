@@ -1,9 +1,20 @@
 const BASE = '/api';
+const AUTH_TOKEN_KEY = 'auth_token';
 
 class AuthError extends Error {
   constructor(message) {
     super(message);
     this.name = 'AuthError';
+  }
+}
+
+class PermissionDeniedError extends Error {
+  constructor({ action, resource, reason }) {
+    super(`Permission denied: ${action} on ${resource}`);
+    this.name = 'PermissionDeniedError';
+    this.action = action;
+    this.resource = resource;
+    this.reason = reason;
   }
 }
 
@@ -19,21 +30,40 @@ function sanitizeErrorMessage(text, status) {
   return text;
 }
 
+// Flatten FastAPI error details (string, validation-error list, or object) to text.
+function stringifyDetail(raw) {
+  if (typeof raw === 'string') return raw;
+  if (!raw) return '';
+  if (Array.isArray(raw)) return raw.map(stringifyDetail).filter(Boolean).join('; ');
+  if (typeof raw === 'object') {
+    if (raw.msg && raw.loc) return `${raw.loc.join('.')}: ${raw.msg}`;
+    return raw.msg || raw.message || raw.detail || JSON.stringify(raw);
+  }
+  return String(raw);
+}
+
 async function request(path, body) {
+  const headers = { 'Content-Type': 'application/json' };
+  const authToken = localStorage.getItem(AUTH_TOKEN_KEY) || '';
+  if (authToken) headers['X-Auth-Token'] = authToken;
+
   const resp = await fetch(`${BASE}${path}`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers,
     body: JSON.stringify(body),
   });
   const text = await resp.text();
   let data;
   try { data = JSON.parse(text); } catch { data = { message: sanitizeErrorMessage(text, resp.status) }; }
+  if (resp.status === 403 && data?.detail?.error === 'permission_denied') {
+    throw new PermissionDeniedError(data.detail);
+  }
   if (resp.status === 401 || resp.status === 403) {
     throw new AuthError('Token expired or invalid. Please update your API token in the sidebar.');
   }
   if (!resp.ok) {
     const raw = data.detail || data.message || `Request failed (${resp.status})`;
-    throw new Error(sanitizeErrorMessage(raw, resp.status));
+    throw new Error(sanitizeErrorMessage(stringifyDetail(raw), resp.status));
   }
   return data;
 }
@@ -42,6 +72,8 @@ function uploadWithProgress(path, formData, onProgress) {
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();
     xhr.open('POST', `${BASE}${path}`);
+    const authToken = localStorage.getItem(AUTH_TOKEN_KEY) || '';
+    if (authToken) xhr.setRequestHeader('X-Auth-Token', authToken);
     xhr.upload.onprogress = (e) => {
       if (e.lengthComputable && onProgress) onProgress(Math.round((e.loaded / e.total) * 100));
     };
@@ -49,68 +81,70 @@ function uploadWithProgress(path, formData, onProgress) {
       let data;
       try { data = JSON.parse(xhr.responseText); } catch { data = { message: xhr.responseText }; }
       if (xhr.status >= 200 && xhr.status < 300) { resolve(data); return; }
-      reject(new Error(data.detail || data.message || `Upload failed (${xhr.status})`));
+      if (xhr.status === 403 && data?.detail?.error === 'permission_denied') {
+        reject(new PermissionDeniedError(data.detail));
+        return;
+      }
+      reject(new Error(stringifyDetail(data.detail) || data.message || `Upload failed (${xhr.status})`));
     };
     xhr.onerror = () => reject(new Error('Upload failed: network error'));
     xhr.send(formData);
   });
 }
 
-export { AuthError };
+export { AuthError, PermissionDeniedError };
 
 // ---------------------------------------------------------------------------
-// Admin auth gate (AWS S3 Navigate UI)
+// Auth gate (AWS S3 Navigate UI)
 // ---------------------------------------------------------------------------
 
-const ADMIN_TOKEN_KEY = 'admin_auth_token';
-
-export class AdminAuthError extends Error {
+export class AuthGateError extends Error {
   constructor(message) {
     super(message);
-    this.name = 'AdminAuthError';
+    this.name = 'AuthGateError';
   }
 }
 
-export const adminAuth = {
-  getToken: () => localStorage.getItem(ADMIN_TOKEN_KEY) || '',
+export const authGate = {
+  getToken: () => localStorage.getItem(AUTH_TOKEN_KEY) || '',
   setToken: (t) => {
-    if (t) localStorage.setItem(ADMIN_TOKEN_KEY, t);
-    else localStorage.removeItem(ADMIN_TOKEN_KEY);
+    if (t) localStorage.setItem(AUTH_TOKEN_KEY, t);
+    else localStorage.removeItem(AUTH_TOKEN_KEY);
   },
 
   login: async (account, username, password) => {
-    const resp = await fetch('/api/admin-auth/login', {
+    const resp = await fetch('/api/auth/login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ account, username, password }),
     });
     const text = await resp.text();
     let data; try { data = JSON.parse(text); } catch { data = { message: text }; }
-    if (!resp.ok) throw new AdminAuthError(data.detail || data.message || 'Login failed');
-    localStorage.setItem(ADMIN_TOKEN_KEY, data.token);
+    if (!resp.ok) throw new AuthGateError(data.detail || data.message || 'Login failed');
+    localStorage.setItem(AUTH_TOKEN_KEY, data.token);
     return data;
   },
 
   me: async () => {
-    const token = localStorage.getItem(ADMIN_TOKEN_KEY) || '';
-    const resp = await fetch('/api/admin-auth/me', { headers: { 'X-Admin-Token': token } });
+    const token = localStorage.getItem(AUTH_TOKEN_KEY) || '';
+    const resp = await fetch('/api/auth/me', { headers: { 'X-Auth-Token': token } });
     if (resp.status === 401) {
-      localStorage.removeItem(ADMIN_TOKEN_KEY);
-      throw new AdminAuthError('Session expired');
+      localStorage.removeItem(AUTH_TOKEN_KEY);
+      throw new AuthGateError('Session expired');
     }
-    if (!resp.ok) throw new AdminAuthError(`me failed (${resp.status})`);
+    if (!resp.ok) throw new AuthGateError(`me failed (${resp.status})`);
     return resp.json();
   },
 
   logout: async () => {
-    const token = localStorage.getItem(ADMIN_TOKEN_KEY) || '';
+    const token = localStorage.getItem(AUTH_TOKEN_KEY) || '';
     try {
-      await fetch('/api/admin-auth/logout', {
+      await fetch('/api/auth/logout', {
         method: 'POST',
-        headers: { 'X-Admin-Token': token },
+        headers: { 'X-Auth-Token': token },
       });
     } catch { /* swallow */ }
-    localStorage.removeItem(ADMIN_TOKEN_KEY);
+    localStorage.removeItem(AUTH_TOKEN_KEY);
   },
 };
 
