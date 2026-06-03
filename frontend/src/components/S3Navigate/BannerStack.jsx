@@ -106,8 +106,9 @@ export default function BannerStack({
 }
 
 
-const PEEK_Y = 5;
+const PEEK_Y = 10;
 const PEEK_X = 8;
+const SHADOW = '0 6px 6px -4px rgba(0,0,0,0.7)';
 
 function StackedGroup({ items, dismiss }) {
   return (
@@ -126,7 +127,7 @@ function StackedGroup({ items, dismiss }) {
                   position: 'relative',
                   zIndex: items.length,
                   borderRadius: 8,
-                  boxShadow: '0 4px 10px rgba(0,0,0,0.55)',
+                  boxShadow: SHADOW,
                 }
               : {
                   position: 'absolute',
@@ -135,7 +136,7 @@ function StackedGroup({ items, dismiss }) {
                   right: i * PEEK_X,
                   zIndex: items.length - i,
                   borderRadius: 8,
-                  boxShadow: '0 4px 10px rgba(0,0,0,0.45)',
+                  boxShadow: SHADOW,
                 }
           }
         >
