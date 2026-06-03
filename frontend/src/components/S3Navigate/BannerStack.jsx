@@ -68,7 +68,7 @@ export default function BannerStack({
     return acc;
   }, { error: 0, warning: 0, info: 0 });
 
-  const hasCollapsibleGroup = groups.some(g => g.items.length > VISIBLE_PER_GROUP);
+  const hasStackedGroup = groups.some(g => g.items.length >= 2);
   const showBar = banners.length >= 2;
 
   return (
@@ -97,7 +97,7 @@ export default function BannerStack({
             counts={counts}
             expanded={expanded}
             onToggle={toggleExpanded}
-            collapsible={hasCollapsibleGroup}
+            collapsible={hasStackedGroup}
           />
         </div>
       )}

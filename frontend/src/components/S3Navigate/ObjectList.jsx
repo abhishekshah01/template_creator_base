@@ -141,6 +141,11 @@ export default function ObjectList({
   const selectedKeys = Array.from(selected);
   const singleSelectedKey = selectedKeys.length === 1 ? selectedKeys[0] : null;
   const hasSelection = selectedKeys.length > 0;
+  const singleSelectedRow = useMemo(() => {
+    if (!singleSelectedKey) return null;
+    return sortedRows.find(r => r._id === singleSelectedKey) || null;
+  }, [singleSelectedKey, sortedRows]);
+  const singleSelectedIsFile = singleSelectedRow?._kind === 'file';
 
   function toggleSort(key) {
     setSort(prev => prev.key === key ? { key, dir: prev.dir === 'asc' ? 'desc' : 'asc' } : { key, dir: 'asc' });
@@ -270,9 +275,9 @@ export default function ObjectList({
         <div className="flex items-center gap-2 mb-3 flex-wrap">
           <AwsButton variant="icon" title="Refresh" onClick={() => load(currentToken, { force: true })} icon={<RefreshIcon />} />
           <AwsButton disabled={!singleSelectedKey} onClick={copyS3Uri} icon={<AwsCopyIcon />}>Copy S3 URI</AwsButton>
-          <AwsButton disabled={!singleSelectedKey} onClick={copyUrl} icon={<AwsCopyIcon />}>Copy URL</AwsButton>
-          <AwsButton disabled={!singleSelectedKey} onClick={downloadSel} icon={<DownloadIcon />}>Download</AwsButton>
-          <AwsButton disabled={!singleSelectedKey} onClick={openSel} rightIcon={<OpenExternalIconV2 />}>Open</AwsButton>
+          <AwsButton disabled={!singleSelectedIsFile} onClick={copyUrl} icon={<AwsCopyIcon />}>Copy URL</AwsButton>
+          <AwsButton disabled={!singleSelectedIsFile} onClick={downloadSel} icon={<DownloadIcon />}>Download</AwsButton>
+          <AwsButton disabled={!singleSelectedIsFile} onClick={openSel} rightIcon={<OpenExternalIconV2 />}>Open</AwsButton>
           <AwsButton disabled={!hasSelection} onClick={deleteSel}>Delete</AwsButton>
           <AwsButton disabled rightIcon={<ActionsArrowIcon />}>Actions</AwsButton>
           <AwsButton onClick={() => onOpenCreateFolder?.()}>Create folder</AwsButton>
