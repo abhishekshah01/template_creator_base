@@ -1,5 +1,7 @@
 import AwsAlert2 from './AwsAlert2';
 
+const LINK_COLOR = '#45abfe';
+
 const ACTION_LABELS = {
   'tc:s3:ListBuckets': 'list buckets',
   'tc:s3:GetBucketLocation': 'view bucket details',
@@ -11,12 +13,32 @@ const ACTION_LABELS = {
   'tc:s3:InvalidateCache': 'invalidate the cache',
 };
 
-const LINK_COLOR = '#45abfe';
+const BUCKET_SCOPED_LABEL = {
+  'tc:s3:ListBucket':         (b) => `list objects in ${b}`,
+  'tc:s3:GetBucketLocation':  (b) => `view details of ${b}`,
+  'tc:s3:GetObject':          (b) => `view objects in ${b}`,
+  'tc:s3:PutObject':          (b) => `upload objects to ${b}`,
+  'tc:s3:CreateFolder':       (b) => `create folders in ${b}`,
+  'tc:s3:DeleteObject':       (b) => `delete objects from ${b}`,
+};
+
+function bucketFromResource(resource) {
+  const m = (resource || '').match(/^s3:\/\/([^/]+)/);
+  if (!m) return null;
+  const bucket = m[1];
+  return bucket && bucket !== '*' ? bucket : null;
+}
+
+function labelFor(action, resource) {
+  const bucket = bucketFromResource(resource);
+  if (bucket && BUCKET_SCOPED_LABEL[action]) return BUCKET_SCOPED_LABEL[action](bucket);
+  return ACTION_LABELS[action] || action;
+}
 
 export default function PermissionDeniedBanner({ error, onRefresh, className = '' }) {
   if (!error) return null;
   const action = error.action || 'perform this action';
-  const label = ACTION_LABELS[action] || action;
+  const label = labelFor(action, error.resource);
   return (
     <AwsAlert2
       variant="error"
