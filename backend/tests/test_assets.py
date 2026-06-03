@@ -93,6 +93,43 @@ def test_upload_url_surfaces_upstream_400(client, app_service_base):
     assert "Invalid key" in resp.text
 
 
+def test_upload_mints_then_puts_bytes_server_side(client, app_service_base):
+    presigned = "https://s3.example.com/assets/x.png?AWSAccessKeyId=k&Signature=s&Expires=1"
+    with respx.mock(assert_all_called=True) as mock:
+        mint = mock.post(_upstream(app_service_base, "/upload-url")).mock(
+            return_value=httpx.Response(
+                200,
+                json={
+                    "upload_url": presigned,
+                    "public_url": "https://cdn.example.com/assets/x.png",
+                    "bucket": "my-bucket",
+                    "key": "assets/x.png",
+                    "method": "PUT",
+                    "headers": {"Content-Type": "image/png"},
+                    "expires_at": 1700000000,
+                },
+            ),
+        )
+        put = mock.put(presigned).mock(return_value=httpx.Response(200))
+        resp = client.post(
+            "/api/asset/upload",
+            data={
+                "bucket": "my-bucket",
+                "key": "assets/x.png",
+                "bearer_token": "tok-abc",
+                "content_type": "image/png",
+            },
+            files={"file": ("x.png", b"\x89PNGbytes", "image/png")},
+        )
+
+    assert resp.status_code == 200
+    assert resp.json()["public_url"] == "https://cdn.example.com/assets/x.png"
+    assert mint.calls[0].request.headers["authorization"] == "Bearer tok-abc"
+    # The bytes are PUT to the presigned URL server-side with the signed content-type.
+    assert put.calls[0].request.headers["content-type"] == "image/png"
+    assert put.calls[0].request.content == b"\x89PNGbytes"
+
+
 # ---------------------------------------------------------------------------
 # delete
 # ---------------------------------------------------------------------------

@@ -43,6 +43,21 @@ async def delete_object(*, bucket: str, key: str, bearer_token: str) -> dict:
     return result
 
 
+async def upload_object(*, bucket: str, key: str, content_type: str, data: bytes, bearer_token: str) -> dict:
+    # Mint a presigned PUT, then upload the bytes server-side so the browser
+    # never has to talk to S3 directly (which CORS would block).
+    minted = await mint_upload_url(
+        bucket=bucket,
+        key=key,
+        content_type=content_type,
+        expiration_minutes=15,
+        bearer_token=bearer_token,
+    )
+    await app_svc.put_bytes(minted["upload_url"], data, content_type)
+    object_cache.invalidate_prefix(f"objects:{bucket}:")
+    return {"bucket": bucket, "key": key, "public_url": minted.get("public_url")}
+
+
 async def create_folder(*, bucket: str, key: str, bearer_token: str) -> dict:
     result = await app_svc.post(
         f"{_BASE}/folder",

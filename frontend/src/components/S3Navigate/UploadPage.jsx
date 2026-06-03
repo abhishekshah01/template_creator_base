@@ -91,8 +91,7 @@ export default function UploadPage({ bucket, prefix, onCancel, onDone }) {
       const key = (prefix || '') + relPath;
       setProgress(p => ({ ...p, [relPath]: { pct: 0, status: 'starting' } }));
       try {
-        const { url } = await s3api.uploadUrl(bucket, key, file.type || 'application/octet-stream');
-        await putWithProgress(url, file, (pct) =>
+        await s3api.uploadObject(file, bucket, key, (pct) =>
           setProgress(p => ({ ...p, [relPath]: { pct, status: 'uploading' } }))
         );
         setProgress(p => ({ ...p, [relPath]: { pct: 100, status: 'done' } }));
@@ -488,21 +487,4 @@ function StatusCell({ progress }) {
   if (progress.status === 'done') return <span style={{ color: '#3fb950' }}>Done</span>;
   if (progress.status === 'failed') return <span style={{ color: '#fe6b58' }} title={progress.err}>Failed</span>;
   return null;
-}
-
-function putWithProgress(url, file, onProgress) {
-  return new Promise((resolve, reject) => {
-    const xhr = new XMLHttpRequest();
-    xhr.open('PUT', url);
-    if (file.type) xhr.setRequestHeader('Content-Type', file.type);
-    xhr.upload.onprogress = (ev) => {
-      if (ev.lengthComputable) onProgress(Math.round((ev.loaded / ev.total) * 100));
-    };
-    xhr.onload = () => {
-      if (xhr.status >= 200 && xhr.status < 300) resolve();
-      else reject(new Error(`HTTP ${xhr.status}`));
-    };
-    xhr.onerror = () => reject(new Error('Network error (check bucket CORS)'));
-    xhr.send(file);
-  });
 }

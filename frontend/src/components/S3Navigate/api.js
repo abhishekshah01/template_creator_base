@@ -66,11 +66,9 @@ export const s3api = {
   // Mutate
   uploadFile: (file, bucket, key) =>
     api.uploadAsset(file, bucket, key, bearer(), CLOUDFRONT_URL),
-  // Mint a raw presigned PUT URL — used by ObjectList's XHR-based upload-with-progress flow.
-  uploadUrl: async (bucket, key, contentType = '') => {
-    const data = await api.getAssetUploadUrl(bucket, key, contentType, bearer());
-    return { url: data.upload_url, headers: data.headers, public_url: data.public_url };
-  },
+  // Upload a file through the backend (server-side S3 PUT, no browser CORS).
+  uploadObject: (file, bucket, key, onProgress) =>
+    api.uploadAssetObject(file, bucket, key, bearer(), onProgress),
   // Create a folder server-side (app-service writes the zero-byte marker).
   createFolder: (bucket, key) => api.createAssetFolder(bucket, key, bearer()),
   deleteObject: (bucket, key) => api.deleteAsset(bucket, key, bearer()),

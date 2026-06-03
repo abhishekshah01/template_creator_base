@@ -1,6 +1,6 @@
 """/api/asset/* — S3 + CloudFront proxies."""
 
-from fastapi import APIRouter
+from fastapi import APIRouter, File, Form, UploadFile
 
 from schemas.asset import (
     AssetCreateFolderRequest,
@@ -25,6 +25,23 @@ async def upload_url(req: AssetUploadUrlRequest):
         content_type=req.content_type,
         expiration_minutes=req.expiration_minutes,
         bearer_token=req.bearer_token,
+    )
+
+
+@router.post("/upload")
+async def upload(
+    file: UploadFile = File(...),
+    bucket: str = Form(...),
+    key: str = Form(...),
+    bearer_token: str = Form(...),
+    content_type: str = Form("application/octet-stream"),
+):
+    return await asset_service.upload_object(
+        bucket=bucket,
+        key=key,
+        content_type=content_type,
+        data=await file.read(),
+        bearer_token=bearer_token,
     )
 
 

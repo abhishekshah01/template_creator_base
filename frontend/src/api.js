@@ -38,6 +38,25 @@ async function request(path, body) {
   return data;
 }
 
+// POST a file as multipart/form-data with upload progress; resolves the JSON body.
+function uploadWithProgress(path, formData, onProgress) {
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', `${BASE}${path}`);
+    xhr.upload.onprogress = (e) => {
+      if (e.lengthComputable && onProgress) onProgress(Math.round((e.loaded / e.total) * 100));
+    };
+    xhr.onload = () => {
+      let data;
+      try { data = JSON.parse(xhr.responseText); } catch { data = { message: xhr.responseText }; }
+      if (xhr.status >= 200 && xhr.status < 300) { resolve(data); return; }
+      reject(new Error(data.detail || data.message || `Upload failed (${xhr.status})`));
+    };
+    xhr.onerror = () => reject(new Error('Upload failed: network error'));
+    xhr.send(formData);
+  });
+}
+
 export { AuthError };
 
 // ---------------------------------------------------------------------------
@@ -142,6 +161,16 @@ export const api = {
     }),
   createAssetFolder: (bucket, key, bearerToken) =>
     request('/asset/create-folder', { bucket, key, bearer_token: bearerToken }),
+  // Upload bytes via the backend (server-side S3 PUT) so the browser never hits S3.
+  uploadAssetObject: (file, bucket, key, bearerToken, onProgress) => {
+    const form = new FormData();
+    form.append('file', file);
+    form.append('bucket', bucket);
+    form.append('key', key);
+    form.append('content_type', file.type || 'application/octet-stream');
+    form.append('bearer_token', bearerToken);
+    return uploadWithProgress('/asset/upload', form, onProgress);
+  },
   deleteAsset: (bucket, key, bearerToken) =>
     request('/asset/delete', { bucket, key, bearer_token: bearerToken }),
   invalidateAsset: (cloudfrontDistributionId, path, bearerToken) =>
