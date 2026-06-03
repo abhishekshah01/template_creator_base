@@ -1,14 +1,16 @@
 import { useCallback, useRef, useState } from 'react';
 
+const VISIBLE_PER_GROUP = 3;
+
 export function useBanners() {
   const [banners, setBanners] = useState([]);
+  const [expanded, setExpanded] = useState(false);
   const counter = useRef(0);
 
   const push = useCallback((entry) => {
     const item = typeof entry === 'function' ? { render: entry } : entry;
     setBanners(prev => {
-      // Dedup: a banner with the same key replaces its predecessor in place,
-      // so repeated identical failures don't pile up.
+      // Dedup by key — same key replaces in place (e.g. repeated retry on same file).
       if (item.key) {
         const idx = prev.findIndex(b => b.key === item.key);
         if (idx !== -1) {
@@ -30,18 +32,157 @@ export function useBanners() {
     setBanners(prev => prev.filter(b => b.key !== key));
   }, []);
 
-  const clear = useCallback(() => setBanners([]), []);
+  const clear = useCallback(() => {
+    setBanners([]);
+    setExpanded(false);
+  }, []);
 
-  return { banners, push, dismiss, dismissKey, clear };
+  const toggleExpanded = useCallback(() => setExpanded(e => !e), []);
+
+  return {
+    banners, push, dismiss, dismissKey, clear,
+    expanded, setExpanded, toggleExpanded,
+  };
 }
 
-export default function BannerStack({ banners, dismiss, className = '' }) {
+
+export default function BannerStack({
+  banners, dismiss, expanded, toggleExpanded, className = '',
+}) {
   if (!banners.length) return null;
+
+  // Group consecutive entries with the same groupKey. Banners without a
+  // groupKey (or whose groupKey differs from the previous one) start a new
+  // group of size 1, so unrelated banners never collapse together.
+  const groups = [];
+  for (const b of banners) {
+    const last = groups[groups.length - 1];
+    if (last && b.groupKey != null && last.groupKey === b.groupKey) {
+      last.items.push(b);
+    } else {
+      groups.push({ groupKey: b.groupKey, items: [b] });
+    }
+  }
+
+  const counts = banners.reduce((acc, b) => {
+    const sev = b.severity || 'error';
+    if (acc[sev] != null) acc[sev] += 1;
+    return acc;
+  }, { error: 0, warning: 0, info: 0 });
+
+  const hasCollapsibleGroup = groups.some(g => g.items.length > VISIBLE_PER_GROUP);
+  const showBar = banners.length >= 2;
+
   return (
-    <div className={`flex flex-col gap-2 ${className}`}>
-      {banners.map(b => (
-        <div key={b.id}>{b.render(() => dismiss(b.id))}</div>
-      ))}
+    <div className={`relative flex flex-col gap-2 ${className}`}>
+      {groups.flatMap(g => {
+        const items = expanded || g.items.length <= VISIBLE_PER_GROUP
+          ? g.items
+          : g.items.slice(0, VISIBLE_PER_GROUP);
+        return items.map(b => (
+          <div key={b.id}>{b.render(() => dismiss(b.id))}</div>
+        ));
+      })}
+      {showBar && (
+        <div className="flex justify-center relative" style={{ marginTop: -10, zIndex: 10 }}>
+          <NotificationsBar
+            counts={counts}
+            expanded={expanded}
+            onToggle={toggleExpanded}
+            collapsible={hasCollapsibleGroup}
+          />
+        </div>
+      )}
     </div>
+  );
+}
+
+
+function NotificationsBar({ counts, expanded, onToggle, collapsible }) {
+  return (
+    <div
+      className="inline-flex items-center gap-4 px-4 py-1.5 text-[13px]"
+      style={{
+        backgroundColor: '#1c222c',
+        border: '1px solid #7d7467',
+        borderRadius: 999,
+        color: '#e8e6e2',
+      }}
+    >
+      <span className="font-bold">Notifications</span>
+      <SeverityCount kind="error" count={counts.error} />
+      <SeverityCount kind="warning" count={counts.warning} />
+      <SeverityCount kind="info" count={counts.info} />
+      <button
+        type="button"
+        onClick={onToggle}
+        aria-label={expanded ? 'Collapse notifications' : 'Expand notifications'}
+        className="shrink-0 inline-flex items-center justify-center w-6 h-6 rounded hover:bg-white/5 disabled:opacity-50 disabled:cursor-not-allowed"
+        style={{ color: '#e8e6e2' }}
+        disabled={!collapsible && !expanded}
+      >
+        <ChevronIcon up={expanded} />
+      </button>
+    </div>
+  );
+}
+
+
+function SeverityCount({ kind, count }) {
+  return (
+    <span className="inline-flex items-center gap-1.5">
+      <SeverityIcon kind={kind} />
+      <span>{count}</span>
+    </span>
+  );
+}
+
+
+function SeverityIcon({ kind }) {
+  const common = {
+    width: 14, height: 14, viewBox: '0 0 16 16',
+    fill: 'none', strokeWidth: 1.6,
+    strokeLinecap: 'round', strokeLinejoin: 'round',
+  };
+  if (kind === 'error') {
+    return (
+      <svg {...common} stroke="#bd0000" aria-hidden="true">
+        <circle cx="8" cy="8" r="7" />
+        <path d="m5.5 5.5 5 5M10.5 5.5l-5 5" />
+      </svg>
+    );
+  }
+  if (kind === 'warning') {
+    return (
+      <svg {...common} stroke="#ffcf6f" aria-hidden="true">
+        <path d="M6.52 1.88l-5.33 9.76c-.13.23-.19.5-.19.76 0 .88.71 1.59 1.59 1.59H13.4c.88 0 1.59-.71 1.59-1.59 0-.27-.07-.53-.19-.76L9.48 1.88C9.18 1.34 8.62 1 8 1s-1.18.34-1.48.88Z" />
+        <path d="M8 5v4" />
+        <path d="M8 11.5h.01" />
+      </svg>
+    );
+  }
+  if (kind === 'info') {
+    return (
+      <svg {...common} stroke="#45abfe" aria-hidden="true">
+        <circle cx="8" cy="8" r="7" />
+        <path d="M8 12V7M8 6V4" />
+      </svg>
+    );
+  }
+  return null;
+}
+
+
+function ChevronIcon({ up }) {
+  return (
+    <svg
+      viewBox="0 0 16 16" width="14" height="14"
+      fill="none" stroke="currentColor"
+      strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+      style={{ transform: up ? 'rotate(180deg)' : 'none', transition: 'transform 120ms' }}
+      aria-hidden="true"
+    >
+      <path d="m2 5 6 6 6-6" />
+    </svg>
   );
 }

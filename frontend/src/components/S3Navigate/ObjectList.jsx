@@ -84,6 +84,7 @@ export default function ObjectList({
   function pushOperationError(e, { title, key }) {
     topBanners.push({
       key,
+      severity: 'error',
       render: (dismiss) => (
         <AwsAlert2 variant="error" title={title} onDismiss={dismiss}>
           {e.message || String(e)}
@@ -168,6 +169,8 @@ export default function ObjectList({
     if (e instanceof PermissionDeniedError) {
       topBanners.push({
         key: `perm:${e.action}:${e.resource}`,
+        groupKey: `perm:${e.action}`,
+        severity: 'error',
         render: (dismiss) => <PermissionDeniedBanner error={e} tone="solid" onDismiss={dismiss} />,
       });
     } else {
@@ -234,6 +237,8 @@ export default function ObjectList({
       <BannerStack
         banners={topBanners.banners}
         dismiss={topBanners.dismiss}
+        expanded={topBanners.expanded}
+        toggleExpanded={topBanners.toggleExpanded}
         className="mb-4"
       />
 
