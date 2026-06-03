@@ -17,12 +17,14 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from clients import app_service_client, composer_client, mongo_client
-from routers import admin_auth, asset, category_config, env, job, template
+from routers import access_control, asset, auth, category_config, env, job, template
+from services.access_control import role_seeder
 
 
 @asynccontextmanager
 async def lifespan(_app: FastAPI):
     await mongo_client.ensure_indexes()
+    await role_seeder.seed_system_roles()
     yield
     await app_service_client.aclose()
     await composer_client.aclose()
@@ -50,4 +52,5 @@ app.include_router(job.router)
 app.include_router(template.router)
 app.include_router(category_config.router)
 app.include_router(asset.router)
-app.include_router(admin_auth.router)
+app.include_router(auth.router)
+app.include_router(access_control.router)
