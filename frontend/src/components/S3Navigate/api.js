@@ -66,10 +66,8 @@ export const s3api = {
   // Mutate
   uploadFile: (file, bucket, key) =>
     api.uploadAsset(file, bucket, key, bearer(), CLOUDFRONT_URL),
-  // Upload a file through the backend (server-side S3 PUT, no browser CORS).
   uploadObject: (file, bucket, key, onProgress) =>
     api.uploadAssetObject(file, bucket, key, bearer(), onProgress),
-  // Create a folder server-side (app-service writes the zero-byte marker).
   createFolder: (bucket, key) => api.createAssetFolder(bucket, key, bearer()),
   deleteObject: (bucket, key) => api.deleteAsset(bucket, key, bearer()),
   invalidateCache: (path) =>

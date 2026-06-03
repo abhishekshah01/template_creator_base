@@ -38,7 +38,6 @@ async function request(path, body) {
   return data;
 }
 
-// POST a file as multipart/form-data with upload progress; resolves the JSON body.
 function uploadWithProgress(path, formData, onProgress) {
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();
@@ -161,7 +160,6 @@ export const api = {
     }),
   createAssetFolder: (bucket, key, bearerToken) =>
     request('/asset/create-folder', { bucket, key, bearer_token: bearerToken }),
-  // Upload bytes via the backend (server-side S3 PUT) so the browser never hits S3.
   uploadAssetObject: (file, bucket, key, bearerToken, onProgress) => {
     const form = new FormData();
     form.append('file', file);

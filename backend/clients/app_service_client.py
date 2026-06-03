@@ -98,11 +98,14 @@ async def put(
 
 
 async def put_bytes(url: str, content: bytes, content_type: str, timeout: float = 60.0) -> None:
-    """PUT raw bytes to a presigned storage URL. Server-side, so it bypasses the
-    browser CORS that blocks a direct S3 upload."""
+    """PUT raw bytes to a presigned storage URL."""
     try:
-        resp = await _client.put(url, content=content, headers={"Content-Type": content_type}, timeout=timeout)
+        resp = await _client.put(
+            url, content=content, headers={"Content-Type": content_type}, timeout=timeout
+        )
     except httpx.HTTPError as exc:
         raise HTTPException(502, f"Failed to reach storage: {exc}") from exc
     if resp.status_code >= 400:
-        raise HTTPException(resp.status_code, f"Storage rejected upload ({resp.status_code}): {resp.text[:300]}")
+        raise HTTPException(
+            resp.status_code, f"Storage rejected upload ({resp.status_code}): {resp.text[:300]}"
+        )

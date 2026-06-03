@@ -44,8 +44,6 @@ async def delete_object(*, bucket: str, key: str, bearer_token: str) -> dict:
 
 
 async def upload_object(*, bucket: str, key: str, content_type: str, data: bytes, bearer_token: str) -> dict:
-    # Mint a presigned PUT, then upload the bytes server-side so the browser
-    # never has to talk to S3 directly (which CORS would block).
     minted = await mint_upload_url(
         bucket=bucket,
         key=key,
