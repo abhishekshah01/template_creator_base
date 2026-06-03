@@ -33,7 +33,7 @@ def patch_environment(monkeypatch, fake_audit_collector):
 
     async def fake_admin():
         return {
-            "admin_id": "u-1",
+            "user_id": "u-1",
             "username": "tester",
             "type": "admin",
             "is_admin": False,

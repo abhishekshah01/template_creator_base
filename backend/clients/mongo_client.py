@@ -36,6 +36,13 @@ async def ensure_indexes() -> None:
     await admin_sessions.create_index("expires_at", expireAfterSeconds=0)
     await admin_sessions.create_index("token", unique=True)
 
+    # admin_id was the pre-RBAC name; rename existing rows so new code can
+    # read user_id only. Idempotent — no-op once every row has user_id.
+    await admin_sessions.update_many(
+        {"admin_id": {"$exists": True}, "user_id": {"$exists": False}},
+        {"$rename": {"admin_id": "user_id"}},
+    )
+
     await roles.create_index("name", unique=True)
 
     # No TTL on permission_audit — rows are kept indefinitely.

@@ -37,8 +37,7 @@ async def resolve_user(session: dict) -> dict:
         raise HTTPException(401, "Sign in required.")
     if "type" in session and "attached_roles" in session:
         return session
-    # admin_id is the legacy session field name; treat it as the user id.
-    user_id = session.get("admin_id")
+    user_id = session.get("user_id") or session.get("admin_id")
     if not user_id:
         raise HTTPException(401, "Sign in required.")
     user_doc = await users_svc.find_by_id(user_id)

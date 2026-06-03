@@ -17,7 +17,7 @@ log = logging.getLogger(__name__)
 
 
 def _user_id(user: dict) -> Optional[object]:
-    raw = user.get("_id") or user.get("admin_id")
+    raw = user.get("_id") or user.get("user_id") or user.get("admin_id")
     if raw is None:
         return None
     if isinstance(raw, ObjectId):

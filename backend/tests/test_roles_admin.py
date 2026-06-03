@@ -141,7 +141,7 @@ def stub_env(monkeypatch, audit_log, fake_roles, fake_admin_users):
 
 def _login_as(app, user_type: str, user_id: ObjectId = None):
     user_id = user_id or ObjectId()
-    user = {"admin_id": user_id, "username": user_type, "type": user_type, "is_admin": False}
+    user = {"user_id": user_id, "username": user_type, "type": user_type, "is_admin": False}
 
     async def fake_admin():
         return user

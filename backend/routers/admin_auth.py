@@ -54,7 +54,7 @@ async def me_permissions(me: dict = Depends(get_current_admin)) -> dict:
     # from this module.
     from services.permissions.deps import get_effective_policy
 
-    admin = await users_svc.find_by_id(me["admin_id"])
+    admin = await users_svc.find_by_id(me["user_id"])
     return {
         "username": me.get("username"),
         "type": (admin or {}).get("type", "admin"),
@@ -86,7 +86,7 @@ async def create_admin_user(
         username=req.username,
         password=req.password,
         user_type=req.type,
-        created_by=me["admin_id"],
+        created_by=me["user_id"],
     )
     return _admin_response(doc)
 
@@ -116,12 +116,12 @@ async def update_admin_user(
         email=req.email,
         username=req.username,
         is_active=req.is_active,
-        actor_id=me["admin_id"],
+        actor_id=me["user_id"],
     )
     # If the actor just deactivated themselves, their current session is gone
     # (revoke_sessions was called inside update_admin). Tell the client.
     self_logged_out = bool(
-        req.is_active is False and oid == me["admin_id"]
+        req.is_active is False and oid == me["user_id"]
     )
     response = _admin_response(updated)
     if self_logged_out:
@@ -142,8 +142,8 @@ async def reset_admin_password(
     await users_svc.reset_password(
         oid,
         req.new_password,
-        actor_id=me["admin_id"],
-        revoke_other_sessions=(oid != me["admin_id"]),  # don't kick the actor out of their own password reset
+        actor_id=me["user_id"],
+        revoke_other_sessions=(oid != me["user_id"]),  # don't kick the actor out of their own password reset
     )
     return {"ok": True}
 

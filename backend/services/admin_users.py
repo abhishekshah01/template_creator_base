@@ -127,7 +127,9 @@ async def mark_logged_in(user_id: ObjectId) -> None:
 
 async def revoke_sessions(user_id: ObjectId) -> int:
     """Delete every session for this admin. Returns the count deleted."""
-    res = await admin_sessions.delete_many({"admin_id": user_id})
+    res = await admin_sessions.delete_many(
+        {"$or": [{"user_id": user_id}, {"admin_id": user_id}]}
+    )
     return res.deleted_count
 
 

@@ -36,12 +36,12 @@ def _new_expiry() -> datetime:
 
 
 def _serialize(session: dict, *, fresh_token: Optional[str] = None) -> dict:
-    """Shape returned to callers of login()/require(). Includes admin_id (ObjectId)
-    for downstream handlers; the wire response schema strips it before send.
-    """
+    """Shape returned to callers of login()/require(). user_id is the foreign
+    key into admin_users; legacy session rows may still hold it under
+    admin_id, so we read both."""
     return {
         "token": fresh_token or session["token"],
-        "admin_id": session["admin_id"],
+        "user_id": session.get("user_id") or session.get("admin_id"),
         "username": session["username"],
         "account_id": session["account_id"],
         "email": session["email"],
@@ -69,7 +69,7 @@ async def login(account: str, username: str, password: str) -> dict:
     now = _now()
     session = {
         "token": token,
-        "admin_id": admin["_id"],
+        "user_id": admin["_id"],
         "account_id": admin["account_id"],
         "email": admin["email"],
         "username": admin["username"],

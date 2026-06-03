@@ -100,12 +100,12 @@ async def test_record_accepts_string_user_id(fake_audit):
 
 
 @pytest.mark.asyncio
-async def test_record_uses_admin_id_when_no_underscore_id(fake_audit):
-    """The admin auth dep returns admin_id (not _id) — make sure we read both."""
+async def test_record_uses_user_id_when_no_underscore_id(fake_audit):
+    """The session shape carries user_id, not _id — fallback path must work."""
     from services.permissions import audit
 
     oid = ObjectId()
-    user = {"admin_id": oid, "username": "x", "type": "admin"}
+    user = {"user_id": oid, "username": "x", "type": "admin"}
     decision = Decision(effect="allow", reason="explicit allow")
 
     await audit.record(user=user, action="tc:s3:GetObject", resource="s3://b/k", decision=decision)

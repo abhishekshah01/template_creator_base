@@ -33,7 +33,7 @@ def stub_rbac(monkeypatch, audit_log):
         audit_log.append(kwargs)
 
     async def fake_admin():
-        return {"admin_id": "u-1", "username": "tester", "type": "admin"}
+        return {"user_id": "u-1", "username": "tester", "type": "admin"}
 
     async def passthrough(session):
         return session
