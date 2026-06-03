@@ -1,4 +1,4 @@
-"""S3 + CloudFront operations — proxied through app-service /internal/s3-templates/*.
+"""S3 + CloudFront operations — proxied through app-service /internal/templates/s3/*.
 
 Thin shims; app-service holds all AWS credentials. Reads go through a 30s
 TTL cache (services/cache.py). Writes invalidate the relevant cache keys

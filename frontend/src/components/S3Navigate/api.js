@@ -1,5 +1,5 @@
 // Local client for the S3 browser. Wraps the existing api.* helpers (which
-// proxy to app-service /internal/s3-templates/*) and the auth gate.
+// proxy to app-service /internal/templates/s3/*) and the auth gate.
 //
 // All authed routes require both:
 //   - bearer_token: the template-creator API token (already in localStorage)
