@@ -108,7 +108,7 @@ export default function BannerStack({
 
 const PEEK_Y = 10;
 const PEEK_X = 8;
-const SHADOW = '0 8px 18px -8px rgba(0,0,0,0.55)';
+const SHADOW = '0 6px 6px -4px rgba(0,0,0,0.7)';
 
 function StackedGroup({ items, dismiss }) {
   return (
