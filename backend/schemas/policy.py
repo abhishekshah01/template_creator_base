@@ -36,9 +36,7 @@ class PolicyStatement(BaseModel):
                         f"check it against services.access_control.permission_catalog"
                     )
             elif not permission_catalog.is_known_action(action):
-                raise ValueError(
-                    f"unknown action '{action}'; add it to permission_catalog first"
-                )
+                raise ValueError(f"unknown action '{action}'; add it to permission_catalog first")
         return actions
 
     @field_validator("resources")

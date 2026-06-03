@@ -126,7 +126,10 @@ async def object_meta(
 ):
     await user.require_permission(S3Action.GET_OBJECT, f"s3://{req.bucket}/{req.key}")
     return await asset_service.object_meta(
-        bucket=req.bucket, key=req.key, bearer_token=req.bearer_token, force=req.force,
+        bucket=req.bucket,
+        key=req.key,
+        bearer_token=req.bearer_token,
+        force=req.force,
     )
 
 

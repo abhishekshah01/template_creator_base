@@ -33,12 +33,7 @@ def statement_covers_request(
     requested_action: str,
     requested_resource: str,
 ) -> bool:
-    action_covered = any(
-        action_matches_pattern(pattern, requested_action) for pattern in statement_actions
-    )
+    action_covered = any(action_matches_pattern(pattern, requested_action) for pattern in statement_actions)
     if not action_covered:
         return False
-    return any(
-        resource_matches_pattern(pattern, requested_resource)
-        for pattern in statement_resources
-    )
+    return any(resource_matches_pattern(pattern, requested_resource) for pattern in statement_resources)

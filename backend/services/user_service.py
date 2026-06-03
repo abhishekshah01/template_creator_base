@@ -49,9 +49,7 @@ def validate_email(email: str) -> str:
 
 def validate_username(username: str) -> str:
     if not _USERNAME_PATTERN.match(username or ""):
-        raise InvalidInputError(
-            "username must be 2-64 chars: letters, digits, dot, underscore, or hyphen."
-        )
+        raise InvalidInputError("username must be 2-64 chars: letters, digits, dot, underscore, or hyphen.")
     return username
 
 
@@ -114,9 +112,7 @@ async def list_users() -> list[dict]:
 
 
 async def mark_user_logged_in(user_id: ObjectId) -> None:
-    await user_repository.update_user_fields(
-        user_id, {"last_login_at": datetime.now(timezone.utc)}
-    )
+    await user_repository.update_user_fields(user_id, {"last_login_at": datetime.now(timezone.utc)})
 
 
 async def revoke_user_sessions(user_id: ObjectId) -> int:
@@ -231,9 +227,7 @@ async def reset_user_password(
 async def _assert_not_last_active_user(user_id: ObjectId) -> None:
     remaining_active = await user_repository.count_active_users(excluding_user_id=user_id)
     if remaining_active == 0:
-        raise ConflictError(
-            "Cannot deactivate the last active user. Promote another user first."
-        )
+        raise ConflictError("Cannot deactivate the last active user. Promote another user first.")
 
 
 def _duplicate_user_error(message: str) -> DuplicateResourceError:

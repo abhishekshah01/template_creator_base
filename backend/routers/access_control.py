@@ -79,9 +79,7 @@ async def attach_roles(
     actor: AuthenticatedUser = Depends(AuthenticatedUser.require_user),
 ) -> dict:
     actor.require_owner()
-    user = await user_role_service.attach_roles_to_user(
-        user_service.parse_user_id(user_id), request.names
-    )
+    user = await user_role_service.attach_roles_to_user(user_service.parse_user_id(user_id), request.names)
     return {"id": str(user["_id"]), "attached_roles": user.get("attached_roles", [])}
 
 
@@ -92,9 +90,7 @@ async def detach_roles(
     actor: AuthenticatedUser = Depends(AuthenticatedUser.require_user),
 ) -> dict:
     actor.require_owner()
-    user = await user_role_service.detach_roles_from_user(
-        user_service.parse_user_id(user_id), request.names
-    )
+    user = await user_role_service.detach_roles_from_user(user_service.parse_user_id(user_id), request.names)
     return {"id": str(user["_id"]), "attached_roles": user.get("attached_roles", [])}
 
 
@@ -105,9 +101,7 @@ async def set_inline_policy(
     actor: AuthenticatedUser = Depends(AuthenticatedUser.require_user),
 ) -> dict:
     actor.require_owner()
-    user = await user_role_service.set_user_inline_policy(
-        user_service.parse_user_id(user_id), request.policy
-    )
+    user = await user_role_service.set_user_inline_policy(user_service.parse_user_id(user_id), request.policy)
     return {"id": str(user["_id"]), "inline_policy": user.get("inline_policy", [])}
 
 

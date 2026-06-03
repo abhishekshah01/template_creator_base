@@ -16,9 +16,7 @@ async def find_user_by_id(user_id: ObjectId) -> Optional[dict]:
 
 async def find_user_by_account_or_email(account_or_email: str) -> Optional[dict]:
     value = account_or_email.strip()
-    return await users.find_one(
-        {"$or": [{"account_id": value}, {"email": value.lower()}]}
-    )
+    return await users.find_one({"$or": [{"account_id": value}, {"email": value.lower()}]})
 
 
 async def insert_user(document: dict) -> ObjectId:

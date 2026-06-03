@@ -31,9 +31,7 @@ async def detach_roles_from_user(user_id: ObjectId, role_names: list[str]) -> di
     # demote the user by hand. Change the type instead.
     default_role = DEFAULT_ROLE_BY_USER_TYPE.get(user.get("type", "admin"))
     if default_role and default_role in role_names:
-        raise InvalidInputError(
-            f"cannot detach '{default_role}' — change the user's type instead."
-        )
+        raise InvalidInputError(f"cannot detach '{default_role}' — change the user's type instead.")
 
     await user_repository.remove_roles_from_user(user_id, role_names, datetime.now(timezone.utc))
     return await user_repository.find_user_by_id(user_id)
