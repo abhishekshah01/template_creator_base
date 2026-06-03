@@ -329,7 +329,7 @@ export default function ObjectList({
             </colgroup>
             <thead>
               <tr>
-                <HeaderCell aria-hidden="true" showDivider scrolled={scrolled}>
+                <HeaderCell aria-hidden="true" showDivider scrolled={scrolled} firstCol>
                   <AwsCheckbox
                     checked={allChecked}
                     indeterminate={someChecked}
@@ -560,7 +560,7 @@ function BodyMessage({ children }) {
   );
 }
 
-function HeaderCell({ children, showDivider, scrolled = false }) {
+function HeaderCell({ children, showDivider, scrolled = false, firstCol = false }) {
   return (
     <th
       style={{
@@ -572,6 +572,7 @@ function HeaderCell({ children, showDivider, scrolled = false }) {
         fontWeight: 700,
         backgroundColor: colors.bg.card,
         borderBottom: `${scrolled ? 2 : 1}px solid ${colors.border.rowSeparator}`,
+        borderLeft: firstCol ? '2px solid transparent' : undefined,
         zIndex: 2,
       }}
     >
