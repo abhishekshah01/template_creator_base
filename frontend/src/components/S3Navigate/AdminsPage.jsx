@@ -29,7 +29,7 @@ export default function AdminsPage({ currentUsername, onSelfDeactivated, onCopyT
     setLoading(true);
     setError(null);
     try {
-      const data = await s3api.listAdmins();
+      const data = await s3api.listUsers();
       setItems(data.items || []);
     } catch (e) {
       setError(e.message);
@@ -85,7 +85,7 @@ export default function AdminsPage({ currentUsername, onSelfDeactivated, onCopyT
   }
 
   async function applyUpdate(id, patches, opts = {}) {
-    await s3api.updateAdmin(id, patches);
+    await s3api.updateUser(id, patches);
     if (opts.isSelfDeactivate) {
       onSelfDeactivated?.();
       return;
@@ -408,11 +408,35 @@ function FormField({ label, value, onChange, type = 'text', hint, placeholder, d
   );
 }
 
+function SelectField({ label, value, onChange, options }) {
+  return (
+    <div>
+      <label className="block text-[13px] font-bold mb-1" style={{ color: colors.text.primary }}>{label}</label>
+      <select
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className="w-full h-[34px] px-3 text-[14px] outline-none focus:shadow-[0_0_0_2px_rgba(31,111,235,0.3)]"
+        style={{
+          backgroundColor: '#0d1117',
+          border: `1px solid ${colors.border.inputDefault}`,
+          borderRadius: '4px',
+          color: colors.text.primary,
+        }}
+      >
+        {options.map((opt) => (
+          <option key={opt.value} value={opt.value}>{opt.label}</option>
+        ))}
+      </select>
+    </div>
+  );
+}
+
 function CreateAdminModal({ onCancel, onDone }) {
   const [accountId, setAccountId] = useState('');
   const [email, setEmail] = useState('');
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [userType, setUserType] = useState('admin');
   const [submitting, setSubmitting] = useState(false);
   const [err, setErr] = useState(null);
 
@@ -420,7 +444,13 @@ function CreateAdminModal({ onCancel, onDone }) {
     setSubmitting(true);
     setErr(null);
     try {
-      await s3api.createAdmin({ account_id: accountId.trim(), email: email.trim(), username: username.trim(), password });
+      await s3api.createUser({
+        account_id: accountId.trim(),
+        email: email.trim(),
+        username: username.trim(),
+        password,
+        type: userType,
+      });
       onDone();
     } catch (e) {
       setErr(e.message);
@@ -431,13 +461,23 @@ function CreateAdminModal({ onCancel, onDone }) {
 
   return (
     <ModalShell
-      title="Create admin"
+      title="Create user"
       body={
         <div className="space-y-3">
           <FormField label="Account ID (12 digits)" value={accountId} onChange={setAccountId} placeholder="000000000000" maxLength={12} mono />
           <FormField label="Email (@emergent.sh)" value={email} onChange={setEmail} placeholder="user@emergent.sh" type="email" />
           <FormField label="Username" value={username} onChange={setUsername} placeholder="alice" />
           <FormField label="Password" value={password} onChange={setPassword} type="password" hint="Min 8 chars · upper · lower · digit" />
+          <SelectField
+            label="Role type"
+            value={userType}
+            onChange={setUserType}
+            options={[
+              { value: 'user', label: 'User — no S3 access until roles are attached' },
+              { value: 'admin', label: 'Admin — read + write, no delete' },
+              { value: 'owner', label: 'Owner — full access, manages roles' },
+            ]}
+          />
           {err && <div className="text-[13px]" style={{ color: '#e35b66' }}>{err}</div>}
         </div>
       }
@@ -445,7 +485,7 @@ function CreateAdminModal({ onCancel, onDone }) {
         <>
           <AwsButton onClick={onCancel}>Cancel</AwsButton>
           <AwsButton variant="primary" disabled={submitting} onClick={submit}>
-            {submitting ? 'Creating…' : 'Create admin'}
+            {submitting ? 'Creating…' : 'Create user'}
           </AwsButton>
         </>
       }
@@ -469,7 +509,7 @@ function EditAdminModal({ target, onCancel, onDone }) {
       const patches = {};
       if (email.trim() !== target.email) patches.email = email.trim();
       if (username.trim() !== target.username) patches.username = username.trim();
-      await s3api.updateAdmin(target.id, patches);
+      await s3api.updateUser(target.id, patches);
       onDone();
     } catch (e) {
       setErr(e.message);
@@ -513,7 +553,7 @@ function ResetPasswordModal({ target, isSelf, onCancel, onDone }) {
     setSubmitting(true);
     setErr(null);
     try {
-      await s3api.resetAdminPassword(target.id, pw);
+      await s3api.resetUserPassword(target.id, pw);
       onDone();
     } catch (e) {
       setErr(e.message);
