@@ -167,9 +167,11 @@ export default function ObjectList({
   }
   function handleActionError(e, { title, key }) {
     if (e instanceof PermissionDeniedError) {
+      // groupKey captures everything that affects rendered output (action +
+      // bucket) — banners with the same key are pixel-identical and collapse.
       topBanners.push({
         key: `perm:${e.action}:${e.resource}`,
-        groupKey: `perm:${e.action}`,
+        groupKey: `perm:${e.action}:${bucket}`,
         severity: 'error',
         render: (dismiss) => <PermissionDeniedBanner error={e} tone="solid" onDismiss={dismiss} />,
       });
