@@ -203,12 +203,6 @@ export default function ObjectList({
         <SectionTab active>Objects</SectionTab>
       </div>
 
-      {denied && (
-        <div className="mb-4">
-          <PermissionDeniedBanner error={denied} onRefresh={() => load(currentToken, { force: true })} />
-        </div>
-      )}
-
       {err && (
         <div className="mb-4">
           <AwsAlert2
@@ -229,10 +223,12 @@ export default function ObjectList({
         }}
       >
         <div className="flex items-center justify-between mb-3 flex-wrap gap-3">
-          <h2 className="text-[18px] font-bold inline-flex items-center gap-2" style={{ color: colors.text.primary }}>
-            <span>
-              Objects <span style={{ color: colors.text.info }} className="font-normal">({countLabel})</span>
+          <h2 className="text-[18px] font-bold inline-flex items-baseline gap-2 flex-wrap" style={{ color: colors.text.primary }}>
+            <span>Objects in</span>
+            <span style={{ color: colors.text.info }} className="font-normal break-all">
+              {bucket}/{prefix || ''}
             </span>
+            <span style={{ color: colors.text.info }} className="font-normal">({countLabel})</span>
           </h2>
         </div>
 
@@ -332,15 +328,25 @@ export default function ObjectList({
               {loading && (
                 <BodyMessage>Loading objects…</BodyMessage>
               )}
-              {!loading && !err && filteredFolders.length === 0 && sortedFiles.length === 0 && (
+              {!loading && denied && (
+                <tr>
+                  <td colSpan={6} style={{ padding: '12px 0' }}>
+                    <PermissionDeniedBanner
+                      error={denied}
+                      onRefresh={() => load(currentToken, { force: true })}
+                    />
+                  </td>
+                </tr>
+              )}
+              {!loading && !denied && !err && filteredFolders.length === 0 && sortedFiles.length === 0 && (
                 <BodyMessage>No objects here.</BodyMessage>
               )}
 
-              {!loading && filteredFolders.map(f => (
+              {!loading && !denied && filteredFolders.map(f => (
                 <FolderRow key={f.prefix} folder={f} onOpen={() => onOpenPrefix(f.prefix)} />
               ))}
 
-              {!loading && sortedFiles.map((f, idx) => {
+              {!loading && !denied && sortedFiles.map((f, idx) => {
                 const isSel = selected.has(f.key);
                 const prevSel = idx > 0 && selected.has(sortedFiles[idx - 1].key);
                 const nextSel = idx < sortedFiles.length - 1 && selected.has(sortedFiles[idx + 1].key);
