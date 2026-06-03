@@ -69,19 +69,23 @@ export default function ObjectList({
       if (e instanceof PermissionDeniedError) {
         setDenied(e);
       } else {
-        topBanners.push({
-          key: 'load-error',
-          render: (dismiss) => (
-            <AwsAlert2 variant="error" title="Couldn't load objects" onDismiss={dismiss}>
-              {e.message || String(e)}
-            </AwsAlert2>
-          ),
-        });
+        pushOperationError(e, { title: "Couldn't load objects", key: 'load-error' });
       }
       setData({ folders: [], files: [], is_truncated: false, next_continuation_token: null });
     } finally {
       setLoading(false);
     }
+  }
+
+  function pushOperationError(e, { title, key }) {
+    topBanners.push({
+      key,
+      render: (dismiss) => (
+        <AwsAlert2 variant="error" title={title} onDismiss={dismiss}>
+          {e.message || String(e)}
+        </AwsAlert2>
+      ),
+    });
   }
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -156,21 +160,14 @@ export default function ObjectList({
     if (!singleSelectedKey) return;
     copy(`s3://${bucket}/${singleSelectedKey}`);
   }
-  function handleActionError(e) {
+  function handleActionError(e, { title, key }) {
     if (e instanceof PermissionDeniedError) {
       topBanners.push({
         key: `perm:${e.action}:${e.resource}`,
         render: (dismiss) => <PermissionDeniedBanner error={e} onDismiss={dismiss} />,
       });
     } else {
-      topBanners.push({
-        key: 'action-error',
-        render: (dismiss) => (
-          <AwsAlert2 variant="error" title="Something went wrong" onDismiss={dismiss}>
-            {e.message || String(e)}
-          </AwsAlert2>
-        ),
-      });
+      pushOperationError(e, { title, key });
     }
   }
   async function copyUrl() {
@@ -178,21 +175,21 @@ export default function ObjectList({
     try {
       const { url } = await s3api.objectUrl(bucket, singleSelectedKey, false);
       copy(url);
-    } catch (e) { handleActionError(e); }
+    } catch (e) { handleActionError(e, { title: "Couldn't copy URL", key: 'copy-url-error' }); }
   }
   async function downloadSel() {
     if (!singleSelectedKey) return;
     try {
       const { url } = await s3api.objectUrl(bucket, singleSelectedKey, true);
       window.open(url, '_blank', 'noopener');
-    } catch (e) { handleActionError(e); }
+    } catch (e) { handleActionError(e, { title: "Couldn't download object", key: 'download-error' }); }
   }
   async function openSel() {
     if (!singleSelectedKey) return;
     try {
       const { url } = await s3api.objectUrl(bucket, singleSelectedKey, false);
       window.open(url, '_blank', 'noopener');
-    } catch (e) { handleActionError(e); }
+    } catch (e) { handleActionError(e, { title: "Couldn't open object", key: 'open-error' }); }
   }
   function deleteSel() {
     if (selected.size === 0) return;
@@ -359,7 +356,7 @@ export default function ObjectList({
                   </td>
                 </tr>
               )}
-              {!loading && !denied && !err && filteredFolders.length === 0 && sortedFiles.length === 0 && (
+              {!loading && !denied && filteredFolders.length === 0 && sortedFiles.length === 0 && (
                 <BodyMessage>No objects here.</BodyMessage>
               )}
 
