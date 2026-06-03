@@ -146,26 +146,30 @@ export default function ObjectList({
     if (!singleSelectedKey) return;
     copy(`s3://${bucket}/${singleSelectedKey}`);
   }
+  function handleActionError(e) {
+    if (e instanceof PermissionDeniedError) setDenied(e);
+    else setErr(e.message);
+  }
   async function copyUrl() {
     if (!singleSelectedKey) return;
     try {
       const { url } = await s3api.objectUrl(bucket, singleSelectedKey, false);
       copy(url);
-    } catch (e) { setErr(e.message); }
+    } catch (e) { handleActionError(e); }
   }
   async function downloadSel() {
     if (!singleSelectedKey) return;
     try {
       const { url } = await s3api.objectUrl(bucket, singleSelectedKey, true);
       window.open(url, '_blank', 'noopener');
-    } catch (e) { setErr(e.message); }
+    } catch (e) { handleActionError(e); }
   }
   async function openSel() {
     if (!singleSelectedKey) return;
     try {
       const { url } = await s3api.objectUrl(bucket, singleSelectedKey, false);
       window.open(url, '_blank', 'noopener');
-    } catch (e) { setErr(e.message); }
+    } catch (e) { handleActionError(e); }
   }
   function deleteSel() {
     if (selected.size === 0) return;
