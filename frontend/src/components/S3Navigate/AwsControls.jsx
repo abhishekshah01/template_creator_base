@@ -135,7 +135,7 @@ export function AwsCheckbox({ checked = false, indeterminate = false, onChange, 
       style={{
         backgroundColor: isOn ? colors.border.rowSelected : '#e8e6e2',
         border: `2px solid ${colors.bg.card}`,
-        borderRadius: 4,
+        borderRadius: 6,
       }}
     >
       {indeterminate ? (

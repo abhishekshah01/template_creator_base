@@ -512,11 +512,13 @@ function FileRow({ file, selected, mergeTop = false, mergeBottom = false, onSele
         <button
           type="button"
           onClick={onOpen}
-          className="text-left underline decoration-1 underline-offset-2 break-all inline-flex items-start gap-2"
+          className="text-left flex items-start gap-2 w-full"
           style={{ color: colors.text.buttonActive }}
         >
           <span className="mt-0.5 shrink-0"><FileIcon16 /></span>
-          <span>{file.name}</span>
+          <span className="underline decoration-1 underline-offset-2 break-all min-w-0">
+            {file.name}
+          </span>
         </button>
       </td>
       <td style={{ ...cellBase, borderTop: top, borderBottom: bottom }}>{fileExt(file.name) || '—'}</td>
