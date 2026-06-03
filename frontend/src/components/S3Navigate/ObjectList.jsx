@@ -584,8 +584,8 @@ function HeaderCell({ children, showDivider, scrolled = false, firstCol = false 
             style={{
               position: 'absolute',
               right: -12,
-              top: 2,
-              bottom: 6,
+              top: 1,
+              bottom: 3,
               width: 2,
               backgroundColor: '#8c8c95',
             }}
