@@ -131,19 +131,20 @@ export function AwsCheckbox({ checked = false, indeterminate = false, onChange, 
       aria-checked={indeterminate ? 'mixed' : !!checked}
       aria-label={ariaLabel}
       onClick={onChange}
-      className="inline-flex items-center justify-center w-[16px] h-[16px] shrink-0 cursor-pointer"
+      className="inline-flex items-center justify-center w-[20px] h-[20px] shrink-0 cursor-pointer"
       style={{
         backgroundColor: isOn ? colors.border.rowSelected : '#e8e6e2',
         border: `2px solid ${colors.bg.card}`,
+        borderRadius: 4,
       }}
     >
       {indeterminate ? (
-        <svg viewBox="0 0 10 10" width="10" height="10" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round">
-          <path d="M2 5h6" />
+        <svg viewBox="0 0 12 12" width="12" height="12" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round">
+          <path d="M2.5 6h7" />
         </svg>
       ) : checked ? (
-        <svg viewBox="0 0 10 10" width="10" height="10" fill="none" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M2 5l2 2 4-4" />
+        <svg viewBox="0 0 12 12" width="12" height="12" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M2.5 6.2l2.4 2.4 4.6-4.6" />
         </svg>
       ) : null}
     </button>
