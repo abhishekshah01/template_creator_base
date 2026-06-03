@@ -34,14 +34,12 @@ function titleFor(action, resource) {
   if (bucket && BUCKET_SCOPED_VERB[action]) {
     return (
       <>
-        You don't have permissions to {BUCKET_SCOPED_VERB[action]}{' '}
-        <code style={{ fontFamily: 'inherit', fontWeight: 700 }}>
-          s3:bucket:{bucket}
-        </code>
+        Insufficient permissions to {BUCKET_SCOPED_VERB[action]}{' '}
+        <span style={{ fontStyle: 'italic' }}>s3bucket:{bucket}</span>
       </>
     );
   }
-  return `You don't have permissions to ${ACTION_LABELS[action] || action}`;
+  return `Insufficient permissions to ${ACTION_LABELS[action] || action}`;
 }
 
 export default function PermissionDeniedBanner({ error, onRefresh, className = '' }) {
