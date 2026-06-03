@@ -188,6 +188,8 @@ export default function Sidebar({ activePage, onNavigate, bearerToken, onTokenCh
   const [activeTab, setActiveTab] = useState('standard');
   const [ephInput, setEphInput] = useState('');
   const [ephHistory, setEphHistory] = useState([]);
+  const [tokenOpen, setTokenOpen] = useState(false);
+  const [showToken, setShowToken] = useState(false);
 
   // Reload history whenever dropdown opens; default tab based on active env
   useEffect(() => {
@@ -398,9 +400,9 @@ export default function Sidebar({ activePage, onNavigate, bearerToken, onTokenCh
           <span className="flex-1 text-left">Settings</span>
         </button>
         <button
-          onClick={() => onNavigate('settings')}
+          onClick={() => setTokenOpen(o => !o)}
           data-testid="api-token-btn"
-          title="Configure API token in Settings"
+          title="Paste your API token"
           className="w-full flex items-center gap-2.5 px-2 py-[7px] rounded-md text-[14px] text-[#8b949e] hover:bg-[#161b22] hover:text-[#e6edf3] transition-colors cursor-pointer border border-transparent">
           <KeyIcon className="w-[16px] h-[16px] shrink-0 text-[#6e7681]" />
           <span className="flex-1 text-left text-[13px]">API Token</span>
@@ -412,7 +414,37 @@ export default function Sidebar({ activePage, onNavigate, bearerToken, onTokenCh
             }`}>
             {bearerToken ? 'Set' : 'Not set'}
           </span>
+          <ChevronIcon className="w-[14px] h-[14px] shrink-0 text-[#6e7681]" open={tokenOpen} />
         </button>
+        {tokenOpen && (
+          <div className="mt-1 flex items-center gap-1">
+            <input
+              type={showToken ? 'text' : 'password'}
+              value={bearerToken}
+              onChange={e => onTokenChange(e.target.value.trim())}
+              placeholder="Paste API token"
+              spellCheck={false}
+              autoComplete="off"
+              className="flex-1 min-w-0 h-[30px] px-2 text-[12px] rounded-md bg-[#0d1117] border border-[#30363d] text-[#e6edf3] outline-none focus:border-[#388bfd]"
+            />
+            <button
+              type="button"
+              onClick={() => setShowToken(s => !s)}
+              title={showToken ? 'Hide token' : 'Show token'}
+              className="shrink-0 px-2 h-[30px] text-[11px] rounded-md border border-[#30363d] text-[#8b949e] hover:text-[#e6edf3]">
+              {showToken ? 'Hide' : 'Show'}
+            </button>
+            {bearerToken && (
+              <button
+                type="button"
+                onClick={() => onTokenChange('')}
+                title="Clear token"
+                className="shrink-0 px-2 h-[30px] text-[11px] rounded-md border border-[#30363d] text-[#8b949e] hover:text-[#f85149]">
+                Clear
+              </button>
+            )}
+          </div>
+        )}
       </div>
     </aside>
   );
