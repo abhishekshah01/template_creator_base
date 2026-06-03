@@ -106,7 +106,7 @@ export default function BannerStack({
 }
 
 
-const PEEK_Y = 10;
+const PEEK_Y = 7;
 const PEEK_X = 8;
 const SHADOW = '0 8px 18px -8px rgba(0,0,0,0.55)';
 
