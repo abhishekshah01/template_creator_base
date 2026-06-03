@@ -41,13 +41,14 @@ function titleFor(action, resource) {
   return `Insufficient permissions to ${ACTION_LABELS[action] || action}`;
 }
 
-export default function PermissionDeniedBanner({ error, onRefresh, className = '' }) {
+export default function PermissionDeniedBanner({ error, onRefresh, onDismiss, className = '' }) {
   if (!error) return null;
   const action = error.action || 'perform this action';
   return (
     <AwsAlert2
       variant="error"
       title={titleFor(action, error.resource)}
+      onDismiss={onDismiss}
       className={className}
     >
       After you or your administrator has updated your permissions to allow the{' '}

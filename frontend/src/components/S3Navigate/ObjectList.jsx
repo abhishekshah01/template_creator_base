@@ -67,7 +67,7 @@ export default function ObjectList({
       setSelected(new Set());
     } catch (e) {
       if (e instanceof PermissionDeniedError) setDenied(e);
-      else setErr(e.message);
+      else setErr(e);
       setData({ folders: [], files: [], is_truncated: false, next_continuation_token: null });
     } finally {
       setLoading(false);
@@ -146,30 +146,26 @@ export default function ObjectList({
     if (!singleSelectedKey) return;
     copy(`s3://${bucket}/${singleSelectedKey}`);
   }
-  function handleActionError(e) {
-    if (e instanceof PermissionDeniedError) setDenied(e);
-    else setErr(e.message);
-  }
   async function copyUrl() {
     if (!singleSelectedKey) return;
     try {
       const { url } = await s3api.objectUrl(bucket, singleSelectedKey, false);
       copy(url);
-    } catch (e) { handleActionError(e); }
+    } catch (e) { setErr(e); }
   }
   async function downloadSel() {
     if (!singleSelectedKey) return;
     try {
       const { url } = await s3api.objectUrl(bucket, singleSelectedKey, true);
       window.open(url, '_blank', 'noopener');
-    } catch (e) { handleActionError(e); }
+    } catch (e) { setErr(e); }
   }
   async function openSel() {
     if (!singleSelectedKey) return;
     try {
       const { url } = await s3api.objectUrl(bucket, singleSelectedKey, false);
       window.open(url, '_blank', 'noopener');
-    } catch (e) { handleActionError(e); }
+    } catch (e) { setErr(e); }
   }
   function deleteSel() {
     if (selected.size === 0) return;
@@ -209,13 +205,17 @@ export default function ObjectList({
 
       {err && (
         <div className="mb-4">
-          <AwsAlert2
-            variant="error"
-            title="Couldn't load objects"
-            onDismiss={() => setErr(null)}
-          >
-            {err}
-          </AwsAlert2>
+          {err instanceof PermissionDeniedError ? (
+            <PermissionDeniedBanner error={err} onDismiss={() => setErr(null)} />
+          ) : (
+            <AwsAlert2
+              variant="error"
+              title="Couldn't load objects"
+              onDismiss={() => setErr(null)}
+            >
+              {err.message || String(err)}
+            </AwsAlert2>
+          )}
         </div>
       )}
 
