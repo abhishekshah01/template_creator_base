@@ -10,7 +10,6 @@ export function useBanners() {
   const push = useCallback((entry) => {
     const item = typeof entry === 'function' ? { render: entry } : entry;
     setBanners(prev => {
-      // Dedup by key — same key replaces in place (e.g. repeated retry on same file).
       if (item.key) {
         const idx = prev.findIndex(b => b.key === item.key);
         if (idx !== -1) {
@@ -51,10 +50,6 @@ export default function BannerStack({
 }) {
   if (!banners.length) return null;
 
-  // Group consecutive entries that the caller declared as having identical
-  // rendered content (same groupKey). Any difference in groupKey — or no
-  // groupKey at all — starts a new group, so banners whose title/body
-  // differ never collapse together.
   const groups = [];
   for (const b of banners) {
     const last = groups[groups.length - 1];
