@@ -1,4 +1,5 @@
 import AwsAlert2 from './AwsAlert2';
+import AwsAlertSolid from './AwsAlertSolid';
 
 const LINK_COLOR = '#45abfe';
 
@@ -41,16 +42,18 @@ function titleFor(action, resource) {
   return `Insufficient permissions to ${ACTION_LABELS[action] || action}`;
 }
 
-export default function PermissionDeniedBanner({ error, onRefresh, onDismiss, className = '' }) {
+export default function PermissionDeniedBanner({
+  error,
+  onRefresh,
+  onDismiss,
+  tone = 'outlined',
+  className = '',
+}) {
   if (!error) return null;
   const action = error.action || 'perform this action';
-  return (
-    <AwsAlert2
-      variant="error"
-      title={titleFor(action, error.resource)}
-      onDismiss={onDismiss}
-      className={className}
-    >
+  const title = titleFor(action, error.resource);
+  const body = (
+    <>
       After you or your administrator has updated your permissions to allow the{' '}
       <code style={{ fontFamily: 'inherit', fontWeight: 600 }}>{action}</code> action,{' '}
       {onRefresh ? (
@@ -66,7 +69,14 @@ export default function PermissionDeniedBanner({ error, onRefresh, onDismiss, cl
         'refresh this page'
       )}
       .
-    </AwsAlert2>
+    </>
+  );
+
+  const Shell = tone === 'solid' ? AwsAlertSolid : AwsAlert2;
+  return (
+    <Shell variant="error" title={title} onDismiss={onDismiss} className={className}>
+      {body}
+    </Shell>
   );
 }
 

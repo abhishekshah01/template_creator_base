@@ -167,7 +167,7 @@ export default function ObjectList({
     if (e instanceof PermissionDeniedError) {
       topBanners.push({
         key: `perm:${e.action}:${e.resource}`,
-        render: (dismiss) => <PermissionDeniedBanner error={e} onDismiss={dismiss} />,
+        render: (dismiss) => <PermissionDeniedBanner error={e} tone="solid" onDismiss={dismiss} />,
       });
     } else {
       pushOperationError(e, { title, key });
