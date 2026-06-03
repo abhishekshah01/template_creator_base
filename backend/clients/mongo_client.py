@@ -15,9 +15,9 @@ _client: AsyncIOMotorClient = AsyncIOMotorClient(config.MONGO_URL, tz_aware=True
 _db = _client[config.DB_NAME]
 
 template_jobs = _db["template_jobs"]
-# `admin_users` predates RBAC; it now holds every user type (owner/admin/user).
-admin_users = _db["admin_users"]
-admin_sessions = _db["admin_sessions"]
+# One collection for every user type (owner / admin / user).
+users = _db["users"]
+user_sessions = _db["user_sessions"]
 roles = _db["roles"]
 permission_audit = _db["permission_audit"]
 
@@ -27,21 +27,15 @@ async def ensure_indexes() -> None:
 
     Wired into main.py's lifespan so the indexes exist before the first request.
     """
-    # admin_users: a given account_id / email / username can only exist once.
-    await admin_users.create_index("account_id", unique=True)
-    await admin_users.create_index("email", unique=True)
-    await admin_users.create_index("username", unique=True)
+    # users: a given account_id / email / username can only exist once.
+    await users.create_index("account_id", unique=True)
+    await users.create_index("email", unique=True)
+    await users.create_index("username", unique=True)
 
-    # admin_sessions: Mongo background-deletes expired rows within ~60s of expires_at.
+    # user_sessions: Mongo background-deletes expired rows within ~60s of expires_at.
     # `expireAfterSeconds: 0` means "expire at the timestamp in this field, no grace".
-    await admin_sessions.create_index("expires_at", expireAfterSeconds=0)
-    await admin_sessions.create_index("token", unique=True)
-
-    # admin_id was the pre-RBAC field name; rename so new code reads user_id only.
-    await admin_sessions.update_many(
-        {"admin_id": {"$exists": True}, "user_id": {"$exists": False}},
-        {"$rename": {"admin_id": "user_id"}},
-    )
+    await user_sessions.create_index("expires_at", expireAfterSeconds=0)
+    await user_sessions.create_index("token", unique=True)
 
     await roles.create_index("name", unique=True)
 
