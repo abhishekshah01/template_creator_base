@@ -18,9 +18,13 @@ export default function PermissionDeniedBanner({ error, onRefresh, className = '
   const action = error.action || 'perform this action';
   const label = ACTION_LABELS[action] || action;
   return (
-    <AwsAlert2 variant="error" title={`You don't have permission to ${label}`} className={className}>
-      Ask an owner to grant the{' '}
-      <code style={{ fontFamily: 'inherit', fontWeight: 600 }}>{action}</code> permission, then{' '}
+    <AwsAlert2
+      variant="error"
+      title={`You don't have permissions to ${label}`}
+      className={className}
+    >
+      After you or your administrator has updated your permissions to allow the{' '}
+      <code style={{ fontFamily: 'inherit', fontWeight: 600 }}>{action}</code> action,{' '}
       {onRefresh ? (
         <button
           type="button"
@@ -28,10 +32,10 @@ export default function PermissionDeniedBanner({ error, onRefresh, className = '
           className="underline underline-offset-2 hover:opacity-90"
           style={{ color: LINK_COLOR }}
         >
-          refresh
+          refresh this page
         </button>
       ) : (
-        'refresh'
+        'refresh this page'
       )}
       .
     </AwsAlert2>
