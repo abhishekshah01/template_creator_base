@@ -41,6 +41,7 @@ export default function ObjectList({
   const [data, setData] = useState({ folders: [], files: [], is_truncated: false, next_continuation_token: null });
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState(null);
+  const [actionDenied, setActionDenied] = useState(null);
   const [denied, setDenied] = useState(null);
   const [filter, setFilter] = useState('');
   const [selected, setSelected] = useState(new Set());
@@ -146,26 +147,30 @@ export default function ObjectList({
     if (!singleSelectedKey) return;
     copy(`s3://${bucket}/${singleSelectedKey}`);
   }
+  function handleActionError(e) {
+    if (e instanceof PermissionDeniedError) setActionDenied(e);
+    else setErr(e);
+  }
   async function copyUrl() {
     if (!singleSelectedKey) return;
     try {
       const { url } = await s3api.objectUrl(bucket, singleSelectedKey, false);
       copy(url);
-    } catch (e) { setErr(e); }
+    } catch (e) { handleActionError(e); }
   }
   async function downloadSel() {
     if (!singleSelectedKey) return;
     try {
       const { url } = await s3api.objectUrl(bucket, singleSelectedKey, true);
       window.open(url, '_blank', 'noopener');
-    } catch (e) { setErr(e); }
+    } catch (e) { handleActionError(e); }
   }
   async function openSel() {
     if (!singleSelectedKey) return;
     try {
       const { url } = await s3api.objectUrl(bucket, singleSelectedKey, false);
       window.open(url, '_blank', 'noopener');
-    } catch (e) { setErr(e); }
+    } catch (e) { handleActionError(e); }
   }
   function deleteSel() {
     if (selected.size === 0) return;
@@ -203,19 +208,24 @@ export default function ObjectList({
         <SectionTab active>Objects</SectionTab>
       </div>
 
+      {actionDenied && (
+        <div className="mb-4">
+          <PermissionDeniedBanner
+            error={actionDenied}
+            onDismiss={() => setActionDenied(null)}
+          />
+        </div>
+      )}
+
       {err && (
         <div className="mb-4">
-          {err instanceof PermissionDeniedError ? (
-            <PermissionDeniedBanner error={err} onDismiss={() => setErr(null)} />
-          ) : (
-            <AwsAlert2
-              variant="error"
-              title="Couldn't load objects"
-              onDismiss={() => setErr(null)}
-            >
-              {err.message || String(err)}
-            </AwsAlert2>
-          )}
+          <AwsAlert2
+            variant="error"
+            title="Couldn't load objects"
+            onDismiss={() => setErr(null)}
+          >
+            {err.message || String(err)}
+          </AwsAlert2>
         </div>
       )}
 
