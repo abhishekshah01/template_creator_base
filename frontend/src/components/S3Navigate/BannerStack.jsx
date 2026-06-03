@@ -92,7 +92,7 @@ export default function BannerStack({
         );
       })}
       {showBar && (
-        <div className="flex justify-center relative" style={{ marginTop: -32, zIndex: 20 }}>
+        <div className="flex justify-center relative" style={{ marginTop: expanded ? -16 : -32, zIndex: 20 }}>
           <NotificationsBar
             counts={counts}
             expanded={expanded}
@@ -106,7 +106,7 @@ export default function BannerStack({
 }
 
 
-const PEEK_Y = 10;
+const PEEK_Y = 8.5;
 const PEEK_X = 8;
 const SHADOW = '0 8px 18px -8px rgba(0,0,0,0.55)';
 
