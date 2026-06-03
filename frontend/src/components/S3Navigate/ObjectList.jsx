@@ -275,11 +275,11 @@ export default function ObjectList({
         <div className="flex items-center gap-2 mb-3 flex-wrap">
           <AwsButton variant="icon" title="Refresh" onClick={() => load(currentToken, { force: true })} icon={<RefreshIcon />} />
           <AwsButton disabled={!singleSelectedKey} onClick={copyS3Uri} icon={<AwsCopyIcon />}>Copy S3 URI</AwsButton>
-          <AwsButton disabled={!singleSelectedIsFile} onClick={copyUrl} icon={<AwsCopyIcon />}>Copy URL</AwsButton>
+          <AwsButton disabled={!singleSelectedKey} onClick={copyUrl} icon={<AwsCopyIcon />}>Copy URL</AwsButton>
           <AwsButton disabled={!singleSelectedIsFile} onClick={downloadSel} icon={<DownloadIcon />}>Download</AwsButton>
-          <AwsButton disabled={!singleSelectedIsFile} onClick={openSel} rightIcon={<OpenExternalIconV2 />}>Open</AwsButton>
+          <AwsButton disabled={!singleSelectedKey} onClick={openSel} rightIcon={<OpenExternalIconV2 />}>Open</AwsButton>
           <AwsButton disabled={!hasSelection} onClick={deleteSel}>Delete</AwsButton>
-          <AwsButton disabled rightIcon={<ActionsArrowIcon />}>Actions</AwsButton>
+          <AwsButton disabled={!singleSelectedKey} rightIcon={<ActionsArrowIcon />}>Actions</AwsButton>
           <AwsButton onClick={() => onOpenCreateFolder?.()}>Create folder</AwsButton>
           <AwsButton variant="primary" onClick={() => onOpenUpload?.()} icon={<UploadIconV2 />}>Upload</AwsButton>
         </div>
