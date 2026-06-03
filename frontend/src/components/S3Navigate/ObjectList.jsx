@@ -42,6 +42,7 @@ export default function ObjectList({
   const [data, setData] = useState({ folders: [], files: [], is_truncated: false, next_continuation_token: null });
   const [loading, setLoading] = useState(true);
   const [denied, setDenied] = useState(null);
+  const [loadFailed, setLoadFailed] = useState(false);
   const topBanners = useBanners();
   const [filter, setFilter] = useState('');
   const [selected, setSelected] = useState(new Set());
@@ -60,6 +61,7 @@ export default function ObjectList({
   async function load(token = null, { force = false } = {}) {
     setLoading(true);
     setDenied(null);
+    setLoadFailed(false);
     try {
       const d = await s3api.listObjects(bucket, prefix, token, force);
       setData(d);
@@ -69,6 +71,7 @@ export default function ObjectList({
       if (e instanceof PermissionDeniedError) {
         setDenied(e);
       } else {
+        setLoadFailed(true);
         pushOperationError(e, { title: "Couldn't load objects", key: 'load-error' });
       }
       setData({ folders: [], files: [], is_truncated: false, next_continuation_token: null });
@@ -356,7 +359,7 @@ export default function ObjectList({
                   </td>
                 </tr>
               )}
-              {!loading && !denied && filteredFolders.length === 0 && sortedFiles.length === 0 && (
+              {!loading && !denied && !loadFailed && filteredFolders.length === 0 && sortedFiles.length === 0 && (
                 <BodyMessage>No objects here.</BodyMessage>
               )}
 
