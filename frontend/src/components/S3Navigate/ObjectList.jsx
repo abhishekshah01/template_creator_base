@@ -576,22 +576,20 @@ function HeaderCell({ children, showDivider, scrolled = false, firstCol = false 
         zIndex: 2,
       }}
     >
-      <span style={{ position: 'relative', display: 'block' }}>
-        {children}
-        {showDivider && (
-          <span
-            aria-hidden="true"
-            style={{
-              position: 'absolute',
-              right: -12,
-              top: 1,
-              bottom: 3,
-              width: 2,
-              backgroundColor: '#8c8c95',
-            }}
-          />
-        )}
-      </span>
+      {children}
+      {showDivider && (
+        <span
+          aria-hidden="true"
+          style={{
+            position: 'absolute',
+            right: 0,
+            top: 4,
+            bottom: 6,
+            width: 2,
+            backgroundColor: '#8c8c95',
+          }}
+        />
+      )}
     </th>
   );
 }
