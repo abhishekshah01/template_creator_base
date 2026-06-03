@@ -1,6 +1,6 @@
 """Tests for /api/asset/* proxies.
 
-Mocks the upstream app-service /internal/s3-templates/* with respx so no real
+Mocks the upstream app-service /internal/templates/s3/* with respx so no real
 HTTP traffic leaves the test process.
 """
 
@@ -9,7 +9,7 @@ import json
 import httpx
 import respx
 
-UPSTREAM_BASE = "/internal/s3-templates"
+UPSTREAM_BASE = "/internal/templates/s3"
 
 
 def _upstream(app_service_base, suffix):
@@ -56,6 +56,24 @@ def test_upload_url_forwards_payload_and_bearer(client, app_service_base):
     assert _body(sent)["bucket"] == "my-bucket"
     assert _body(sent)["key"] == "assets/x.png"
     assert _body(sent)["content_type"] == "image/png"
+
+
+def test_create_folder_forwards_payload(client, app_service_base):
+    upstream_resp = {"created": True, "bucket": "my-bucket", "key": "assets/new/"}
+    with respx.mock(assert_all_called=True) as mock:
+        route = mock.post(_upstream(app_service_base, "/folder")).mock(
+            return_value=httpx.Response(200, json=upstream_resp),
+        )
+        resp = client.post(
+            "/api/asset/create-folder",
+            json={"bucket": "my-bucket", "key": "assets/new/", "bearer_token": "tok-abc"},
+        )
+
+    assert resp.status_code == 200
+    assert resp.json() == upstream_resp
+    sent = route.calls[0]
+    assert sent.request.headers["authorization"] == "Bearer tok-abc"
+    assert _body(sent) == {"bucket": "my-bucket", "key": "assets/new/"}
 
 
 def test_upload_url_surfaces_upstream_400(client, app_service_base):

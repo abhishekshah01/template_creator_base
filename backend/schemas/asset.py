@@ -24,6 +24,13 @@ class AssetUploadUrlRequest(BaseModel):
     bearer_token: str = _TOKEN
 
 
+class AssetCreateFolderRequest(BaseModel):
+    bucket: str = _BUCKET
+    # Folder key; a trailing '/' is optional — app-service normalizes it.
+    key: str = _KEY
+    bearer_token: str = _TOKEN
+
+
 class AssetDeleteRequest(BaseModel):
     bucket: str = _BUCKET
     key: str = _KEY

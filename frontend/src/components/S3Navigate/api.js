@@ -71,6 +71,8 @@ export const s3api = {
     const data = await api.getAssetUploadUrl(bucket, key, contentType, bearer());
     return { url: data.upload_url, headers: data.headers, public_url: data.public_url };
   },
+  // Create a folder server-side (app-service writes the zero-byte marker).
+  createFolder: (bucket, key) => api.createAssetFolder(bucket, key, bearer()),
   deleteObject: (bucket, key) => api.deleteAsset(bucket, key, bearer()),
   invalidateCache: (path) =>
     api.invalidateAsset(CLOUDFRONT_DISTRIBUTION_ID, path, bearer()),

@@ -10,7 +10,7 @@ from typing import Optional
 from clients import app_service_client as app_svc
 from services.cache import object_cache, token_hash
 
-_BASE = "/internal/s3-templates"
+_BASE = "/internal/templates/s3"
 
 
 async def mint_upload_url(
@@ -40,6 +40,18 @@ async def delete_object(*, bucket: str, key: str, bearer_token: str) -> dict:
     # across all tokens — a delete is observable to everyone.
     object_cache.invalidate_prefix(f"objects:{bucket}:")
     object_cache.invalidate_prefix(f"meta:{bucket}:{key}:")
+    return result
+
+
+async def create_folder(*, bucket: str, key: str, bearer_token: str) -> dict:
+    result = await app_svc.post(
+        f"{_BASE}/folder",
+        json={"bucket": bucket, "key": key},
+        bearer_token=bearer_token,
+        label="S3 create-folder",
+    )
+    # A new marker object changes what listings return for this bucket.
+    object_cache.invalidate_prefix(f"objects:{bucket}:")
     return result
 
 

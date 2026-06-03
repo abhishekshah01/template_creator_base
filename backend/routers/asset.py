@@ -3,6 +3,7 @@
 from fastapi import APIRouter
 
 from schemas.asset import (
+    AssetCreateFolderRequest,
     AssetDeleteRequest,
     AssetDownloadUrlRequest,
     AssetInvalidateRequest,
@@ -25,6 +26,11 @@ async def upload_url(req: AssetUploadUrlRequest):
         expiration_minutes=req.expiration_minutes,
         bearer_token=req.bearer_token,
     )
+
+
+@router.post("/create-folder")
+async def create_folder(req: AssetCreateFolderRequest):
+    return await asset_service.create_folder(bucket=req.bucket, key=req.key, bearer_token=req.bearer_token)
 
 
 @router.post("/delete")

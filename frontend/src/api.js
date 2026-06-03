@@ -135,11 +135,13 @@ export const api = {
     request('/get-category-config', { config_id: String(configId), bearer_token: bearerToken }),
   updateCategoryConfig: (payload) => request('/update-category-config', payload),
 
-  // S3 / CloudFront — proxied to app-service /internal/s3-templates
+  // S3 / CloudFront — proxied to app-service /internal/templates/s3
   getAssetUploadUrl: (bucket, key, contentType, bearerToken) =>
     request('/asset/upload-url', {
       bucket, key, content_type: contentType || 'application/octet-stream', bearer_token: bearerToken,
     }),
+  createAssetFolder: (bucket, key, bearerToken) =>
+    request('/asset/create-folder', { bucket, key, bearer_token: bearerToken }),
   deleteAsset: (bucket, key, bearerToken) =>
     request('/asset/delete', { bucket, key, bearer_token: bearerToken }),
   invalidateAsset: (cloudfrontDistributionId, path, bearerToken) =>

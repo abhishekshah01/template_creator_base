@@ -26,14 +26,7 @@ export default function CreateFolderPage({ bucket, prefix, onCancel, onDone }) {
     setErr(null);
     const key = (prefix || '') + trimmed + '/';
     try {
-      const { url } = await s3api.uploadUrl(bucket, key, 'application/x-directory');
-      await fetch(url, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/x-directory' },
-        body: new Blob([], { type: 'application/x-directory' }),
-      }).then((r) => {
-        if (!r.ok) throw new Error(`HTTP ${r.status}`);
-      });
+      await s3api.createFolder(bucket, key);
       onDone?.(trimmed);
     } catch (e) {
       setErr(e.message);
