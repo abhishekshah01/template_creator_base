@@ -13,13 +13,13 @@ const ACTION_LABELS = {
   'tc:s3:InvalidateCache': 'invalidate the cache',
 };
 
-const BUCKET_SCOPED_LABEL = {
-  'tc:s3:ListBucket':         (b) => `list objects in ${b}`,
-  'tc:s3:GetBucketLocation':  (b) => `view details of ${b}`,
-  'tc:s3:GetObject':          (b) => `view objects in ${b}`,
-  'tc:s3:PutObject':          (b) => `upload objects to ${b}`,
-  'tc:s3:CreateFolder':       (b) => `create folders in ${b}`,
-  'tc:s3:DeleteObject':       (b) => `delete objects from ${b}`,
+const BUCKET_SCOPED_VERB = {
+  'tc:s3:ListBucket':        'list objects in',
+  'tc:s3:GetBucketLocation': 'view details of',
+  'tc:s3:GetObject':         'view objects in',
+  'tc:s3:PutObject':         'upload objects to',
+  'tc:s3:CreateFolder':      'create folders in',
+  'tc:s3:DeleteObject':      'delete objects from',
 };
 
 function bucketFromResource(resource) {
@@ -29,20 +29,28 @@ function bucketFromResource(resource) {
   return bucket && bucket !== '*' ? bucket : null;
 }
 
-function labelFor(action, resource) {
+function titleFor(action, resource) {
   const bucket = bucketFromResource(resource);
-  if (bucket && BUCKET_SCOPED_LABEL[action]) return BUCKET_SCOPED_LABEL[action](bucket);
-  return ACTION_LABELS[action] || action;
+  if (bucket && BUCKET_SCOPED_VERB[action]) {
+    return (
+      <>
+        You don't have permissions to {BUCKET_SCOPED_VERB[action]}{' '}
+        <code style={{ fontFamily: 'inherit', fontWeight: 700 }}>
+          s3:bucket:{bucket}
+        </code>
+      </>
+    );
+  }
+  return `You don't have permissions to ${ACTION_LABELS[action] || action}`;
 }
 
 export default function PermissionDeniedBanner({ error, onRefresh, className = '' }) {
   if (!error) return null;
   const action = error.action || 'perform this action';
-  const label = labelFor(action, error.resource);
   return (
     <AwsAlert2
       variant="error"
-      title={`You don't have permissions to ${label}`}
+      title={titleFor(action, error.resource)}
       className={className}
     >
       After you or your administrator has updated your permissions to allow the{' '}
