@@ -13,6 +13,7 @@ import {
   SortTriangleV2,
   UploadIconV2,
 } from './AwsControls';
+import BannerStack, { useBanners } from './BannerStack';
 import PermissionDeniedBanner from './PermissionDeniedBanner';
 import { s3api } from './api';
 import { PermissionDeniedError } from '../../api';
@@ -40,9 +41,8 @@ export default function ObjectList({
 }) {
   const [data, setData] = useState({ folders: [], files: [], is_truncated: false, next_continuation_token: null });
   const [loading, setLoading] = useState(true);
-  const [err, setErr] = useState(null);
-  const [actionDenied, setActionDenied] = useState(null);
   const [denied, setDenied] = useState(null);
+  const topBanners = useBanners();
   const [filter, setFilter] = useState('');
   const [selected, setSelected] = useState(new Set());
   const [pageStack, setPageStack] = useState([]);
@@ -59,7 +59,6 @@ export default function ObjectList({
 
   async function load(token = null, { force = false } = {}) {
     setLoading(true);
-    setErr(null);
     setDenied(null);
     try {
       const d = await s3api.listObjects(bucket, prefix, token, force);
@@ -67,8 +66,18 @@ export default function ObjectList({
       setCurrentToken(token);
       setSelected(new Set());
     } catch (e) {
-      if (e instanceof PermissionDeniedError) setDenied(e);
-      else setErr(e);
+      if (e instanceof PermissionDeniedError) {
+        setDenied(e);
+      } else {
+        topBanners.push({
+          key: 'load-error',
+          render: (dismiss) => (
+            <AwsAlert2 variant="error" title="Couldn't load objects" onDismiss={dismiss}>
+              {e.message || String(e)}
+            </AwsAlert2>
+          ),
+        });
+      }
       setData({ folders: [], files: [], is_truncated: false, next_continuation_token: null });
     } finally {
       setLoading(false);
@@ -148,8 +157,21 @@ export default function ObjectList({
     copy(`s3://${bucket}/${singleSelectedKey}`);
   }
   function handleActionError(e) {
-    if (e instanceof PermissionDeniedError) setActionDenied(e);
-    else setErr(e);
+    if (e instanceof PermissionDeniedError) {
+      topBanners.push({
+        key: `perm:${e.action}:${e.resource}`,
+        render: (dismiss) => <PermissionDeniedBanner error={e} onDismiss={dismiss} />,
+      });
+    } else {
+      topBanners.push({
+        key: 'action-error',
+        render: (dismiss) => (
+          <AwsAlert2 variant="error" title="Something went wrong" onDismiss={dismiss}>
+            {e.message || String(e)}
+          </AwsAlert2>
+        ),
+      });
+    }
   }
   async function copyUrl() {
     if (!singleSelectedKey) return;
@@ -208,26 +230,11 @@ export default function ObjectList({
         <SectionTab active>Objects</SectionTab>
       </div>
 
-      {actionDenied && (
-        <div className="mb-4">
-          <PermissionDeniedBanner
-            error={actionDenied}
-            onDismiss={() => setActionDenied(null)}
-          />
-        </div>
-      )}
-
-      {err && (
-        <div className="mb-4">
-          <AwsAlert2
-            variant="error"
-            title="Couldn't load objects"
-            onDismiss={() => setErr(null)}
-          >
-            {err.message || String(err)}
-          </AwsAlert2>
-        </div>
-      )}
+      <BannerStack
+        banners={topBanners.banners}
+        dismiss={topBanners.dismiss}
+        className="mb-4"
+      />
 
       <div
         className="rounded-[12px] p-5"
