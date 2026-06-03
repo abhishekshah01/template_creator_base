@@ -7,9 +7,26 @@ HTTP traffic leaves the test process.
 import json
 
 import httpx
+import pytest
 import respx
 
+from authentication.authenticated_user import AuthenticatedUser
+from main import app
+
 UPSTREAM_BASE = "/internal/templates/s3"
+
+
+class _AllowAllUser:
+    async def require_permission(self, action, resource):
+        return None
+
+
+@pytest.fixture(autouse=True)
+def _bypass_permissions():
+    """These tests exercise the proxy layer, not RBAC — satisfy the auth dep."""
+    app.dependency_overrides[AuthenticatedUser.require_user] = lambda: _AllowAllUser()
+    yield
+    app.dependency_overrides.pop(AuthenticatedUser.require_user, None)
 
 
 def _upstream(app_service_base, suffix):

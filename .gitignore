@@ -20,3 +20,6 @@ template-bot-key.pub
 .env
 .env.local
 .env.*.local
+
+# local test venv
+.venv311/

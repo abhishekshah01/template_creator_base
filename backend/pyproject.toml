@@ -13,3 +13,7 @@ ignore = ["E501", "B008", "SIM117", "SIM103"]
 
 [tool.ruff.format]
 quote-style = "double"
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"

@@ -37,6 +37,17 @@ def _restore_config():
             setattr(config, attr, value)
 
 
+@pytest.fixture(autouse=True)
+def _clear_caches():
+    """Reset the module-level TTL caches so a value cached by one test can't
+    satisfy another test's request (and skip its respx mock)."""
+    from services import cache
+
+    cache.object_cache._store.clear()
+    cache.config_cache._store.clear()
+    yield
+
+
 @pytest.fixture
 def client():
     """FastAPI TestClient against the real app, but with httpx routed via respx."""
