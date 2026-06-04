@@ -122,7 +122,7 @@ export default function DeleteStatusPage({ source, results, onClose }) {
               <span style={{ color: colors.text.selectedRow }}>0 objects</span>
             ) : (
               <span className="inline-flex items-center gap-1.5" style={{ color: FAIL_RED }}>
-                <FailIcon size={14} strokeWidth={1.6} />
+                <FailIcon size={18} strokeWidth={2.4} />
                 {failed.length} object{failed.length === 1 ? '' : 's'}, {bytesToHuman(failedBytes)}
               </span>
             )}
@@ -168,11 +168,11 @@ export default function DeleteStatusPage({ source, results, onClose }) {
             >
               <colgroup>
                 <col />
-                <col style={{ width: 200 }} />
-                <col style={{ width: 110 }} />
-                <col style={{ width: 220 }} />
-                <col style={{ width: 110 }} />
                 <col style={{ width: 180 }} />
+                <col style={{ width: 90 }} />
+                <col style={{ width: 200 }} />
+                <col style={{ width: 90 }} />
+                <col style={{ width: 140 }} />
               </colgroup>
               <thead>
                 <tr>
@@ -209,7 +209,10 @@ export default function DeleteStatusPage({ source, results, onClose }) {
                     <Td>
                       <span className="inline-flex items-center gap-1.5" style={{ color: FAIL_RED }}>
                         <FailIcon size={16} strokeWidth={2.4} />
-                        <span className="underline decoration-dotted underline-offset-4">
+                        <span
+                          className="underline decoration-dotted underline-offset-4"
+                          style={{ textDecorationColor: colors.text.selectedRow }}
+                        >
                           {r.error || 'Access denied'}
                         </span>
                       </span>
@@ -264,7 +267,7 @@ function SortHeader({ label, col, sort, onToggle, showDivider = false }) {
       <button
         type="button"
         onClick={() => onToggle(col)}
-        className="flex items-center justify-between w-full pr-2"
+        className="flex items-center justify-between w-full"
         style={{ color: colors.text.info }}
       >
         <span>{label}</span>
