@@ -122,7 +122,7 @@ export default function DeleteStatusPage({ source, results, onClose }) {
               <span style={{ color: colors.text.selectedRow }}>0 objects</span>
             ) : (
               <span className="inline-flex items-center gap-1.5" style={{ color: FAIL_RED }}>
-                <FailIcon size={18} strokeWidth={2.6} />
+                <FailIcon size={16} strokeWidth={2.6} />
                 {failed.length} object{failed.length === 1 ? '' : 's'}, {bytesToHuman(failedBytes)}
               </span>
             )}
@@ -148,7 +148,7 @@ export default function DeleteStatusPage({ source, results, onClose }) {
           style={{ backgroundColor: colors.bg.card, border: `1px solid ${colors.border.cardOutline}` }}
         >
           <h2 className="text-[18px] font-bold mb-3 inline-flex items-center gap-2" style={{ color: colors.text.primary }}>
-            <span style={{ color: '#dbd8d3' }}><FailIcon size={18} strokeWidth={2.6} /></span>
+            <span style={{ color: '#dbd8d3' }}><FailIcon size={16} strokeWidth={2.6} /></span>
             <span>
               Failed to delete{' '}
               <span className="font-normal" style={{ color: colors.text.info }}>
@@ -212,16 +212,14 @@ export default function DeleteStatusPage({ source, results, onClose }) {
                     <Td>{r.last_modified ? formatAwsDate(r.last_modified) : '—'}</Td>
                     <Td>{r.size != null ? bytesToHuman(r.size) : '—'}</Td>
                     <Td>
-                      <span className="break-all" style={{ color: FAIL_RED }}>
+                      <span
+                        className="break-all underline decoration-dashed decoration-2 underline-offset-4"
+                        style={{ color: FAIL_RED, textDecorationColor: colors.text.selectedRow }}
+                      >
                         <span className="inline-block align-text-bottom mr-1.5">
-                          <FailIcon size={18} strokeWidth={2.6} />
+                          <FailIcon size={16} strokeWidth={2.6} />
                         </span>
-                        <span
-                          className="underline decoration-dotted decoration-2 underline-offset-4"
-                          style={{ textDecorationColor: colors.text.selectedRow }}
-                        >
-                          {r.error || 'Access denied'}
-                        </span>
+                        {r.error || 'Access denied'}
                       </span>
                     </Td>
                   </tr>
