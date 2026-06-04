@@ -195,9 +195,14 @@ export default function DeleteStatusPage({ source, results, onClose }) {
                 {rows.map(r => (
                   <tr key={r.key}>
                     <Td>
-                      <span className="inline-flex items-start gap-2">
-                        {r.isFolder ? <FolderIcon /> : <FileIcon />}
-                        <span className="underline decoration-1 underline-offset-4 break-all" style={{ color: colors.text.buttonActive }}>
+                      <span className="break-all">
+                        <span className="inline-block align-text-bottom mr-2">
+                          {r.isFolder ? <FolderIcon /> : <FileIcon />}
+                        </span>
+                        <span
+                          className="underline decoration-1 underline-offset-4"
+                          style={{ color: colors.text.buttonActive }}
+                        >
                           {r.isFolder ? `${r._name}/` : r._name}
                         </span>
                       </span>
@@ -207,10 +212,12 @@ export default function DeleteStatusPage({ source, results, onClose }) {
                     <Td>{r.last_modified ? formatAwsDate(r.last_modified) : '—'}</Td>
                     <Td>{r.size != null ? bytesToHuman(r.size) : '—'}</Td>
                     <Td>
-                      <span className="inline-flex items-center gap-1.5" style={{ color: FAIL_RED }}>
-                        <FailIcon size={16} strokeWidth={2.4} />
+                      <span className="break-all" style={{ color: FAIL_RED }}>
+                        <span className="inline-block align-text-bottom mr-1.5">
+                          <FailIcon size={16} strokeWidth={2.4} />
+                        </span>
                         <span
-                          className="underline decoration-dotted underline-offset-4"
+                          className="underline decoration-dotted decoration-2 underline-offset-4"
                           style={{ textDecorationColor: colors.text.selectedRow }}
                         >
                           {r.error || 'Access denied'}
