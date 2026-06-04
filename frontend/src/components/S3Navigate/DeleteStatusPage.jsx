@@ -213,12 +213,18 @@ export default function DeleteStatusPage({ source, results, onClose }) {
                     <Td>{r.size != null ? bytesToHuman(r.size) : '—'}</Td>
                     <Td>
                       <span
-                        className="break-all underline decoration-dashed decoration-2 underline-offset-4"
-                        style={{ color: FAIL_RED, textDecorationColor: colors.text.selectedRow }}
+                        className="break-all underline decoration-dashed decoration-1 underline-offset-4"
+                        style={{
+                          color: FAIL_RED,
+                          textDecorationColor: colors.text.selectedRow,
+                          textDecorationSkipInk: 'none',
+                        }}
                       >
-                        <span className="inline-block align-text-bottom mr-1.5">
-                          <FailIcon size={16} strokeWidth={2.6} />
-                        </span>
+                        <FailIcon
+                          size={16}
+                          strokeWidth={2.6}
+                          style={{ display: 'inline', verticalAlign: '-3px', marginRight: 6 }}
+                        />
                         {r.error || 'Access denied'}
                       </span>
                     </Td>
@@ -330,7 +336,7 @@ function TabBtn({ active, children, onClick }) {
   );
 }
 
-function FailIcon({ size = 14, strokeWidth = 1.6 }) {
+function FailIcon({ size = 14, strokeWidth = 1.6, style }) {
   return (
     <svg
       viewBox="0 0 16 16"
@@ -342,6 +348,7 @@ function FailIcon({ size = 14, strokeWidth = 1.6 }) {
       strokeLinecap="round"
       strokeLinejoin="round"
       aria-hidden="true"
+      style={style}
     >
       <circle cx="8" cy="8" r="7" />
       <path d="m5.5 5.5 5 5M10.5 5.5l-5 5" />
