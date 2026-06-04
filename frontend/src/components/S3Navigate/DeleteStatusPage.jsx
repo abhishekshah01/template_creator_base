@@ -213,17 +213,20 @@ export default function DeleteStatusPage({ source, results, onClose }) {
                     <Td>{r.size != null ? bytesToHuman(r.size) : '—'}</Td>
                     <Td>
                       <span
-                        className="break-all underline decoration-dashed decoration-1 underline-offset-4"
+                        className="break-all"
                         style={{
                           color: FAIL_RED,
-                          textDecorationColor: colors.text.selectedRow,
-                          textDecorationSkipInk: 'none',
+                          paddingBottom: 4,
+                          backgroundImage: `linear-gradient(to right, ${colors.text.selectedRow} 50%, transparent 50%)`,
+                          backgroundSize: '6px 1px',
+                          backgroundRepeat: 'repeat-x',
+                          backgroundPosition: 'left bottom',
                         }}
                       >
                         <FailIcon
                           size={16}
                           strokeWidth={2.6}
-                          style={{ display: 'inline', verticalAlign: '-3px', marginRight: 6 }}
+                          style={{ display: 'inline-block', verticalAlign: 'middle', marginRight: 6 }}
                         />
                         {r.error || 'Access denied'}
                       </span>
