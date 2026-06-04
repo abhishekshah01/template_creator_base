@@ -2,7 +2,6 @@ import { useState } from 'react';
 
 import AwsAlert2 from './AwsAlert2';
 import { AwsButton, AwsSearchInput, SortTriangleV2 } from './AwsControls';
-import PermissionDeniedBanner from './PermissionDeniedBanner';
 import { s3api } from './api';
 import { PermissionDeniedError } from '../../api';
 import { bytesToHuman, formatAwsDate, fileExt } from './format';
@@ -12,7 +11,6 @@ export default function DeletePage({ bucket, prefix, objects, onCancel, onDone }
   const [confirmText, setConfirmText] = useState('');
   const [filter, setFilter] = useState('');
   const [deleting, setDeleting] = useState(false);
-  const [denied, setDenied] = useState(null);
   const canDelete = confirmText === 'delete' && !deleting && objects.length > 0;
 
   const filtered = objects.filter(o => !filter.trim()
@@ -21,21 +19,28 @@ export default function DeletePage({ bucket, prefix, objects, onCancel, onDone }
   async function handleDelete() {
     if (!canDelete) return;
     setDeleting(true);
-    setDenied(null);
     const results = [];
-    for (const o of objects) {
+    let stopAt = -1;
+    for (let i = 0; i < objects.length; i++) {
+      const o = objects[i];
       try {
         await s3api.deleteObject(bucket, o.key);
         results.push({ ...o, ok: true });
       } catch (e) {
-        // Lacking delete permission applies to the whole batch — surface the
-        // banner and stop rather than failing every row identically.
-        if (e instanceof PermissionDeniedError) {
-          setDenied(e);
-          setDeleting(false);
-          return;
-        }
-        results.push({ ...o, ok: false, error: e.message || 'Access denied' });
+        const isPerm = e instanceof PermissionDeniedError;
+        results.push({
+          ...o,
+          ok: false,
+          error: isPerm ? 'Access denied' : (e.message || 'Delete failed'),
+        });
+        if (isPerm) { stopAt = i; break; }
+      }
+    }
+    // Permission denial applies to the whole batch — mark remaining objects
+    // as access denied without retrying.
+    if (stopAt >= 0) {
+      for (let i = stopAt + 1; i < objects.length; i++) {
+        results.push({ ...objects[i], ok: false, error: 'Access denied' });
       }
     }
     setDeleting(false);
@@ -53,12 +58,6 @@ export default function DeletePage({ bucket, prefix, objects, onCancel, onDone }
           Info
         </span>
       </h1>
-
-      {denied && (
-        <div className="mb-4">
-          <PermissionDeniedBanner error={denied} />
-        </div>
-      )}
 
       <div className="mb-6">
         <AwsAlert2
