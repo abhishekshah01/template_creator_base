@@ -1,8 +1,9 @@
 import { useState } from 'react';
 
 import AwsAlert2 from './AwsAlert2';
-import AwsAlertSolid from './AwsAlertSolid';
 import { AwsButton, AwsSearchInput } from './AwsControls';
+
+const FAIL_RED = '#ff3233';
 import { bytesToHuman, formatAwsDate, fileExt } from './format';
 import { colors } from './theme';
 
@@ -21,17 +22,17 @@ export default function DeleteStatusPage({ source, results, onClose }) {
     <div>
       <div className="mb-4">
         {hasFailure ? (
-          <AwsAlertSolid variant="error" title="Failed to delete objects">
+          <AwsAlert2 variant="error" title="Failed to delete objects">
             For more information, see the <strong>Error</strong> column in the{' '}
             <strong>Failed to delete</strong> table below.
-          </AwsAlertSolid>
+          </AwsAlert2>
         ) : (
-          <AwsAlertSolid
-            variant="success"
+          <AwsAlert2
+            variant="info"
             title={`Successfully deleted ${ok.length} object${ok.length === 1 ? '' : 's'}`}
           >
             Source: <strong>{source}</strong>
-          </AwsAlertSolid>
+          </AwsAlert2>
         )}
       </div>
 
@@ -53,11 +54,11 @@ export default function DeleteStatusPage({ source, results, onClose }) {
         style={{ backgroundColor: colors.bg.card, border: `1px solid ${colors.border.cardOutline}` }}
       >
         <h2 className="text-[18px] font-bold mb-4" style={{ color: colors.text.primary }}>Summary</h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-y-4 gap-x-12 text-[14px]">
-          <SummaryField label="Source">
+        <div className="grid grid-cols-1 md:grid-cols-3 text-[14px]">
+          <SummaryField label="Source" divider>
             <span className="break-all" style={{ color: colors.text.buttonActive }}>{source}</span>
           </SummaryField>
-          <SummaryField label="Successfully deleted">
+          <SummaryField label="Successfully deleted" divider>
             <span style={{ color: colors.text.selectedRow }}>
               {ok.length} object{ok.length === 1 ? '' : 's'}
             </span>
@@ -66,7 +67,7 @@ export default function DeleteStatusPage({ source, results, onClose }) {
             {failed.length === 0 ? (
               <span style={{ color: colors.text.selectedRow }}>0 objects</span>
             ) : (
-              <span className="inline-flex items-center gap-1.5" style={{ color: '#fe6b58' }}>
+              <span className="inline-flex items-center gap-1.5" style={{ color: FAIL_RED }}>
                 <FailIcon />
                 {failed.length} object{failed.length === 1 ? '' : 's'}, {bytesToHuman(failedBytes)}
               </span>
@@ -93,7 +94,7 @@ export default function DeleteStatusPage({ source, results, onClose }) {
           style={{ backgroundColor: colors.bg.card, border: `1px solid ${colors.border.cardOutline}` }}
         >
           <h2 className="text-[18px] font-bold mb-3 inline-flex items-center gap-2" style={{ color: colors.text.primary }}>
-            <FailIcon />
+            <span style={{ color: FAIL_RED }}><FailIcon /></span>
             <span>
               Failed to delete{' '}
               <span className="font-normal" style={{ color: colors.text.info }}>
@@ -153,7 +154,7 @@ export default function DeleteStatusPage({ source, results, onClose }) {
                       <Td>{r.last_modified ? formatAwsDate(r.last_modified) : '—'}</Td>
                       <Td>{r.size != null ? bytesToHuman(r.size) : '—'}</Td>
                       <Td>
-                        <span className="inline-flex items-center gap-1.5" style={{ color: '#fe6b58' }}>
+                        <span className="inline-flex items-center gap-1.5" style={{ color: FAIL_RED }}>
                           <FailIcon />
                           {r.error || 'Access denied'}
                         </span>
@@ -181,9 +182,12 @@ export default function DeleteStatusPage({ source, results, onClose }) {
   );
 }
 
-function SummaryField({ label, children }) {
+function SummaryField({ label, children, divider = false }) {
   return (
-    <div>
+    <div
+      className="px-6 first:pl-0 last:pr-0"
+      style={divider ? { borderRight: `1px solid ${colors.border.rowSeparator}` } : undefined}
+    >
       <div className="font-bold mb-1" style={{ color: colors.text.primary }}>{label}</div>
       <div>{children}</div>
     </div>
