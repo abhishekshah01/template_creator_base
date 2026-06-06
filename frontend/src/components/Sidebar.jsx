@@ -140,6 +140,24 @@ function BucketIcon({ className }) {
   );
 }
 
+// CMS Portal (item) — atomic structure (nucleus + 3 orbital ellipses)
+function CmsIcon({ className }) {
+  return (
+    <svg
+      className={className}
+      viewBox="0 0 16 16"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.3"
+    >
+      <ellipse cx="8" cy="8" rx="6.8" ry="2.6" />
+      <ellipse cx="8" cy="8" rx="6.8" ry="2.6" transform="rotate(60 8 8)" />
+      <ellipse cx="8" cy="8" rx="6.8" ry="2.6" transform="rotate(120 8 8)" />
+      <circle cx="8" cy="8" r="1.3" fill="currentColor" stroke="none" />
+    </svg>
+  );
+}
+
 const navStructure = [
   {
     section: 'Getting Started',
@@ -178,6 +196,7 @@ const navStructure = [
     collapsible: true,
     items: [
       { id: 's3', label: 'AWS S3 Navigate', icon: BucketIcon },
+      { id: 'cms-portal', label: 'CMS Portal', icon: CmsIcon },
     ],
   },
 ];

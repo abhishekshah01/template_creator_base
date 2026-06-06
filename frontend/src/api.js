@@ -68,14 +68,22 @@ async function request(path, body) {
   return data;
 }
 
-function uploadWithProgress(path, formData, onProgress) {
+export class UploadAbortedError extends Error {
+  constructor() { super('Upload aborted'); this.name = 'UploadAbortedError'; }
+}
+
+function uploadWithProgress(path, formData, onProgress, signal) {
   return new Promise((resolve, reject) => {
+    if (signal?.aborted) { reject(new UploadAbortedError()); return; }
     const xhr = new XMLHttpRequest();
     xhr.open('POST', `${BASE}${path}`);
     const authToken = localStorage.getItem(AUTH_TOKEN_KEY) || '';
     if (authToken) xhr.setRequestHeader('X-Auth-Token', authToken);
     xhr.upload.onprogress = (e) => {
-      if (e.lengthComputable && onProgress) onProgress(Math.round((e.loaded / e.total) * 100));
+      if (e.lengthComputable && onProgress) {
+        const pct = Math.round((e.loaded / e.total) * 100);
+        onProgress(pct, e.loaded, e.total);
+      }
     };
     xhr.onload = () => {
       let data;
@@ -88,6 +96,9 @@ function uploadWithProgress(path, formData, onProgress) {
       reject(new Error(stringifyDetail(data.detail) || data.message || `Upload failed (${xhr.status})`));
     };
     xhr.onerror = () => reject(new Error('Upload failed: network error'));
+    xhr.onabort = () => reject(new UploadAbortedError());
+    const onAbort = () => xhr.abort();
+    signal?.addEventListener('abort', onAbort, { once: true });
     xhr.send(formData);
   });
 }
@@ -194,14 +205,14 @@ export const api = {
     }),
   createAssetFolder: (bucket, key, bearerToken) =>
     request('/asset/create-folder', { bucket, key, bearer_token: bearerToken }),
-  uploadAssetObject: (file, bucket, key, bearerToken, onProgress) => {
+  uploadAssetObject: (file, bucket, key, bearerToken, onProgress, signal) => {
     const form = new FormData();
     form.append('file', file);
     form.append('bucket', bucket);
     form.append('key', key);
     form.append('content_type', file.type || 'application/octet-stream');
     form.append('bearer_token', bearerToken);
-    return uploadWithProgress('/asset/upload', form, onProgress);
+    return uploadWithProgress('/asset/upload', form, onProgress, signal);
   },
   deleteAsset: (bucket, key, bearerToken) =>
     request('/asset/delete', { bucket, key, bearer_token: bearerToken }),

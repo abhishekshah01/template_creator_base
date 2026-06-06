@@ -1,61 +1,44 @@
 import { useMemo, useState } from 'react';
 
 import AwsAlert2 from './AwsAlert2';
+import AwsAlertSolid from './AwsAlertSolid';
 import { AwsButton, AwsSearchInput, SortTriangleV2 } from './AwsControls';
 import { bytesToHuman, formatAwsDate, fileExt } from './format';
 import { colors } from './theme';
 
 const FAIL_RED = '#ff3233';
+const SUCCESS_GREEN = '#73ffa6';
+const ZERO_GRAY = '#a49d91';
 
 function bucketFromSource(source) {
   const m = (source || '').match(/^s3:\/\/([^/]+)/);
   return m ? m[1] : '';
 }
 
-export default function DeleteStatusPage({ source, results, onClose }) {
-  const [tab, setTab] = useState('failed');
-  const [filter, setFilter] = useState('');
-  const [sort, setSort] = useState({ key: 'name', dir: 'asc' });
+function fmtPct(p) {
+  if (!isFinite(p) || p === 0) return '0%';
+  if (p === 100) return '100.00%';
+  return p.toFixed(2) + '%';
+}
 
+export default function DeleteStatusPage({ source, results, onClose }) {
   const ok = results.filter(r => r.ok);
   const failed = results.filter(r => !r.ok);
+  const okBytes = ok.reduce((s, r) => s + (Number(r.size) || 0), 0);
   const failedBytes = failed.reduce((s, r) => s + (Number(r.size) || 0), 0);
+  const total = ok.length + failed.length;
+  const okPct = total ? (ok.length / total) * 100 : 0;
+  const failPct = total ? (failed.length / total) * 100 : 0;
   const hasFailure = failed.length > 0;
   const allPerm = hasFailure && failed.every(r => r.errorKind === 'perm');
   const bucket = bucketFromSource(source);
 
-  const rows = useMemo(() => {
-    const out = failed
-      .filter(r => !filter.trim() || r.key.toLowerCase().includes(filter.trim().toLowerCase()))
-      .map(r => {
-        const parts = r.key.split('/').filter(Boolean);
-        const name = parts[parts.length - 1] || r.key;
-        const folder = parts.slice(0, -1).join('/') || '—';
-        return { ...r, _name: name, _folder: folder };
-      });
-    const { key, dir } = sort;
-    const mult = dir === 'asc' ? 1 : -1;
-    function valueFor(row) {
-      if (key === 'name') return row._name;
-      if (key === 'folder') return row._folder;
-      if (key === 'type') return row.isFolder ? 'Folder' : (fileExt(row._name) || '');
-      if (key === 'last_modified') return row.last_modified || null;
-      if (key === 'size') return row.size == null ? null : Number(row.size);
-      if (key === 'error') return row.error || '';
-      return null;
-    }
-    out.sort((a, b) => {
-      const av = valueFor(a);
-      const bv = valueFor(b);
-      if (av == null && bv == null) return 0;
-      if (av == null) return 1;
-      if (bv == null) return -1;
-      if (av < bv) return -1 * mult;
-      if (av > bv) return  1 * mult;
-      return 0;
-    });
-    return out;
-  }, [failed, filter, sort]);
+  const [tab, setTab] = useState(hasFailure ? 'failed' : 'files');
+  const [filter, setFilter] = useState('');
+  const [sort, setSort] = useState({ key: 'name', dir: 'asc' });
+
+  const failedRows = useMemo(() => buildRows(failed, filter, sort), [failed, filter, sort]);
+  const allRows = useMemo(() => buildRows(results, filter, sort), [results, filter, sort]);
 
   function toggleSort(key) {
     setSort(prev => prev.key === key ? { key, dir: prev.dir === 'asc' ? 'desc' : 'asc' } : { key, dir: 'asc' });
@@ -65,12 +48,12 @@ export default function DeleteStatusPage({ source, results, onClose }) {
     <div>
       <div className="mb-4">
         {!hasFailure ? (
-          <AwsAlert2
-            variant="info"
+          <AwsAlertSolid
+            variant="success"
             title={`Successfully deleted ${ok.length} object${ok.length === 1 ? '' : 's'}`}
           >
-            Source: <strong>{source}</strong>
-          </AwsAlert2>
+            For more information, see the <strong>Files and folders</strong> table.
+          </AwsAlertSolid>
         ) : allPerm ? (
           <AwsAlert2
             variant="error"
@@ -118,20 +101,11 @@ export default function DeleteStatusPage({ source, results, onClose }) {
           <SummaryField label="Source" divider>
             <span className="break-all" style={{ color: colors.text.buttonActive }}>{source}</span>
           </SummaryField>
-          <SummaryField label="Successfully deleted" divider>
-            <span style={{ color: colors.text.selectedRow }}>
-              {ok.length} object{ok.length === 1 ? '' : 's'}
-            </span>
+          <SummaryField label="Succeeded" divider>
+            <SummaryStat count={ok.length} bytes={okBytes} pct={okPct} tone="success" />
           </SummaryField>
-          <SummaryField label="Failed to delete">
-            {failed.length === 0 ? (
-              <span style={{ color: colors.text.selectedRow }}>0 objects</span>
-            ) : (
-              <span className="inline-flex items-center gap-1.5" style={{ color: FAIL_RED }}>
-                <FailIcon size={16} strokeWidth={2.6} />
-                {failed.length} object{failed.length === 1 ? '' : 's'}, {bytesToHuman(failedBytes)}
-              </span>
-            )}
+          <SummaryField label="Failed">
+            <SummaryStat count={failed.length} bytes={failedBytes} pct={failPct} tone="fail" />
           </SummaryField>
         </div>
       </div>
@@ -140,109 +114,42 @@ export default function DeleteStatusPage({ source, results, onClose }) {
         className="mb-4 flex gap-6"
         style={{ borderBottom: `2px solid ${colors.border.rowSeparator}` }}
       >
-        <TabBtn active={tab === 'failed'} onClick={() => setTab('failed')}>
-          Failed to delete
-        </TabBtn>
+        {hasFailure ? (
+          <TabBtn active={tab === 'failed'} onClick={() => setTab('failed')}>
+            Failed to delete
+          </TabBtn>
+        ) : (
+          <TabBtn active={tab === 'files'} onClick={() => setTab('files')}>
+            Files and folders
+          </TabBtn>
+        )}
         <TabBtn active={tab === 'configuration'} onClick={() => setTab('configuration')}>
           Configuration
         </TabBtn>
       </div>
 
-      {tab === 'failed' && (
-        <div
-          className="rounded-[12px] p-5"
-          style={{ backgroundColor: colors.bg.card, border: `1px solid ${colors.border.cardOutline}` }}
-        >
-          <h2 className="text-[18px] font-bold mb-3 inline-flex items-center gap-2" style={{ color: colors.text.primary }}>
-            <span style={{ color: '#dbd8d3' }}><FailIcon size={16} strokeWidth={2.6} /></span>
-            <span>
-              Failed to delete{' '}
-              <span className="font-normal" style={{ color: colors.text.info }}>
-                ({failed.length} object{failed.length === 1 ? '' : 's'}, {bytesToHuman(failedBytes)})
-              </span>
-            </span>
-          </h2>
+      {tab === 'failed' && hasFailure && (
+        <FailedTable
+          rows={failedRows}
+          failedCount={failed.length}
+          failedBytes={failedBytes}
+          filter={filter}
+          setFilter={setFilter}
+          sort={sort}
+          toggleSort={toggleSort}
+        />
+      )}
 
-          <div className="mb-3 max-w-[640px]">
-            <AwsSearchInput value={filter} onChange={setFilter} placeholder="Find objects by name" />
-          </div>
-
-          <div className="rounded-[4px] overflow-x-auto min-w-0">
-            <table
-              className="w-full text-[14px] text-left"
-              style={{ tableLayout: 'fixed', borderCollapse: 'separate', borderSpacing: 0 }}
-            >
-              <colgroup>
-                <col style={{ width: '25%' }} />
-                <col style={{ width: '20%' }} />
-                <col style={{ width: '10%' }} />
-                <col style={{ width: '20%' }} />
-                <col style={{ width: '10%' }} />
-                <col style={{ width: '15%' }} />
-              </colgroup>
-              <thead>
-                <tr>
-                  <SortHeader label="Name" col="name" sort={sort} onToggle={toggleSort} showDivider />
-                  <SortHeader label="Folder" col="folder" sort={sort} onToggle={toggleSort} showDivider />
-                  <SortHeader label="Type" col="type" sort={sort} onToggle={toggleSort} showDivider />
-                  <SortHeader label="Last modified" col="last_modified" sort={sort} onToggle={toggleSort} showDivider />
-                  <SortHeader label="Size" col="size" sort={sort} onToggle={toggleSort} showDivider />
-                  <SortHeader label="Error" col="error" sort={sort} onToggle={toggleSort} />
-                </tr>
-              </thead>
-              <tbody>
-                {rows.length === 0 && (
-                  <tr>
-                    <td colSpan={6} style={{ padding: '24px 12px', textAlign: 'center', color: colors.text.info }}>
-                      No failed objects match your search.
-                    </td>
-                  </tr>
-                )}
-                {rows.map(r => (
-                  <tr key={r.key}>
-                    <Td>
-                      <span className="break-all">
-                        <span className="inline-block align-text-bottom mr-2">
-                          {r.isFolder ? <FolderIcon /> : <FileIcon />}
-                        </span>
-                        <span
-                          className="underline decoration-1 underline-offset-4"
-                          style={{ color: colors.text.buttonActive }}
-                        >
-                          {r.isFolder ? `${r._name}/` : r._name}
-                        </span>
-                      </span>
-                    </Td>
-                    <Td muted>{r._folder}</Td>
-                    <Td>{r.isFolder ? 'Folder' : (fileExt(r._name) || '—')}</Td>
-                    <Td>{r.last_modified ? formatAwsDate(r.last_modified) : '—'}</Td>
-                    <Td>{r.size != null ? bytesToHuman(r.size) : '—'}</Td>
-                    <Td>
-                      <span
-                        className="break-all"
-                        style={{
-                          color: FAIL_RED,
-                          paddingBottom: 4,
-                          backgroundImage: `linear-gradient(to right, ${colors.text.selectedRow} 50%, transparent 50%)`,
-                          backgroundSize: '6px 1px',
-                          backgroundRepeat: 'repeat-x',
-                          backgroundPosition: 'left bottom',
-                        }}
-                      >
-                        <FailIcon
-                          size={16}
-                          strokeWidth={2.6}
-                          style={{ display: 'inline-block', verticalAlign: 'middle', marginRight: 6 }}
-                        />
-                        {r.error || 'Access denied'}
-                      </span>
-                    </Td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
+      {tab === 'files' && !hasFailure && (
+        <FilesTable
+          rows={allRows}
+          totalCount={ok.length}
+          totalBytes={okBytes}
+          filter={filter}
+          setFilter={setFilter}
+          sort={sort}
+          toggleSort={toggleSort}
+        />
       )}
 
       {tab === 'configuration' && (
@@ -255,6 +162,244 @@ export default function DeleteStatusPage({ source, results, onClose }) {
           Quiet mode: <span style={{ color: colors.text.selectedRow }}>No</span>
         </div>
       )}
+    </div>
+  );
+}
+
+function buildRows(items, filter, sort) {
+  const out = items
+    .filter(r => !filter.trim() || r.key.toLowerCase().includes(filter.trim().toLowerCase()))
+    .map(r => {
+      const parts = r.key.split('/').filter(Boolean);
+      const name = parts[parts.length - 1] || r.key;
+      const folder = parts.slice(0, -1).join('/') || '—';
+      return { ...r, _name: name, _folder: folder };
+    });
+  const { key, dir } = sort;
+  const mult = dir === 'asc' ? 1 : -1;
+  function valueFor(row) {
+    if (key === 'name') return row._name;
+    if (key === 'folder') return row._folder;
+    if (key === 'type') return row.isFolder ? 'Folder' : (fileExt(row._name) || '');
+    if (key === 'last_modified') return row.last_modified || null;
+    if (key === 'size') return row.size == null ? null : Number(row.size);
+    if (key === 'error') return row.error || '';
+    if (key === 'status') return row.ok ? 1 : 0;
+    return null;
+  }
+  out.sort((a, b) => {
+    const av = valueFor(a);
+    const bv = valueFor(b);
+    if (av == null && bv == null) return 0;
+    if (av == null) return 1;
+    if (bv == null) return -1;
+    if (av < bv) return -1 * mult;
+    if (av > bv) return  1 * mult;
+    return 0;
+  });
+  return out;
+}
+
+function SummaryStat({ count, bytes, pct, tone }) {
+  const isZero = count === 0;
+  const color = isZero
+    ? ZERO_GRAY
+    : (tone === 'success' ? SUCCESS_GREEN : FAIL_RED);
+  const Icon = isZero
+    ? DotsIcon
+    : (tone === 'success' ? CheckCircleIcon : FailIcon);
+  const noun = `file${count === 1 ? '' : 's'}`;
+  return (
+    <span className="inline-flex items-center gap-1.5" style={{ color }}>
+      <Icon size={16} strokeWidth={1.4} />
+      {count} {noun}, {bytesToHuman(bytes || 0)} ({fmtPct(pct)})
+    </span>
+  );
+}
+
+function FailedTable({ rows, failedCount, failedBytes, filter, setFilter, sort, toggleSort }) {
+  return (
+    <div
+      className="rounded-[12px] p-5"
+      style={{ backgroundColor: colors.bg.card, border: `1px solid ${colors.border.cardOutline}` }}
+    >
+      <h2 className="text-[18px] font-bold mb-3 inline-flex items-center gap-2" style={{ color: colors.text.primary }}>
+        <span style={{ color: '#dbd8d3' }}><FailIcon size={16} strokeWidth={2.6} /></span>
+        <span>
+          Failed to delete{' '}
+          <span className="font-normal" style={{ color: colors.text.info }}>
+            ({failedCount} object{failedCount === 1 ? '' : 's'}, {bytesToHuman(failedBytes)})
+          </span>
+        </span>
+      </h2>
+
+      <div className="mb-3 max-w-[640px]">
+        <AwsSearchInput value={filter} onChange={setFilter} placeholder="Find objects by name" />
+      </div>
+
+      <div className="rounded-[4px] overflow-x-auto min-w-0">
+        <table
+          className="w-full text-[14px] text-left"
+          style={{ tableLayout: 'fixed', borderCollapse: 'separate', borderSpacing: 0 }}
+        >
+          <colgroup>
+            <col style={{ width: '25%' }} />
+            <col style={{ width: '20%' }} />
+            <col style={{ width: '10%' }} />
+            <col style={{ width: '20%' }} />
+            <col style={{ width: '10%' }} />
+            <col style={{ width: '15%' }} />
+          </colgroup>
+          <thead>
+            <tr>
+              <SortHeader label="Name" col="name" sort={sort} onToggle={toggleSort} showDivider />
+              <SortHeader label="Folder" col="folder" sort={sort} onToggle={toggleSort} showDivider />
+              <SortHeader label="Type" col="type" sort={sort} onToggle={toggleSort} showDivider />
+              <SortHeader label="Last modified" col="last_modified" sort={sort} onToggle={toggleSort} showDivider />
+              <SortHeader label="Size" col="size" sort={sort} onToggle={toggleSort} showDivider />
+              <SortHeader label="Error" col="error" sort={sort} onToggle={toggleSort} />
+            </tr>
+          </thead>
+          <tbody>
+            {rows.length === 0 && (
+              <tr>
+                <td colSpan={6} style={{ padding: '24px 12px', textAlign: 'center', color: colors.text.info }}>
+                  No failed objects match your search.
+                </td>
+              </tr>
+            )}
+            {rows.map(r => (
+              <tr key={r.key}>
+                <Td>
+                  <span className="break-all">
+                    <span className="inline-block align-text-bottom mr-2">
+                      {r.isFolder ? <FolderIcon /> : <FileIcon />}
+                    </span>
+                    <span
+                      className="underline decoration-1 underline-offset-4"
+                      style={{ color: colors.text.buttonActive }}
+                    >
+                      {r.isFolder ? `${r._name}/` : r._name}
+                    </span>
+                  </span>
+                </Td>
+                <Td muted>{r._folder}</Td>
+                <Td>{r.isFolder ? 'Folder' : (fileExt(r._name) || '—')}</Td>
+                <Td>{r.last_modified ? formatAwsDate(r.last_modified) : '—'}</Td>
+                <Td>{r.size != null ? bytesToHuman(r.size) : '—'}</Td>
+                <Td>
+                  <span
+                    className="break-all"
+                    style={{
+                      display: 'inline-block',
+                      maxWidth: '100%',
+                      color: FAIL_RED,
+                      paddingBottom: 4,
+                      backgroundImage: `linear-gradient(to right, ${colors.text.selectedRow} 50%, transparent 50%)`,
+                      backgroundSize: '6px 1px',
+                      backgroundRepeat: 'repeat-x',
+                      backgroundPosition: 'left bottom',
+                    }}
+                  >
+                    <FailIcon
+                      size={16}
+                      strokeWidth={1.4}
+                      style={{ display: 'inline-block', verticalAlign: 'middle', marginRight: 6 }}
+                    />
+                    {r.error || 'Access denied'}
+                  </span>
+                </Td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+function FilesTable({ rows, totalCount, totalBytes, filter, setFilter, sort, toggleSort }) {
+  return (
+    <div
+      className="rounded-[12px] p-5"
+      style={{ backgroundColor: colors.bg.card, border: `1px solid ${colors.border.cardOutline}` }}
+    >
+      <h2 className="text-[18px] font-bold mb-3" style={{ color: colors.text.primary }}>
+        Files and folders{' '}
+        <span className="font-normal" style={{ color: colors.text.info }}>
+          ({totalCount} total, {bytesToHuman(totalBytes || 0)})
+        </span>
+      </h2>
+
+      <div className="mb-3 max-w-[640px]">
+        <AwsSearchInput value={filter} onChange={setFilter} placeholder="Find by name" />
+      </div>
+
+      <div className="rounded-[4px] overflow-x-auto min-w-0">
+        <table
+          className="w-full text-[14px] text-left"
+          style={{ tableLayout: 'fixed', borderCollapse: 'separate', borderSpacing: 0 }}
+        >
+          <colgroup>
+            <col style={{ width: '32%' }} />
+            <col style={{ width: '22%' }} />
+            <col style={{ width: '14%' }} />
+            <col style={{ width: '14%' }} />
+            <col style={{ width: '18%' }} />
+          </colgroup>
+          <thead>
+            <tr>
+              <SortHeader label="Name" col="name" sort={sort} onToggle={toggleSort} showDivider />
+              <SortHeader label="Folder" col="folder" sort={sort} onToggle={toggleSort} showDivider />
+              <SortHeader label="Type" col="type" sort={sort} onToggle={toggleSort} showDivider />
+              <SortHeader label="Size" col="size" sort={sort} onToggle={toggleSort} showDivider />
+              <SortHeader label="Status" col="status" sort={sort} onToggle={toggleSort} />
+            </tr>
+          </thead>
+          <tbody>
+            {rows.length === 0 && (
+              <tr>
+                <td colSpan={5} style={{ padding: '24px 12px', textAlign: 'center', color: colors.text.info }}>
+                  No items match your search.
+                </td>
+              </tr>
+            )}
+            {rows.map((r, idx) => {
+              const isLast = idx === rows.length - 1;
+              return (
+              <tr key={r.key}>
+                <Td dense noBorder={isLast}>
+                  <span className="break-all">
+                    <span className="inline-block align-text-bottom mr-2">
+                      {r.isFolder ? <FolderIcon /> : <FileIcon />}
+                    </span>
+                    <span
+                      className="underline decoration-1 underline-offset-4"
+                      style={{ color: colors.text.buttonActive }}
+                    >
+                      {r.isFolder ? `${r._name}/` : r._name}
+                    </span>
+                  </span>
+                </Td>
+                <Td dense muted noBorder={isLast}>—</Td>
+                <Td dense noBorder={isLast}>{r.isFolder ? 'Folder' : (fileExt(r._name) || '—')}</Td>
+                <Td dense noBorder={isLast}>{r.size != null ? bytesToHuman(r.size) : '—'}</Td>
+                <Td dense noBorder={isLast}>
+                  <span className="inline-flex items-center gap-1.5" style={{ color: SUCCESS_GREEN }}>
+                    <CheckCircleIcon
+                      size={16}
+                      strokeWidth={1.4}
+                      style={{ display: 'inline-block', verticalAlign: 'middle' }}
+                    />
+                    Succeeded
+                  </span>
+                </Td>
+              </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }
@@ -310,14 +455,14 @@ function SortHeader({ label, col, sort, onToggle, showDivider = false }) {
   );
 }
 
-function Td({ children, muted = false }) {
+function Td({ children, muted = false, dense = false, noBorder = false }) {
   return (
     <td
       style={{
-        padding: '8px 12px',
+        padding: dense ? '3px 12px' : '8px 12px',
         verticalAlign: 'middle',
         color: muted ? colors.text.info : colors.text.selectedRow,
-        borderBottom: `1px solid ${colors.border.rowSeparator}`,
+        borderBottom: noBorder ? 'none' : `1px solid ${colors.border.rowSeparator}`,
       }}
     >
       {children}
@@ -361,6 +506,48 @@ function FailIcon({ size = 14, strokeWidth = 1.6, style }) {
     >
       <circle cx="8" cy="8" r="7" />
       <path d="m5.5 5.5 5 5M10.5 5.5l-5 5" />
+    </svg>
+  );
+}
+
+function CheckCircleIcon({ size = 16, strokeWidth = 1.6, style }) {
+  return (
+    <svg
+      viewBox="0 0 16 16"
+      width={size}
+      height={size}
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={strokeWidth}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+      style={style}
+    >
+      <circle cx="8" cy="8" r="7" />
+      <path d="M4.5 7.5 7 10l4-5" />
+    </svg>
+  );
+}
+
+function DotsIcon({ size = 16, strokeWidth = 1.6, style }) {
+  return (
+    <svg
+      viewBox="0 0 16 16"
+      width={size}
+      height={size}
+      aria-hidden="true"
+      style={style}
+    >
+      <circle
+        cx="8"
+        cy="8"
+        r="7"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth={strokeWidth}
+      />
+      <path d="M9 7H7v2h2V7ZM6 7H4v2h2V7ZM12 7h-2v2h2V7Z" fill="currentColor" />
     </svg>
   );
 }

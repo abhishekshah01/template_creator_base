@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 import AwsAlert2 from './AwsAlert2';
 import { AwsButton, AwsSearchInput, SortTriangleV2 } from './AwsControls';
+import ProgressBanner from './ProgressBanner';
 import { s3api } from './api';
 import { PermissionDeniedError } from '../../api';
 import { bytesToHuman, formatAwsDate, fileExt } from './format';
@@ -24,21 +25,64 @@ export default function DeletePage({ bucket, prefix, objects, onCancel, onDone }
   const [confirmText, setConfirmText] = useState('');
   const [filter, setFilter] = useState('');
   const [deleting, setDeleting] = useState(false);
+  const [deletedBytes, setDeletedBytes] = useState(0);
+  const [completedCount, setCompletedCount] = useState(0);
+  const [rateBps, setRateBps] = useState(null);
+  const [etaSeconds, setEtaSeconds] = useState(null);
+  const [cancelling, setCancelling] = useState(false);
+  const cancelRef = useRef(false);
+  const sampleRef = useRef([]);
   const canDelete = confirmText === 'delete' && !deleting && objects.length > 0;
+
+  const totalBytes = objects.reduce((s, o) => s + (Number(o.size) || 0), 0);
 
   const filtered = objects.filter(o => !filter.trim()
     || o.key.toLowerCase().includes(filter.trim().toLowerCase()));
 
+  useEffect(() => {
+    if (!deleting) return undefined;
+    const id = setInterval(() => {
+      const now = performance.now();
+      const samples = sampleRef.current;
+      samples.push({ t: now, bytes: deletedBytes });
+      const cutoff = now - 2500;
+      while (samples.length > 2 && samples[0].t < cutoff) samples.shift();
+      if (samples.length >= 2) {
+        const first = samples[0];
+        const last = samples[samples.length - 1];
+        const dt = (last.t - first.t) / 1000;
+        if (dt > 0.4) {
+          const rate = (last.bytes - first.bytes) / dt;
+          setRateBps(rate);
+          const remaining = Math.max(0, totalBytes - deletedBytes);
+          setEtaSeconds(rate > 0 ? remaining / rate : null);
+        }
+      }
+    }, 250);
+    return () => clearInterval(id);
+  }, [deleting, deletedBytes, totalBytes]);
+
   async function handleDelete() {
     if (!canDelete) return;
+    sampleRef.current = [];
+    setRateBps(null);
+    setEtaSeconds(null);
     setDeleting(true);
+    setCancelling(false);
+    cancelRef.current = false;
+    setDeletedBytes(0);
+    setCompletedCount(0);
     const results = [];
     let stopAt = -1;
+    let cancelled = false;
     for (let i = 0; i < objects.length; i++) {
+      if (cancelRef.current) { stopAt = i - 1; cancelled = true; break; }
       const o = objects[i];
       try {
         await s3api.deleteObject(bucket, o.key);
         results.push({ ...o, ok: true });
+        setDeletedBytes(b => b + (Number(o.size) || 0));
+        setCompletedCount(c => c + 1);
       } catch (e) {
         const isPerm = e instanceof PermissionDeniedError;
         results.push({
@@ -47,23 +91,53 @@ export default function DeletePage({ bucket, prefix, objects, onCancel, onDone }
           errorKind: isPerm ? 'perm' : 'other',
           error: isPerm ? 'Access denied' : prettifyError(e.message),
         });
+        setCompletedCount(c => c + 1);
         if (isPerm) { stopAt = i; break; }
       }
     }
     if (stopAt >= 0) {
       for (let i = stopAt + 1; i < objects.length; i++) {
-        results.push({ ...objects[i], ok: false, errorKind: 'perm', error: 'Access denied' });
+        results.push({
+          ...objects[i],
+          ok: false,
+          errorKind: cancelled ? 'cancelled' : 'perm',
+          error: cancelled ? 'Cancelled' : 'Access denied',
+        });
       }
     }
     setDeleting(false);
+    setCancelling(false);
     onDone?.({
       source: `s3://${bucket}/${prefix || ''}`,
       results,
     });
   }
 
+  function cancelDelete() {
+    if (!deleting || cancelling) return;
+    setCancelling(true);
+    cancelRef.current = true;
+  }
+
   return (
     <div>
+      {deleting && (
+        <div className="mb-4">
+          <ProgressBanner
+            title="Deleting"
+            noun="object"
+            totalFiles={objects.length}
+            completedFiles={completedCount}
+            totalBytes={totalBytes}
+            uploadedBytes={deletedBytes}
+            rateBytesPerSec={rateBps}
+            etaSeconds={etaSeconds}
+            onCancel={cancelDelete}
+            cancelling={cancelling}
+          />
+        </div>
+      )}
+
       <h1 className="text-[24px] font-bold mb-4 inline-flex items-center gap-2" style={{ color: colors.text.primary }}>
         Delete objects
         <span className="text-[14px] font-normal underline decoration-dotted underline-offset-2 cursor-help" style={{ color: colors.text.buttonActive }}>

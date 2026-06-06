@@ -94,7 +94,7 @@ export default function ObjectList({
   }
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  useEffect(() => { setPageStack([]); setCurrentToken(null); load(null); }, [bucket, prefix, refreshTick]);
+  useEffect(() => { setPageStack([]); setCurrentToken(null); setFilter(''); load(null); }, [bucket, prefix, refreshTick]);
 
   const filteredFolders = useMemo(() => {
     const q = filter.trim().toLowerCase();
@@ -379,7 +379,34 @@ export default function ObjectList({
                 </tr>
               )}
               {!loading && !denied && !loadFailed && sortedRows.length === 0 && (
-                <BodyMessage>No objects here.</BodyMessage>
+                <tr>
+                  <td
+                    colSpan={6}
+                    style={{ padding: '40px 12px', textAlign: 'center' }}
+                  >
+                    {filter.trim() ? (
+                      <>
+                        <div className="font-bold" style={{ color: colors.text.primary, fontSize: 14, marginBottom: 2 }}>
+                          No matches
+                        </div>
+                        <div style={{ color: colors.text.info, fontSize: 13, marginBottom: 12 }}>
+                          We can't find a match.
+                        </div>
+                        <AwsButton onClick={() => setFilter('')}>Clear filters</AwsButton>
+                      </>
+                    ) : (
+                      <>
+                        <div className="font-bold" style={{ color: colors.text.primary, fontSize: 14, marginBottom: 2 }}>
+                          No objects
+                        </div>
+                        <div style={{ color: colors.text.info, fontSize: 13, marginBottom: 12 }}>
+                          You don't have any objects in this folder.
+                        </div>
+                        <AwsButton onClick={() => onOpenUpload?.()} icon={<UploadIconV2 />}>Upload</AwsButton>
+                      </>
+                    )}
+                  </td>
+                </tr>
               )}
 
               {!loading && !denied && sortedRows.map((row, idx) => {

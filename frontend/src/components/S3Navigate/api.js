@@ -66,8 +66,8 @@ export const s3api = {
   // Mutate
   uploadFile: (file, bucket, key) =>
     api.uploadAsset(file, bucket, key, bearer(), CLOUDFRONT_URL),
-  uploadObject: (file, bucket, key, onProgress) =>
-    api.uploadAssetObject(file, bucket, key, bearer(), onProgress),
+  uploadObject: (file, bucket, key, onProgress, signal) =>
+    api.uploadAssetObject(file, bucket, key, bearer(), onProgress, signal),
   createFolder: (bucket, key) => api.createAssetFolder(bucket, key, bearer()),
   deleteObject: (bucket, key) => api.deleteAsset(bucket, key, bearer()),
   invalidateCache: (path) =>

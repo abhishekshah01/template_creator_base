@@ -19,6 +19,12 @@ const VARIANTS = {
     iconColor: '#45abfe',
     Icon: InfoCircleIcon,
   },
+  success: {
+    bg: '#002910',
+    border: '#017325',
+    iconColor: '#51d480',
+    Icon: SuccessCircleIcon,
+  },
   tip: {
     bg: '#1a0a35',
     border: '#7730e8',
@@ -32,7 +38,7 @@ export default function AwsAlert2({ variant = 'error', title, onDismiss, classNa
   const Icon = v.Icon;
   return (
     <div
-      role={variant === 'error' ? 'alert' : 'status'}
+      role={variant === 'error' || variant === 'warning' ? 'alert' : 'status'}
       className={`flex items-start gap-3 px-4 py-3 rounded-[8px] text-[14px] leading-[1.45] ${className}`}
       style={{
         backgroundColor: v.bg,
@@ -87,6 +93,26 @@ function ErrorCircleIcon() {
   );
 }
 
+function SuccessCircleIcon() {
+  return (
+    <svg
+      viewBox="0 0 16 16"
+      width="20"
+      height="20"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.6"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+      focusable="false"
+    >
+      <circle cx="8" cy="8" r="7" />
+      <path d="M4.5 7.5 7 10l4-5" />
+    </svg>
+  );
+}
+
 function InfoCircleIcon() {
   return (
     <svg
@@ -102,7 +128,8 @@ function InfoCircleIcon() {
       focusable="false"
     >
       <circle cx="8" cy="8" r="7" />
-      <path d="M8 12V7M8 6V4" />
+      <path d="M8 11.5V7" />
+      <circle cx="8" cy="4.6" r="0.85" fill="currentColor" stroke="none" />
     </svg>
   );
 }

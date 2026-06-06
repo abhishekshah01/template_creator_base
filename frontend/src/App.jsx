@@ -6,6 +6,7 @@ import UpdateCategory from './components/UpdateCategory';
 import { ConfigAll, ConfigCreate, ConfigSummary, ConfigDetailPage } from './components/CategoryConfig';
 import Settings from './components/Settings';
 import S3Navigate from './components/S3Navigate';
+import CmsPortal from './components/CmsPortal';
 import Banner from './components/Banner';
 import AwsAlert2 from './components/S3Navigate/AwsAlert2';
 import Guide from './components/Guide';
@@ -173,6 +174,7 @@ export default function App() {
 
   function renderPage() {
     if (activePage === 's3') return <S3Navigate />;
+    if (activePage === 'cms-portal') return <CmsPortal />;
     if (activePage.startsWith('guide-')) {
       return <Guide page={activePage} onNavigate={navigate} />;
     }

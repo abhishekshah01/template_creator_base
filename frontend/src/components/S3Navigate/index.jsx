@@ -10,6 +10,7 @@ import CreateFolderPage from './CreateFolderPage';
 import DeletePage from './DeletePage';
 import DeleteStatusPage from './DeleteStatusPage';
 import AwsAlert from './AwsAlert';
+import AwsAlert2 from './AwsAlert2';
 import AdminsPage from './AdminsPage';
 import { s3api, getToken, GateError } from './api';
 
@@ -183,14 +184,13 @@ export default function S3Navigate() {
 
       {pageBanner && (
         <div className="mb-4">
-          <AwsAlert
+          <AwsAlert2
             variant={pageBanner.variant}
-            tone={pageBanner.tone || (pageBanner.variant === 'success' ? 'solid' : 'outlined')}
             title={pageBanner.title}
             onDismiss={() => setPageBanner(null)}
           >
             {pageBanner.body}
-          </AwsAlert>
+          </AwsAlert2>
         </div>
       )}
 
@@ -234,11 +234,13 @@ export default function S3Navigate() {
             onDone={(count) => {
               setRefreshTick(t => t + 1);
               setView('objects');
-              showBanner({
-                variant: 'success',
-                title: `Successfully uploaded ${count} object${count === 1 ? '' : 's'}`,
-                body: <>to <span className="font-mono">s3://{bucket}/{prefix || ''}</span></>,
-              });
+              if (count > 0) {
+                showBanner({
+                  variant: 'success',
+                  title: `Successfully uploaded ${count} object${count === 1 ? '' : 's'}`,
+                  body: <>to <span className="font-mono">s3://{bucket}/{prefix || ''}</span></>,
+                });
+              }
             }}
           />
         )}
@@ -279,7 +281,6 @@ export default function S3Navigate() {
               const fail = deleteSummary.results.length - ok;
               showBanner({
                 variant: fail ? 'warning' : 'success',
-                tone: fail ? 'outlined' : 'solid',
                 title: fail
                   ? `Deleted ${ok} object${ok === 1 ? '' : 's'} with ${fail} failure${fail === 1 ? '' : 's'}`
                   : `Successfully deleted ${ok} object${ok === 1 ? '' : 's'}`,

@@ -102,7 +102,8 @@ function InfoCircleIcon() {
       focusable="false"
     >
       <circle cx="8" cy="8" r="7" />
-      <path d="M8 12V7M8 6V4" />
+      <path d="M8 11.5V7" />
+      <circle cx="8" cy="4.6" r="0.85" fill="currentColor" stroke="none" />
     </svg>
   );
 }
