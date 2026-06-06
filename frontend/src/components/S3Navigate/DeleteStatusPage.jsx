@@ -21,6 +21,7 @@ export default function DeleteStatusPage({ source, results, onClose }) {
   const failed = results.filter(r => !r.ok);
   const failedBytes = failed.reduce((s, r) => s + (Number(r.size) || 0), 0);
   const hasFailure = failed.length > 0;
+  const allPerm = hasFailure && failed.every(r => r.errorKind === 'perm');
   const bucket = bucketFromSource(source);
 
   const rows = useMemo(() => {
@@ -63,7 +64,14 @@ export default function DeleteStatusPage({ source, results, onClose }) {
   return (
     <div>
       <div className="mb-4">
-        {hasFailure ? (
+        {!hasFailure ? (
+          <AwsAlert2
+            variant="info"
+            title={`Successfully deleted ${ok.length} object${ok.length === 1 ? '' : 's'}`}
+          >
+            Source: <strong>{source}</strong>
+          </AwsAlert2>
+        ) : allPerm ? (
           <AwsAlert2
             variant="error"
             title={`Insufficient permissions to delete objects${bucket ? ` from s3bucket:${bucket}` : ''}`}
@@ -81,11 +89,9 @@ export default function DeleteStatusPage({ source, results, onClose }) {
             {' '}and retry.
           </AwsAlert2>
         ) : (
-          <AwsAlert2
-            variant="info"
-            title={`Successfully deleted ${ok.length} object${ok.length === 1 ? '' : 's'}`}
-          >
-            Source: <strong>{source}</strong>
+          <AwsAlert2 variant="error" title="Failed to delete objects">
+            For more information, see the <strong>Error</strong> column in the{' '}
+            <strong>Failed to delete</strong> table below.
           </AwsAlert2>
         )}
       </div>

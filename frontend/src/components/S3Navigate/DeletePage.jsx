@@ -7,6 +7,19 @@ import { PermissionDeniedError } from '../../api';
 import { bytesToHuman, formatAwsDate, fileExt } from './format';
 import { colors } from './theme';
 
+function prettifyError(message) {
+  if (!message) return 'Delete failed';
+  // Backend forwards upstream JSON in the form `... failed: {"detail":"..."}`.
+  // Strip the leading "<label> failed: " and unwrap the JSON if possible.
+  const stripped = message.replace(/^[^:]*failed:\s*/i, '');
+  try {
+    const parsed = JSON.parse(stripped);
+    return parsed.detail || parsed.message || stripped;
+  } catch {
+    return stripped || message;
+  }
+}
+
 export default function DeletePage({ bucket, prefix, objects, onCancel, onDone }) {
   const [confirmText, setConfirmText] = useState('');
   const [filter, setFilter] = useState('');
@@ -31,16 +44,15 @@ export default function DeletePage({ bucket, prefix, objects, onCancel, onDone }
         results.push({
           ...o,
           ok: false,
-          error: isPerm ? 'Access denied' : (e.message || 'Delete failed'),
+          errorKind: isPerm ? 'perm' : 'other',
+          error: isPerm ? 'Access denied' : prettifyError(e.message),
         });
         if (isPerm) { stopAt = i; break; }
       }
     }
-    // Permission denial applies to the whole batch — mark remaining objects
-    // as access denied without retrying.
     if (stopAt >= 0) {
       for (let i = stopAt + 1; i < objects.length; i++) {
-        results.push({ ...objects[i], ok: false, error: 'Access denied' });
+        results.push({ ...objects[i], ok: false, errorKind: 'perm', error: 'Access denied' });
       }
     }
     setDeleting(false);
