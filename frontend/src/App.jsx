@@ -307,6 +307,8 @@ export default function App() {
             )}
             <div className="flex-1 min-h-0">{renderPage()}</div>
           </>
+        ) : activePage === 'cms-portal' ? (
+          <div className="flex-1 min-h-0">{renderPage()}</div>
         ) : (
           <div className={`${
             activePage.startsWith('guide-')
