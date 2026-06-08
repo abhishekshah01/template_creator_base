@@ -1,7 +1,8 @@
 """Tests for the Composer-DAG-backed template flow.
 
-Mocks composer_client, the template_jobs Mongo collection, and the polling
-background task — no real Composer / Mongo / asyncio.sleep traffic.
+Composer is reached only through app-service, so we mock composer_client
+(trigger_dag / get_dag_run return {status_code, body}) and the template_jobs
+Mongo collection — no real Composer / Mongo traffic.
 """
 
 from datetime import datetime, timezone
@@ -10,29 +11,24 @@ from unittest.mock import AsyncMock
 
 import pytest
 
+BEARER = "test-bearer-token"
+AUTH = {"Authorization": f"Bearer {BEARER}"}
+
 
 @pytest.fixture
 def mock_composer(monkeypatch):
-    """Stub composer_client + clear the OIDC cache between tests."""
+    """Stub composer_client's app-service-proxied calls with success defaults."""
     from clients import composer_client
 
-    monkeypatch.setattr(composer_client, "get_oidc_token", AsyncMock(return_value="tok-xyz"))
-    composer_client.clear_oidc_cache()
+    monkeypatch.setattr(
+        composer_client, "trigger_dag", AsyncMock(return_value={"status_code": 200, "body": {}})
+    )
+    monkeypatch.setattr(
+        composer_client,
+        "get_dag_run",
+        AsyncMock(return_value={"status_code": 200, "body": {"state": "running"}}),
+    )
     return composer_client
-
-
-@pytest.fixture(autouse=True)
-def stub_poll_background(monkeypatch):
-    """Replace the polling background task with a no-op so TestClient doesn't hang.
-
-    The real `_poll_dag_run` runs `asyncio.sleep(5)` and would block the
-    request handler in TestClient's BackgroundTasks runner.
-    """
-
-    async def _noop(dag_run_id):
-        return None
-
-    monkeypatch.setattr("services.template_service._poll_dag_run", _noop)
 
 
 @pytest.fixture
@@ -61,7 +57,6 @@ def fake_jobs():
             if doc is None:
                 return SimpleNamespace(matched_count=0)
             doc.update(update.get("$set", {}))
-            # Support dag_run_id rewrite (Composer returning a different id)
             new_id = update.get("$set", {}).get("dag_run_id")
             if new_id and new_id != filter_["dag_run_id"]:
                 self.docs[new_id] = self.docs.pop(filter_["dag_run_id"])
@@ -78,14 +73,8 @@ def patch_template_jobs(monkeypatch, fake_jobs):
     return fake_jobs
 
 
-def _composer_response(status_code=200, json_body=None, text=""):
-    """Helper to build a fake httpx.Response-like object for trigger_dag's return."""
-    body = json_body or {}
-    return SimpleNamespace(
-        status_code=status_code,
-        text=text or str(body),
-        json=lambda: body,
-    )
+def _create_payload(template_name="lumina"):
+    return {"job_id": "j-1", "user_id": "u-1", "template_name": template_name, "bearer_token": BEARER}
 
 
 # ---------------------------------------------------------------------------
@@ -93,81 +82,44 @@ def _composer_response(status_code=200, json_body=None, text=""):
 # ---------------------------------------------------------------------------
 
 
-def test_rejects_invalid_template_name(client, mock_composer, monkeypatch):
-    monkeypatch.setattr("config.COMPOSER_DAG_TRIGGER_URL", "http://composer.test/dag")
-    resp = client.post(
-        "/api/create-template",
-        json={"job_id": "j-1", "user_id": "u-1", "template_name": "bad name!"},
-    )
+def test_rejects_invalid_template_name(client, mock_composer):
+    resp = client.post("/api/create-template", json=_create_payload("bad name!"))
     assert resp.status_code == 400
 
 
-def test_rejects_when_composer_not_configured(client, mock_composer, monkeypatch):
-    monkeypatch.setattr("config.COMPOSER_DAG_TRIGGER_URL", "")
-    resp = client.post(
-        "/api/create-template",
-        json={"job_id": "j-1", "user_id": "u-1", "template_name": "lumina"},
-    )
-    assert resp.status_code == 503
-
-
-def test_success_returns_queued_record(client, mock_composer, monkeypatch, patch_template_jobs):
-    monkeypatch.setattr("config.COMPOSER_DAG_TRIGGER_URL", "http://composer.test/dag")
-    monkeypatch.setattr(mock_composer, "trigger_dag", AsyncMock(return_value=_composer_response()))
-
-    resp = client.post(
-        "/api/create-template",
-        json={"job_id": "j-1", "user_id": "u-1", "template_name": "lumina"},
-    )
+def test_success_returns_queued_record(client, mock_composer, patch_template_jobs):
+    resp = client.post("/api/create-template", json=_create_payload())
     assert resp.status_code == 200
     body = resp.json()
     assert body["status"] == "queued"
     assert body["template_name"] == "lumina"
     assert body["dag_run_id"].startswith("tc-")
     assert body["dag_run_id"] in patch_template_jobs.docs
+    # The internal bearer token must reach composer_client, never be stored.
+    assert mock_composer.trigger_dag.await_args.kwargs["bearer_token"] == BEARER
+    assert "webhook_secret" not in body
 
 
-def test_composer_4xx_marks_run_failed(client, mock_composer, monkeypatch, patch_template_jobs):
-    monkeypatch.setattr("config.COMPOSER_DAG_TRIGGER_URL", "http://composer.test/dag")
-    monkeypatch.setattr(
-        mock_composer,
-        "trigger_dag",
-        AsyncMock(return_value=_composer_response(status_code=400, text="bad payload")),
-    )
+def test_composer_4xx_marks_run_failed(client, mock_composer, patch_template_jobs):
+    mock_composer.trigger_dag = AsyncMock(return_value={"status_code": 400, "body": "bad payload"})
 
-    resp = client.post(
-        "/api/create-template",
-        json={"job_id": "j-1", "user_id": "u-1", "template_name": "lumina"},
-    )
+    resp = client.post("/api/create-template", json=_create_payload())
     assert resp.status_code == 400
-    # The Mongo record should reflect the failure even though the response is 4xx.
     stored = next(iter(patch_template_jobs.docs.values()))
     assert stored["status"] == "failed"
     assert "bad payload" in stored["error"]
 
 
-def test_composer_alt_dag_run_id_stored_in_composer_field(
-    client,
-    mock_composer,
-    monkeypatch,
-    patch_template_jobs,
-):
-    """If Composer responds with its own id, our local key stays stable; composer_dag_run_id is stored alongside."""
-    monkeypatch.setattr("config.COMPOSER_DAG_TRIGGER_URL", "http://composer.test/dag")
-    monkeypatch.setattr(
-        mock_composer,
-        "trigger_dag",
-        AsyncMock(return_value=_composer_response(json_body={"dag_run_id": "manual-id-42"})),
+def test_composer_alt_dag_run_id_stored_in_composer_field(client, mock_composer, patch_template_jobs):
+    """If Composer responds with its own id, our local key stays stable; composer_dag_run_id stored alongside."""
+    mock_composer.trigger_dag = AsyncMock(
+        return_value={"status_code": 200, "body": {"dag_run_id": "manual-id-42"}}
     )
 
-    resp = client.post(
-        "/api/create-template",
-        json={"job_id": "j-1", "user_id": "u-1", "template_name": "lumina"},
-    )
+    resp = client.post("/api/create-template", json=_create_payload())
     assert resp.status_code == 200
     local_id = resp.json()["dag_run_id"]
     assert local_id.startswith("tc-")  # NOT "manual-id-42"
-    assert local_id in patch_template_jobs.docs
     assert patch_template_jobs.docs[local_id]["composer_dag_run_id"] == "manual-id-42"
 
 
@@ -176,20 +128,62 @@ def test_composer_alt_dag_run_id_stored_in_composer_field(
 # ---------------------------------------------------------------------------
 
 
-def test_get_template_job_returns_stored_record(client, patch_template_jobs):
+def test_get_template_job_live_fetches_non_terminal(client, mock_composer, patch_template_jobs):
     patch_template_jobs.docs["tc-abc"] = {
         "dag_run_id": "tc-abc",
-        "status": "running",
+        "composer_dag_run_id": "tc-abc",
+        "status": "queued",
         "template_name": "lumina",
+        "gcs_path": "",
     }
-    resp = client.get("/api/template-job/tc-abc")
+    mock_composer.get_dag_run = AsyncMock(return_value={"status_code": 200, "body": {"state": "running"}})
+
+    resp = client.get("/api/template-job/tc-abc", headers=AUTH)
     assert resp.status_code == 200
     assert resp.json()["status"] == "running"
+    assert mock_composer.get_dag_run.await_args.kwargs["bearer_token"] == BEARER
 
 
-def test_get_template_job_404_when_missing(client):
-    resp = client.get("/api/template-job/never-existed")
+def test_get_template_job_success_derives_gcs_path(client, mock_composer, patch_template_jobs):
+    patch_template_jobs.docs["tc-abc"] = {
+        "dag_run_id": "tc-abc",
+        "composer_dag_run_id": "tc-abc",
+        "status": "running",
+        "template_name": "lumina",
+        "gcs_path": "",
+    }
+    mock_composer.get_dag_run = AsyncMock(return_value={"status_code": 200, "body": {"state": "success"}})
+
+    resp = client.get("/api/template-job/tc-abc", headers=AUTH)
+    body = resp.json()
+    assert body["status"] == "success"
+    assert body["gcs_path"].startswith("gs://") and body["gcs_path"].endswith("lumina")
+
+
+def test_get_template_job_terminal_short_circuits(client, mock_composer, patch_template_jobs):
+    """A terminal record (e.g. webhook-fed) is returned without re-hitting Composer."""
+    patch_template_jobs.docs["tc-abc"] = {
+        "dag_run_id": "tc-abc",
+        "status": "success",
+        "gcs_path": "gs://bkt/lumina",
+    }
+    mock_composer.get_dag_run = AsyncMock(side_effect=AssertionError("must not fetch when terminal"))
+
+    resp = client.get("/api/template-job/tc-abc", headers=AUTH)
+    assert resp.status_code == 200
+    assert resp.json()["status"] == "success"
+    mock_composer.get_dag_run.assert_not_awaited()
+
+
+def test_get_template_job_404_when_missing(client, mock_composer):
+    resp = client.get("/api/template-job/never-existed", headers=AUTH)
     assert resp.status_code == 404
+
+
+def test_get_template_job_requires_auth(client, mock_composer, patch_template_jobs):
+    patch_template_jobs.docs["tc-abc"] = {"dag_run_id": "tc-abc", "status": "queued"}
+    resp = client.get("/api/template-job/tc-abc")
+    assert resp.status_code == 401
 
 
 # ---------------------------------------------------------------------------
@@ -226,7 +220,6 @@ def test_callback_wrong_secret_returns_403(client, patch_template_jobs):
         headers={"X-Callback-Secret": "wrong-secret"},
     )
     assert resp.status_code == 403
-    # State should NOT have been updated
     assert patch_template_jobs.docs["tc-abc"]["status"] == "running"
 
 
@@ -262,37 +255,3 @@ def test_callback_404_when_record_missing(client):
         headers={"X-Callback-Secret": "whatever"},
     )
     assert resp.status_code == 404
-
-
-# ---------------------------------------------------------------------------
-# Poll loop short-circuit on terminal state (regression guard)
-# ---------------------------------------------------------------------------
-
-
-def test_poll_loop_stops_on_terminal_state_set_by_webhook(monkeypatch, patch_template_jobs):
-    """If a webhook has already marked the record terminal, the poll loop returns
-    without hitting Composer or writing an older state back."""
-    import asyncio as _asyncio
-
-    from services import template_service
-
-    patch_template_jobs.docs["tc-abc"] = {
-        "dag_run_id": "tc-abc",
-        "status": "success",  # already terminal (webhook beat us)
-        "gcs_path": "gs://bkt/lumina",
-    }
-
-    composer_called = {"count": 0}
-
-    async def fail_if_called(_id):
-        composer_called["count"] += 1
-        raise AssertionError("Composer should not be called once the record is terminal")
-
-    monkeypatch.setattr("clients.composer_client.get_dag_run", fail_if_called)
-    # Skip the initial 5s sleep so the test doesn't block.
-    monkeypatch.setattr("services.template_service.asyncio.sleep", AsyncMock(return_value=None))
-
-    _asyncio.get_event_loop().run_until_complete(template_service._poll_dag_run("tc-abc"))
-
-    assert composer_called["count"] == 0
-    assert patch_template_jobs.docs["tc-abc"]["status"] == "success"  # not regressed

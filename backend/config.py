@@ -112,23 +112,8 @@ DEST_BUCKET = (
 )
 
 # --- Composer / Airflow DAG trigger (template creation) ---
-# Currently only configured for dev + eph environments. Empty in prod → the
-# Create Template endpoint returns 503 (button disabled in the UI).
-COMPOSER_DAG_TRIGGER_URL = os.environ.get("COMPOSER_DAG_TRIGGER_URL", "")
-
-
-def _default_oidc_audience() -> str:
-    """OIDC audience for Composer's IAP — defaults to the scheme+host of the trigger URL."""
-    if not COMPOSER_DAG_TRIGGER_URL:
-        return ""
-    try:
-        scheme, rest = COMPOSER_DAG_TRIGGER_URL.split("://", 1)
-        return f"{scheme}://{rest.split('/', 1)[0]}"
-    except ValueError:
-        return COMPOSER_DAG_TRIGGER_URL
-
-
-OIDC_AUDIENCE = os.environ.get("OIDC_AUDIENCE", "") or _default_oidc_audience()
+# The Composer URL, DAG id, and OIDC minting now live in app-service (which holds
+# the GCP creds); template-creator reaches Composer only via /internal/composer/*.
 
 # Notification mode for DAG completion:
 #   "poll"    – backend polls Composer's dagRuns endpoint (default, works locally)

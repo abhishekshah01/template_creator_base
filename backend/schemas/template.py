@@ -7,6 +7,8 @@ class CreateTemplateRequest(BaseModel):
     job_id: str
     user_id: str
     template_name: str
+    # Internal-user token forwarded to app-service, which mints the Composer OIDC token.
+    bearer_token: str
 
 
 class TemplateJobCallback(BaseModel):
