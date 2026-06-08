@@ -660,7 +660,7 @@ export default function CreateTemplate({ bearerToken = "" }) {
 
     let triggered;
     try {
-      triggered = await api.createTemplate(jobId, userId, templateName);
+      triggered = await api.createTemplate(jobId, userId, templateName, bearerToken);
     } catch (e) {
       setCreateSub({ status: 'error', message: e.message, time: now() });
       setLoading('');
@@ -683,13 +683,13 @@ export default function CreateTemplate({ bearerToken = "" }) {
       time: now(),
     });
 
-    // Poll backend every 5s until terminal. Backend internally either polls
-    // Composer or waits for the webhook callback — same status endpoint either way.
+    // Poll backend every 5s until terminal. Each poll does a live Composer fetch
+    // via app-service (or returns a webhook-fed terminal state).
     const TERMINAL = new Set(['success', 'failed', 'timeout']);
     try {
       while (true) {
         await new Promise(r => setTimeout(r, 5000));
-        const job = await api.getTemplateJob(dagRunId);
+        const job = await api.getTemplateJob(dagRunId, bearerToken);
         if (TERMINAL.has(job.status)) {
           if (job.status === 'success') {
             setGcsPath(job.gcs_path || '');

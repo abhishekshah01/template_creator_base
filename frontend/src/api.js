@@ -106,14 +106,17 @@ export const api = {
   deployApp: (jobId, bearerToken) => request('/deploy-app', { job_id: jobId, bearer_token: bearerToken || '' }),
   getDeployStatus: (jobId, bearerToken) => request('/deploy-status', { job_id: jobId, bearer_token: bearerToken || '' }),
   getDeployHistory: (jobId, bearerToken) => request('/deploy-history', { job_id: jobId, bearer_token: bearerToken || '' }),
-  createTemplate: (jobId, userId, templateName) =>
+  createTemplate: (jobId, userId, templateName, bearerToken) =>
     request('/create-template', {
       job_id: jobId,
       user_id: userId,
       template_name: templateName,
+      bearer_token: bearerToken || '',
     }),
-  getTemplateJob: (dagRunId) =>
-    fetch(`/api/template-job/${encodeURIComponent(dagRunId)}`).then(async r => {
+  getTemplateJob: (dagRunId, bearerToken) =>
+    fetch(`/api/template-job/${encodeURIComponent(dagRunId)}`, {
+      headers: { Authorization: `Bearer ${bearerToken || ''}` },
+    }).then(async r => {
       const text = await r.text();
       let data; try { data = JSON.parse(text); } catch { data = {}; }
       if (!r.ok) throw new Error(data.detail || data.message || `Status check failed (${r.status})`);
